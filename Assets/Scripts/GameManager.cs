@@ -1,103 +1,524 @@
+using System;
+using System.Collections;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;  
 
 public class GameManager : MonoBehaviour
 {
-    private int[] board = new int[9];
+    [SerializeField] private ApiClient apiClient;
+    [SerializeField] private BoardView boardView;
 
-    public Cell[] cells;           // 9 تا Cell را در Inspector در این آرایه بچین
-    public Sprite xSprite;         // تصویر X
-    public Sprite oSprite;         // تصویر O
-    public TextMeshProUGUI statusText; // متن وضعیت (نوبت یا برد/مساوی)
-    public Button resetButton;     // دکمه ریست
+    [Header("Panels")]
+    [SerializeField] private GameObject enterNicknamePanel;
+    [SerializeField] private GameObject chooseModePanel;
+    [SerializeField] private GameObject joinRoomPanel;
+    [SerializeField] private GameObject waitingPanel;
+    [SerializeField] private GameObject inGamePanel;
+    [SerializeField] private GameObject finishedPanel;
 
-    private bool xTurn = true;     // نوبت X شروع
-    private bool gameOver = false;
+    [Header("Enter Nickname")]
+    [SerializeField] private TMP_InputField nicknameInput;
+    [SerializeField] private TMP_Text playerInfoLabel;
 
-    void Start()
+    [Header("Join Room")]
+    [SerializeField] private TMP_InputField joinRoomInput;
+
+    [Header("Waiting")]
+    [SerializeField] private TMP_Text waitingStatusLabel;
+    [SerializeField] private TMP_Text shareRoomIdLabel;
+
+    [Header("In Game")]
+    [SerializeField] private TMP_Text roomIdLabel;
+    [SerializeField] private TMP_Text playersLabel;
+    [SerializeField] private TMP_Text turnLabel;
+    [SerializeField] private TMP_Text statusLabel;
+
+    [Header("Finished")]
+    [SerializeField] private TMP_Text resultLabel;
+
+    [Header("General")]
+    [SerializeField] private TMP_Text errorLabel;
+
+    [SerializeField] private float pollIntervalSeconds = 2.5f;
+
+    private GameState currentState = GameState.EnterNickname;
+    private Coroutine pollingCoroutine;
+    private bool requestInFlight;
+
+    private int localPlayerId;
+    private string localNickname;
+    private int currentRoomId;
+    private string localPlayerSymbol;
+    private RoomStateResponse currentRoomState;
+
+    private enum GameState
     {
-        NewGame();
-        if (resetButton != null)
-            resetButton.onClick.AddListener(NewGame);
+        EnterNickname,
+        ChooseMode,
+        JoinRoom,
+        WaitingForOpponent,
+        InGame,
+        GameFinished
     }
 
-    public void NewGame()
+    private void Awake()
     {
-        for (int i = 0; i < 9; i++) board[i] = 0;
-        xTurn = true;
-        gameOver = false;
-
-        if (cells != null)
+        if (apiClient == null)
         {
-            foreach (var c in cells) c.Clear();
+            apiClient = FindObjectOfType<ApiClient>();
         }
 
-        SetStatus("Turn: X");
+        if (boardView != null)
+        {
+            boardView.Initialize(OnCellClicked);
+        }
     }
 
-    public void OnCellClicked(int index, Cell cell)
+    private void Start()
     {
-        if (gameOver) return;
-        if (index < 0 || index > 8) return;
-        if (board[index] != 0) return;
+        SetState(GameState.EnterNickname);
+        UpdateUI();
+    }
 
-        int player = xTurn ? 1 : 2;
-        board[index] = player;
+    public void OnCreatePlayerClicked()
+    {
+        if (requestInFlight) return;
 
-        // نمایش نشانه
-        var mark = xTurn ? xSprite : oSprite;
-        cell.SetMark(mark);
-
-        // بررسی برد/مساوی
-        int winner = CheckWinner();
-        if (winner != 0)
+        var nickname = nicknameInput != null ? nicknameInput.text.Trim() : string.Empty;
+        if (string.IsNullOrEmpty(nickname))
         {
-            gameOver = true;
-            SetStatus(winner == 1 ? "Win: X" : "Win: O");
+            ShowError(GameStrings.NicknameRequired);
             return;
         }
 
-        if (IsBoardFull())
+        StartCoroutine(HandleCreatePlayer(nickname));
+    }
+
+    public void OnCreateRoomClicked()
+    {
+        if (!EnsurePlayerCreated()) return;
+        if (requestInFlight) return;
+
+        SetState(GameState.WaitingForOpponent);
+        StartCoroutine(HandleCreateRoom(localPlayerId));
+    }
+
+    public void OnJoinRoomModeClicked()
+    {
+        if (!EnsurePlayerCreated()) return;
+        SetState(GameState.JoinRoom);
+        ClearError();
+        if (joinRoomInput != null) joinRoomInput.text = string.Empty;
+    }
+
+    public void OnSubmitJoinRoom()
+    {
+        if (requestInFlight) return;
+        if (!EnsurePlayerCreated()) return;
+
+        if (joinRoomInput == null)
         {
-            gameOver = true;
-            SetStatus("Oops!");
+            ShowError(GameStrings.JoinRoomIdRequired);
             return;
         }
 
-        // تغییر نوبت
-        xTurn = !xTurn;
-        SetStatus(xTurn ? "Turn: X" : "Turn: O");
-    }
-
-    private void SetStatus(string msg)
-    {
-        if (statusText != null) statusText.text = msg;
-        else Debug.Log(msg);
-    }
-
-    private bool IsBoardFull()
-    {
-        for (int i = 0; i < 9; i++)
-            if (board[i] == 0) return false;
-        return true;
-    }
-
-    private int CheckWinner()
-    {
-        int[][] lines = new int[][]
+        var text = joinRoomInput.text.Trim();
+        if (!int.TryParse(text, out var roomId) || roomId <= 0)
         {
-            new int[]{0,1,2}, new int[]{3,4,5}, new int[]{6,7,8}, // ردیف‌ها
-            new int[]{0,3,6}, new int[]{1,4,7}, new int[]{2,5,8}, // ستون‌ها
-            new int[]{0,4,8}, new int[]{2,4,6}                     // قطرها
-        };
-
-        foreach (var line in lines)
-        {
-            int a = line[0], b = line[1], c = line[2];
-            if (board[a] != 0 && board[a] == board[b] && board[b] == board[c])
-                return board[a]; // 1 یا 2
+            ShowError(GameStrings.JoinRoomIdInvalid);
+            return;
         }
-        return 0; // هنوز برنده‌ای نیست
+
+        StartCoroutine(HandleJoinRoom(roomId, localPlayerId));
+    }
+
+    public void OnBackToMenu()
+    {
+        StopPolling();
+        currentRoomId = 0;
+        localPlayerSymbol = null;
+        currentRoomState = null;
+        boardView?.RenderBoard(null, false);
+        SetState(GameState.ChooseMode);
+        UpdateUI();
+    }
+
+    private IEnumerator HandleCreatePlayer(string nickname)
+    {
+        requestInFlight = true;
+        ClearError();
+
+        yield return apiClient.CreatePlayer(nickname,
+            response =>
+            {
+                localPlayerId = response.playerId;
+                localNickname = response.nickname;
+                SetState(GameState.ChooseMode);
+                UpdateUI();
+            },
+            ShowError);
+
+        requestInFlight = false;
+    }
+
+    private IEnumerator HandleCreateRoom(int playerId)
+    {
+        requestInFlight = true;
+        ClearError();
+        yield return apiClient.CreateRoom(playerId,
+            response =>
+            {
+                currentRoomId = response.roomId;
+                localPlayerSymbol = GameStrings.SymbolX;
+                waitingStatusLabel?.SetText(GameStrings.WaitingForOpponent);
+                shareRoomIdLabel?.SetText(string.Format(GameStrings.ShareRoomFormat, currentRoomId));
+                StartWaitingForOpponent();
+            },
+            error =>
+            {
+                ShowError(error);
+                SetState(GameState.ChooseMode);
+            });
+        requestInFlight = false;
+    }
+
+    private IEnumerator HandleJoinRoom(int roomId, int playerId)
+    {
+        requestInFlight = true;
+        ClearError();
+
+        yield return apiClient.JoinRoom(roomId, playerId,
+            response =>
+            {
+                currentRoomId = response.roomId;
+                DetermineLocalSymbolFromJoin(response);
+                StartCoroutine(HandleFetchRoomState());
+            },
+            error =>
+            {
+                ShowError(error);
+                SetState(GameState.JoinRoom);
+            });
+
+        requestInFlight = false;
+    }
+
+    private IEnumerator HandleFetchRoomState()
+    {
+        if (currentRoomId <= 0) yield break;
+
+        yield return apiClient.GetRoom(currentRoomId,
+            state =>
+            {
+                ApplyRoomState(state);
+                if (state.status == GameStrings.StatusInProgress)
+                {
+                    SetState(GameState.InGame);
+                }
+                else if (state.status == GameStrings.StatusFinished)
+                {
+                    SetState(GameState.GameFinished);
+                }
+            },
+            ShowError);
+    }
+
+    private IEnumerator HandlePlayMove(int cellIndex)
+    {
+        if (currentRoomId <= 0) yield break;
+        if (!IsLocalTurn()) yield break;
+
+        requestInFlight = true;
+        ClearError();
+
+        yield return apiClient.PlayMove(currentRoomId, localPlayerId, cellIndex,
+            response =>
+            {
+                currentRoomState = new RoomStateResponse
+                {
+                    roomId = response.roomId,
+                    status = response.status,
+                    board = response.board,
+                    currentTurnPlayerId = response.currentTurnPlayerId,
+                    result = response.result,
+                    players = currentRoomState?.players
+                };
+
+                boardView?.RenderBoard(response.board, IsLocalTurn(response.currentTurnPlayerId));
+                UpdateTurnLabel(response.currentTurnPlayerId);
+                HandleStatusTransition(response.status, response.result);
+
+                if (response.status == GameStrings.StatusInProgress && response.currentTurnPlayerId != localPlayerId)
+                {
+                    StartInGamePolling();
+                }
+            },
+            ShowError);
+
+        requestInFlight = false;
+    }
+
+    private void DetermineLocalSymbolFromJoin(JoinRoomResponse response)
+    {
+        if (response.player1 != null && response.player1.id == localPlayerId)
+        {
+            localPlayerSymbol = response.player1.symbol;
+        }
+        else if (response.player2 != null && response.player2.id == localPlayerId)
+        {
+            localPlayerSymbol = response.player2.symbol;
+        }
+    }
+
+    private void ApplyRoomState(RoomStateResponse state)
+    {
+        currentRoomState = state;
+        if (state.players != null)
+        {
+            if (localPlayerSymbol == null)
+            {
+                if (state.players.player1 != null && state.players.player1.id == localPlayerId)
+                    localPlayerSymbol = state.players.player1.symbol;
+                else if (state.players.player2 != null && state.players.player2.id == localPlayerId)
+                    localPlayerSymbol = state.players.player2.symbol;
+            }
+        }
+
+        boardView?.RenderBoard(state.board, IsLocalTurn(state.currentTurnPlayerId));
+        UpdateTurnLabel(state.currentTurnPlayerId);
+        UpdateStatus(state.status);
+        UpdatePlayerInfo(state);
+        HandleStatusTransition(state.status, state.result);
+    }
+
+    private void StartWaitingForOpponent()
+    {
+        StopPolling();
+        SetState(GameState.WaitingForOpponent);
+        pollingCoroutine = StartCoroutine(PollRoomStateUntilStarted());
+    }
+
+    private IEnumerator PollRoomStateUntilStarted()
+    {
+        while (currentState == GameState.WaitingForOpponent)
+        {
+            yield return HandleFetchRoomState();
+            if (currentRoomState != null && currentRoomState.status == GameStrings.StatusInProgress)
+            {
+                SetState(GameState.InGame);
+                StartInGamePolling();
+                yield break;
+            }
+            yield return new WaitForSeconds(pollIntervalSeconds);
+        }
+    }
+
+    private void StartInGamePolling()
+    {
+        StopPolling();
+        if (currentState != GameState.InGame) return;
+
+        if (currentRoomState != null && IsLocalTurn(currentRoomState.currentTurnPlayerId))
+        {
+            boardView?.RenderBoard(currentRoomState.board, true);
+            return;
+        }
+
+        pollingCoroutine = StartCoroutine(PollRoomStateWhileNotLocalTurn());
+    }
+
+    private IEnumerator PollRoomStateWhileNotLocalTurn()
+    {
+        while (currentState == GameState.InGame && !IsLocalTurn())
+        {
+            yield return HandleFetchRoomState();
+            if (currentRoomState != null && currentRoomState.status == GameStrings.StatusFinished)
+            {
+                yield break;
+            }
+            yield return new WaitForSeconds(pollIntervalSeconds);
+        }
+    }
+
+    private void StopPolling()
+    {
+        if (pollingCoroutine != null)
+        {
+            StopCoroutine(pollingCoroutine);
+            pollingCoroutine = null;
+        }
+    }
+
+    private void SetState(GameState newState)
+    {
+        currentState = newState;
+        UpdateUI();
+
+        if (newState == GameState.InGame)
+        {
+            StartInGamePolling();
+        }
+        else if (newState == GameState.GameFinished)
+        {
+            StopPolling();
+            boardView?.RenderBoard(currentRoomState?.board, false);
+        }
+        else if (newState != GameState.WaitingForOpponent)
+        {
+            StopPolling();
+        }
+    }
+
+    private void UpdateUI()
+    {
+        if (enterNicknamePanel != null) enterNicknamePanel.SetActive(currentState == GameState.EnterNickname);
+        if (chooseModePanel != null) chooseModePanel.SetActive(currentState == GameState.ChooseMode);
+        if (joinRoomPanel != null) joinRoomPanel.SetActive(currentState == GameState.JoinRoom);
+        if (waitingPanel != null) waitingPanel.SetActive(currentState == GameState.WaitingForOpponent);
+        if (inGamePanel != null) inGamePanel.SetActive(currentState == GameState.InGame);
+        if (finishedPanel != null) finishedPanel.SetActive(currentState == GameState.GameFinished);
+
+        if (playerInfoLabel != null)
+        {
+            playerInfoLabel.text = localPlayerId > 0
+                ? string.Format(GameStrings.PlayerInfoFormat, localNickname, localPlayerId)
+                : GameStrings.PlayerInfoPlaceholder;
+        }
+
+        if (roomIdLabel != null)
+        {
+            roomIdLabel.text = currentRoomId > 0
+                ? string.Format(GameStrings.RoomInfoFormat, currentRoomId)
+                : GameStrings.RoomInfoPlaceholder;
+        }
+
+        if (waitingStatusLabel != null && currentState == GameState.WaitingForOpponent)
+        {
+            waitingStatusLabel.text = GameStrings.WaitingForOpponent;
+        }
+    }
+
+    private void UpdatePlayerInfo(RoomStateResponse state)
+    {
+        if (playersLabel == null || state?.players == null) return;
+
+        var player1Name = state.players.player1 != null ? $"{state.players.player1.nickname} ({state.players.player1.symbol})" : GameStrings.UnknownPlayer;
+        var player2Name = state.players.player2 != null ? $"{state.players.player2.nickname} ({state.players.player2.symbol})" : GameStrings.UnknownPlayer;
+
+        playersLabel.text = string.Format(GameStrings.PlayerNamesFormat, player1Name, player2Name);
+    }
+
+    private void UpdateTurnLabel(int? currentTurnPlayer)
+    {
+        if (turnLabel == null) return;
+
+        if (currentRoomState == null || currentRoomState.status == GameStrings.StatusFinished)
+        {
+            turnLabel.text = string.Empty;
+            return;
+        }
+
+        if (!currentTurnPlayer.HasValue || currentTurnPlayer.Value == 0)
+        {
+            turnLabel.text = string.Empty;
+            return;
+        }
+
+        turnLabel.text = currentTurnPlayer.Value == localPlayerId
+            ? GameStrings.YourTurn
+            : GameStrings.OpponentTurn;
+    }
+
+    private void UpdateStatus(string status)
+    {
+        if (statusLabel == null) return;
+        statusLabel.text = string.Format(GameStrings.StatusFormat, status ?? GameStrings.StatusUnknown);
+    }
+
+    private void HandleStatusTransition(string status, string result)
+    {
+        if (status == GameStrings.StatusFinished)
+        {
+            ShowGameResult(result);
+            SetState(GameState.GameFinished);
+        }
+    }
+
+    private void ShowGameResult(string result)
+    {
+        if (resultLabel == null) return;
+        if (string.IsNullOrEmpty(result))
+        {
+            resultLabel.text = GameStrings.ResultUnknown;
+            return;
+        }
+
+        if (string.Equals(result, GameStrings.ResultDraw, StringComparison.OrdinalIgnoreCase))
+        {
+            resultLabel.text = GameStrings.Draw;
+            return;
+        }
+
+        if (string.Equals(result, localPlayerSymbol, StringComparison.OrdinalIgnoreCase))
+        {
+            resultLabel.text = GameStrings.YouWin;
+        }
+        else
+        {
+            resultLabel.text = GameStrings.YouLose;
+        }
+    }
+
+    private void ShowError(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message)) return;
+        if (errorLabel != null)
+        {
+            errorLabel.text = $"{GameStrings.ErrorPrefix}{message}";
+        }
+        else
+        {
+            Debug.LogError(message);
+        }
+    }
+
+    private void ClearError()
+    {
+        if (errorLabel != null)
+        {
+            errorLabel.text = string.Empty;
+        }
+    }
+
+    private void OnCellClicked(int index)
+    {
+        if (currentState != GameState.InGame) return;
+        if (!IsLocalTurn()) return;
+        if (currentRoomState?.board == null) return;
+        if (index < 0 || index >= currentRoomState.board.Length) return;
+        if (!string.IsNullOrEmpty(currentRoomState.board[index]))
+        {
+            return;
+        }
+
+        StartCoroutine(HandlePlayMove(index));
+    }
+
+    private bool IsLocalTurn()
+    {
+        return IsLocalTurn(currentRoomState?.currentTurnPlayerId);
+    }
+
+    private bool IsLocalTurn(int? currentTurnPlayerId)
+    {
+        if (!currentTurnPlayerId.HasValue || currentTurnPlayerId.Value == 0) return false;
+        return currentTurnPlayerId.Value == localPlayerId;
+    }
+
+    private bool EnsurePlayerCreated()
+    {
+        if (localPlayerId > 0) return true;
+        ShowError(GameStrings.PlayerNotCreated);
+        return false;
     }
 }
