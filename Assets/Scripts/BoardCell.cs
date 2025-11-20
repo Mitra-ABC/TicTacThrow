@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(Button))]
 public class BoardCell : MonoBehaviour
 {
     [SerializeField] private int cellIndex;
@@ -20,13 +21,10 @@ public class BoardCell : MonoBehaviour
 
         if (label == null)
         {
-            label = GetComponentInChildren<TMP_Text>();
+            label = GetComponentInChildren<TMP_Text>(true);
         }
 
-        if (button != null)
-        {
-            button.onClick.AddListener(HandleClick);
-        }
+        button.onClick.AddListener(HandleClick);
     }
 
     private void OnDestroy()

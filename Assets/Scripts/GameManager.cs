@@ -142,7 +142,7 @@ public class GameManager : MonoBehaviour
         currentRoomId = 0;
         localPlayerSymbol = null;
         currentRoomState = null;
-        boardView?.RenderBoard(null, false);
+        boardView?.Clear();
         SetState(GameState.ChooseMode);
         UpdateUI();
     }
