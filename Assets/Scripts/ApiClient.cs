@@ -152,6 +152,7 @@ public class ApiClient : MonoBehaviour
             }
             catch (Exception ex)
             {
+                Debug.LogError($"JSON parse error at '{endpoint}': {ex.Message}\nResponse: {responseText}");
                 onError?.Invoke($"JSON parse error: {ex.Message}");
             }
         }

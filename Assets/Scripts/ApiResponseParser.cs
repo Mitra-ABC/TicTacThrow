@@ -123,13 +123,24 @@ public static class ApiResponseParser
 
     private static Dictionary<string, object> RequireDictionary(object value)
     {
-        var dict = value as Dictionary<string, object>;
-        if (dict == null)
+        if (value is Dictionary<string, object> dict)
         {
-            throw new Exception("JSON root is not an object.");
+            return dict;
         }
 
-        return dict;
+        if (value is List<object> list)
+        {
+            foreach (var item in list)
+            {
+                if (item is Dictionary<string, object> nestedDict)
+                {
+                    return nestedDict;
+                }
+            }
+        }
+
+        var typeName = value?.GetType().Name ?? "null";
+        throw new Exception($"JSON root is not an object (type: {typeName}).");
     }
 
     private static int GetInt(this Dictionary<string, object> dict, string key)
