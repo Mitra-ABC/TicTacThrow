@@ -14,73 +14,7 @@ public static class MiniJSON
     public static object Deserialize(string json)
     {
         if (string.IsNullOrEmpty(json)) return null;
-        json = NormalizeJson(json);
         return Parser.Parse(json);
-    }
-
-    private static string NormalizeJson(string json)
-    {
-        if (string.IsNullOrEmpty(json))
-        {
-            return json;
-        }
-
-        var cleaned = StripControlCharacters(json);
-
-        var startIndex = FindJsonStart(cleaned);
-        if (startIndex > 0 && startIndex < cleaned.Length)
-        {
-            cleaned = cleaned.Substring(startIndex);
-        }
-
-        if (cleaned.Length > 0 && cleaned[0] == '\uFEFF')
-        {
-            cleaned = cleaned.Substring(1);
-        }
-
-        return cleaned.TrimEnd('\u0000', '\uFEFF');
-    }
-
-    private static string StripControlCharacters(string json)
-    {
-        if (string.IsNullOrEmpty(json)) return json;
-
-        var builder = new StringBuilder(json.Length);
-        for (int i = 0; i < json.Length; i++)
-        {
-            var c = json[i];
-            if (IsAllowedCharacter(c))
-            {
-                builder.Append(c);
-            }
-        }
-
-        return builder.ToString();
-    }
-
-    private static bool IsAllowedCharacter(char c)
-    {
-        if (c == '\uFEFF') return false;
-        if (char.IsControl(c) && c != '\n' && c != '\r' && c != '\t')
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static int FindJsonStart(string json)
-    {
-        for (int i = 0; i < json.Length; i++)
-        {
-            var c = json[i];
-            if (c == '{' || c == '[' || c == '"' || c == '-' || char.IsDigit(c))
-            {
-                return i;
-            }
-        }
-
-        return 0;
     }
 
     public static string Serialize(object obj)
