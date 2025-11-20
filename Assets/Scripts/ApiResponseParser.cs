@@ -1,18 +1,8 @@
 using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using UnityEngine;
 
 public static class ApiResponseParser
 {
-    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
-    {
-        PropertyNameCaseInsensitive = true,
-        AllowTrailingCommas = true,
-        ReadCommentHandling = JsonCommentHandling.Skip,
-        IncludeFields = true,
-        NumberHandling = JsonNumberHandling.AllowReadingFromString
-    };
-
     public static PlayerResponse ParsePlayerResponse(string json)
     {
         return Deserialize<PlayerResponse>(json, nameof(PlayerResponse));
@@ -47,15 +37,15 @@ public static class ApiResponseParser
 
         try
         {
-            var result = JsonSerializer.Deserialize<T>(json, JsonOptions);
+            var result = JsonUtility.FromJson<T>(json);
             if (result == null)
             {
-                throw new JsonException($"{typeName} JSON deserialized to null.");
+                throw new Exception($"{typeName} JSON deserialized to null.");
             }
 
             return result;
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
             throw new Exception($"Failed to parse {typeName}: {ex.Message}", ex);
         }
