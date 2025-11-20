@@ -25,12 +25,34 @@ public static class MiniJSON
             return json;
         }
 
-        var normalized = json
-            .Replace("\uFEFF", string.Empty)
-            .Replace("\u0000", string.Empty)
-            .TrimStart();
+        var cleaned = json.Replace("\u0000", string.Empty);
 
-        return normalized;
+        var startIndex = FindJsonStart(cleaned);
+        if (startIndex > 0 && startIndex < cleaned.Length)
+        {
+            cleaned = cleaned.Substring(startIndex);
+        }
+
+        if (cleaned.Length > 0 && cleaned[0] == '\uFEFF')
+        {
+            cleaned = cleaned.Substring(1);
+        }
+
+        return cleaned.TrimEnd('\u0000', '\uFEFF');
+    }
+
+    private static int FindJsonStart(string json)
+    {
+        for (int i = 0; i < json.Length; i++)
+        {
+            var c = json[i];
+            if (c == '{' || c == '[' || c == '"' || c == '-' || char.IsDigit(c))
+            {
+                return i;
+            }
+        }
+
+        return 0;
     }
 
     public static string Serialize(object obj)
