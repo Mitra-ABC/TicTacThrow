@@ -9,6 +9,7 @@ public class ApiClient : MonoBehaviour
     [SerializeField] private ApiConfig apiConfig;
     [SerializeField] private string baseUrlOverride;
     [SerializeField] private float requestTimeoutSeconds = 10f;
+    [SerializeField] private bool verboseLogging;
 
     public string BaseUrl
     {
@@ -107,7 +108,7 @@ public class ApiClient : MonoBehaviour
     private IEnumerator SendRequest(string endpoint, string method, string jsonBody, Action<string> onSuccess, Action<string> onError)
     {
         var url = $"{BaseUrl}{endpoint}";
-        Debug.Log($"[ApiClient] Sending {method} {url} bodyLength={(jsonBody?.Length ?? 0)}");
+        Log($"[ApiClient] Sending {method} {url} bodyLength={(jsonBody?.Length ?? 0)}");
         using (var request = new UnityWebRequest(url, method))
         {
             request.downloadHandler = new DownloadHandlerBuffer();
@@ -136,32 +137,35 @@ public class ApiClient : MonoBehaviour
                 {
                     message = $"{request.responseCode}: {message}";
                 }
-                Debug.LogWarning($"[ApiClient] Request FAILED {method} {endpoint} - {message}");
+                LogWarning($"[ApiClient] Request FAILED {method} {endpoint} - {message}");
                 onError?.Invoke(message);
                 yield break;
             }
 
             var responseText = request.downloadHandler.text;
-            Debug.Log($"[ApiClient] Response {method} {endpoint} code={request.responseCode} length={(responseText?.Length ?? 0)}");
+            Log($"[ApiClient] Response {method} {endpoint} code={request.responseCode} length={(responseText?.Length ?? 0)}");
             if (string.IsNullOrEmpty(responseText))
             {
-                Debug.LogWarning($"[ApiClient] Empty response from server for {endpoint}");
+                LogWarning($"[ApiClient] Empty response from server for {endpoint}");
                 onError?.Invoke("Empty response from server.");
                 yield break;
             }
 
-            Debug.Log($"[ApiClient] Raw response for {endpoint}: {responseText}");
+            Log($"[ApiClient] Raw response for {endpoint}: {responseText}");
 
             try
             {
-                Debug.Log($"[ApiClient] Parsing response for {endpoint}");
+                Log($"[ApiClient] Parsing response for {endpoint}");
                 onSuccess?.Invoke(responseText);
-                Debug.Log($"[ApiClient] Successfully parsed response for {endpoint}");
+                Log($"[ApiClient] Successfully parsed response for {endpoint}");
             }
             catch (Exception ex)
             {
                 LogResponseDiagnostics(endpoint, responseText);
-                Debug.LogError($"[ApiClient] Response handling error at '{endpoint}': {ex}\nResponse: {responseText}");
+                if (verboseLogging)
+                {
+                    Debug.LogError($"[ApiClient] Response handling error at '{endpoint}': {ex}\nResponse: {responseText}");
+                }
                 onError?.Invoke($"JSON parse error: {ex.Message}");
             }
         }
@@ -171,7 +175,7 @@ public class ApiClient : MonoBehaviour
     {
         if (string.IsNullOrEmpty(responseText))
         {
-            Debug.LogWarning($"Response diagnostics ({endpoint}): empty body");
+            LogWarning($"Response diagnostics ({endpoint}): empty body");
             return;
         }
 
@@ -189,7 +193,19 @@ public class ApiClient : MonoBehaviour
             }
         }
 
-        Debug.LogWarning(builder.ToString());
+        LogWarning(builder.ToString());
+    }
+
+    private void Log(string message)
+    {
+        if (!verboseLogging) return;
+        Debug.Log(message);
+    }
+
+    private void LogWarning(string message)
+    {
+        if (!verboseLogging) return;
+        Debug.LogWarning(message);
     }
 }
 
