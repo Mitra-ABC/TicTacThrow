@@ -150,6 +150,8 @@ public class ApiClient : MonoBehaviour
                 yield break;
             }
 
+            Debug.Log($"[ApiClient] Raw response for {endpoint}: {responseText}");
+
             try
             {
                 Debug.Log($"[ApiClient] Parsing response for {endpoint}");
@@ -159,7 +161,7 @@ public class ApiClient : MonoBehaviour
             catch (Exception ex)
             {
                 LogResponseDiagnostics(endpoint, responseText);
-                Debug.LogError($"JSON parse error at '{endpoint}': {ex.Message}\nResponse: {responseText}");
+                Debug.LogError($"[ApiClient] Response handling error at '{endpoint}': {ex}\nResponse: {responseText}");
                 onError?.Invoke($"JSON parse error: {ex.Message}");
             }
         }
