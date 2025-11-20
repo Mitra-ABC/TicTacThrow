@@ -14,18 +14,23 @@ public static class MiniJSON
     public static object Deserialize(string json)
     {
         if (string.IsNullOrEmpty(json)) return null;
-        json = StripUtf8Bom(json);
+        json = NormalizeJson(json);
         return Parser.Parse(json);
     }
 
-    private static string StripUtf8Bom(string json)
+    private static string NormalizeJson(string json)
     {
-        if (!string.IsNullOrEmpty(json) && json.Length > 0 && json[0] == '\uFEFF')
+        if (string.IsNullOrEmpty(json))
         {
-            return json.Substring(1);
+            return json;
         }
 
-        return json;
+        var normalized = json
+            .Replace("\uFEFF", string.Empty)
+            .Replace("\u0000", string.Empty)
+            .TrimStart();
+
+        return normalized;
     }
 
     public static string Serialize(object obj)
