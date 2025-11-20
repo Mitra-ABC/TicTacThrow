@@ -4,9 +4,9 @@ using UnityEngine;
 public class BoardView : MonoBehaviour
 {
     [SerializeField] private BoardCell[] cells;
+    [SerializeField] private bool respectTurnLocks;
 
     private Action<int> onCellClicked;
-    private bool boardHasServerData;
 
     public void Initialize(Action<int> onCellSelected)
     {
@@ -26,20 +26,11 @@ public class BoardView : MonoBehaviour
             cell.SetMark(null);
             cell.SetInteractable(true);
         }
-
-        boardHasServerData = false;
     }
 
     public void RenderBoard(string[] board, bool allowInteraction)
     {
         if (cells == null || cells.Length == 0) return;
-
-        if (board != null)
-        {
-            boardHasServerData = true;
-        }
-
-        bool effectiveAllowInteraction = boardHasServerData && allowInteraction;
 
         for (int i = 0; i < cells.Length; i++)
         {
@@ -50,14 +41,13 @@ public class BoardView : MonoBehaviour
             bool cellEmpty = IsSymbolEmpty(symbol);
             cell.SetMark(cellEmpty ? null : symbol?.Trim());
 
-            bool canInteract = !boardHasServerData || (effectiveAllowInteraction && cellEmpty);
+            bool canInteract = cellEmpty && (allowInteraction || !respectTurnLocks);
             cell.SetInteractable(canInteract);
         }
     }
 
     public void Clear()
     {
-        boardHasServerData = false;
         if (cells == null) return;
 
         for (int i = 0; i < cells.Length; i++)
