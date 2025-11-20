@@ -21,7 +21,7 @@ public class JoinRoomResponse
     public PlayerInfo player1;
     public PlayerInfo player2;
     public string status;
-    public int? currentTurnPlayerId;
+    public int currentTurnPlayerId;
 }
 
 [Serializable]
@@ -38,7 +38,7 @@ public class RoomStateResponse
     public int roomId;
     public string status;
     public RoomPlayers players;
-    public int? currentTurnPlayerId;
+    public int currentTurnPlayerId;
     public string result;
     public string[] board;
 }
@@ -64,7 +64,7 @@ public class MoveResponse
     public int roomId;
     public string status;
     public string[] board;
-    public int? currentTurnPlayerId;
+    public int currentTurnPlayerId;
     public string result;
 }
 
