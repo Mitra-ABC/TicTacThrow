@@ -527,12 +527,13 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        Debug.Log($"[GameManager] Make move button clicked (cellIndex={index})");
         StartCoroutine(HandlePlayMove(index));
     }
 
     private void LogStep(string message)
     {
-        Debug.Log($"[GameManager] {message}");
+        // Logging suppressed to avoid clutter.
     }
 
     private bool IsLocalTurn()
