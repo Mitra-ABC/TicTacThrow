@@ -25,7 +25,7 @@ public static class MiniJSON
             return json;
         }
 
-        var cleaned = json.Replace("\u0000", string.Empty);
+        var cleaned = StripControlCharacters(json);
 
         var startIndex = FindJsonStart(cleaned);
         if (startIndex > 0 && startIndex < cleaned.Length)
@@ -39,6 +39,34 @@ public static class MiniJSON
         }
 
         return cleaned.TrimEnd('\u0000', '\uFEFF');
+    }
+
+    private static string StripControlCharacters(string json)
+    {
+        if (string.IsNullOrEmpty(json)) return json;
+
+        var builder = new StringBuilder(json.Length);
+        for (int i = 0; i < json.Length; i++)
+        {
+            var c = json[i];
+            if (IsAllowedCharacter(c))
+            {
+                builder.Append(c);
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    private static bool IsAllowedCharacter(char c)
+    {
+        if (c == '\uFEFF') return false;
+        if (char.IsControl(c) && c != '\n' && c != '\r' && c != '\t')
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static int FindJsonStart(string json)

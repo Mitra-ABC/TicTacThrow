@@ -85,6 +85,7 @@ public class GameManager : MonoBehaviour
         if (requestInFlight) return;
 
         var nickname = nicknameInput != null ? nicknameInput.text.Trim() : string.Empty;
+        LogStep($"OnCreatePlayerClicked nickname='{nickname}'");
         if (string.IsNullOrEmpty(nickname))
         {
             ShowError(GameStrings.NicknameRequired);
@@ -97,6 +98,7 @@ public class GameManager : MonoBehaviour
     public void OnCreateRoomClicked()
     {
         if (!EnsurePlayerCreated()) return;
+        LogStep($"OnCreateRoomClicked playerId={localPlayerId}");
         if (requestInFlight) return;
 
         SetState(GameState.WaitingForOpponent);
@@ -106,6 +108,7 @@ public class GameManager : MonoBehaviour
     public void OnJoinRoomModeClicked()
     {
         if (!EnsurePlayerCreated()) return;
+        LogStep("OnJoinRoomModeClicked");
         SetState(GameState.JoinRoom);
         ClearError();
         if (joinRoomInput != null) joinRoomInput.text = string.Empty;
@@ -123,6 +126,7 @@ public class GameManager : MonoBehaviour
         }
 
         var text = joinRoomInput.text.Trim();
+        LogStep($"OnSubmitJoinRoom roomInput='{text}'");
         if (!int.TryParse(text, out var roomId) || roomId <= 0)
         {
             ShowError(GameStrings.JoinRoomIdInvalid);
@@ -147,12 +151,14 @@ public class GameManager : MonoBehaviour
     {
         requestInFlight = true;
         ClearError();
+        LogStep($"HandleCreatePlayer start nickname='{nickname}'");
 
         yield return apiClient.CreatePlayer(nickname,
             response =>
             {
                 localPlayerId = response.playerId;
                 localNickname = response.nickname;
+                LogStep($"HandleCreatePlayer success playerId={localPlayerId}");
                 SetState(GameState.ChooseMode);
                 UpdateUI();
             },
@@ -165,17 +171,20 @@ public class GameManager : MonoBehaviour
     {
         requestInFlight = true;
         ClearError();
+        LogStep($"HandleCreateRoom start playerId={playerId}");
         yield return apiClient.CreateRoom(playerId,
             response =>
             {
                 currentRoomId = response.roomId;
                 localPlayerSymbol = GameStrings.SymbolX;
+                LogStep($"HandleCreateRoom success roomId={currentRoomId}");
                 waitingStatusLabel?.SetText(GameStrings.WaitingForOpponent);
                 shareRoomIdLabel?.SetText(string.Format(GameStrings.ShareRoomFormat, currentRoomId));
                 StartWaitingForOpponent();
             },
             error =>
             {
+                LogStep($"HandleCreateRoom error: {error}");
                 ShowError(error);
                 SetState(GameState.ChooseMode);
             });
@@ -186,16 +195,19 @@ public class GameManager : MonoBehaviour
     {
         requestInFlight = true;
         ClearError();
+        LogStep($"HandleJoinRoom start roomId={roomId} playerId={playerId}");
 
         yield return apiClient.JoinRoom(roomId, playerId,
             response =>
             {
                 currentRoomId = response.roomId;
+                LogStep($"HandleJoinRoom success roomId={currentRoomId}");
                 DetermineLocalSymbolFromJoin(response);
                 StartCoroutine(HandleFetchRoomState());
             },
             error =>
             {
+                LogStep($"HandleJoinRoom error: {error}");
                 ShowError(error);
                 SetState(GameState.JoinRoom);
             });
@@ -206,6 +218,7 @@ public class GameManager : MonoBehaviour
     private IEnumerator HandleFetchRoomState()
     {
         if (currentRoomId <= 0) yield break;
+        LogStep($"HandleFetchRoomState start roomId={currentRoomId}");
 
         yield return apiClient.GetRoom(currentRoomId,
             state =>
@@ -219,6 +232,7 @@ public class GameManager : MonoBehaviour
                 {
                     SetState(GameState.GameFinished);
                 }
+                LogStep($"HandleFetchRoomState success status={state.status}");
             },
             ShowError);
     }
@@ -230,6 +244,7 @@ public class GameManager : MonoBehaviour
 
         requestInFlight = true;
         ClearError();
+        LogStep($"HandlePlayMove start cellIndex={cellIndex}");
 
         yield return apiClient.PlayMove(currentRoomId, localPlayerId, cellIndex,
             response =>
@@ -252,6 +267,7 @@ public class GameManager : MonoBehaviour
                 {
                     StartInGamePolling();
                 }
+                LogStep($"HandlePlayMove success status={response.status} nextTurn={response.currentTurnPlayerId}");
             },
             ShowError);
 
@@ -263,15 +279,18 @@ public class GameManager : MonoBehaviour
         if (response.player1 != null && response.player1.id == localPlayerId)
         {
             localPlayerSymbol = response.player1.symbol;
+            LogStep($"DetermineLocalSymbol assigned from player1 symbol={localPlayerSymbol}");
         }
         else if (response.player2 != null && response.player2.id == localPlayerId)
         {
             localPlayerSymbol = response.player2.symbol;
+            LogStep($"DetermineLocalSymbol assigned from player2 symbol={localPlayerSymbol}");
         }
     }
 
     private void ApplyRoomState(RoomStateResponse state)
     {
+        LogStep($"ApplyRoomState status={state?.status} turn={state?.currentTurnPlayerId}");
         currentRoomState = state;
         if (state.players != null)
         {
@@ -295,6 +314,7 @@ public class GameManager : MonoBehaviour
     {
         StopPolling();
         SetState(GameState.WaitingForOpponent);
+        LogStep("StartWaitingForOpponent");
         pollingCoroutine = StartCoroutine(PollRoomStateUntilStarted());
     }
 
@@ -317,6 +337,7 @@ public class GameManager : MonoBehaviour
     {
         StopPolling();
         if (currentState != GameState.InGame) return;
+        LogStep("StartInGamePolling");
 
         if (currentRoomState != null && IsLocalTurn(currentRoomState.currentTurnPlayerId))
         {
@@ -346,12 +367,15 @@ public class GameManager : MonoBehaviour
         {
             StopCoroutine(pollingCoroutine);
             pollingCoroutine = null;
+            LogStep("StopPolling");
         }
     }
 
     private void SetState(GameState newState)
     {
+        var previousState = currentState;
         currentState = newState;
+        LogStep($"SetState {previousState} -> {newState}");
         UpdateUI();
 
         if (newState == GameState.InGame)
@@ -472,6 +496,7 @@ public class GameManager : MonoBehaviour
     private void ShowError(string message)
     {
         if (string.IsNullOrWhiteSpace(message)) return;
+        LogStep($"ShowError '{message}'");
         if (errorLabel != null)
         {
             errorLabel.text = $"{GameStrings.ErrorPrefix}{message}";
@@ -488,6 +513,7 @@ public class GameManager : MonoBehaviour
         {
             errorLabel.text = string.Empty;
         }
+        LogStep("ClearError");
     }
 
     private void OnCellClicked(int index)
@@ -502,6 +528,11 @@ public class GameManager : MonoBehaviour
         }
 
         StartCoroutine(HandlePlayMove(index));
+    }
+
+    private void LogStep(string message)
+    {
+        Debug.Log($"[GameManager] {message}");
     }
 
     private bool IsLocalTurn()

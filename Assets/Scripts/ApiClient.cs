@@ -107,6 +107,7 @@ public class ApiClient : MonoBehaviour
     private IEnumerator SendRequest(string endpoint, string method, string jsonBody, Action<string> onSuccess, Action<string> onError)
     {
         var url = $"{BaseUrl}{endpoint}";
+        Debug.Log($"[ApiClient] Sending {method} {url} bodyLength={(jsonBody?.Length ?? 0)}");
         using (var request = new UnityWebRequest(url, method))
         {
             request.downloadHandler = new DownloadHandlerBuffer();
@@ -135,27 +136,58 @@ public class ApiClient : MonoBehaviour
                 {
                     message = $"{request.responseCode}: {message}";
                 }
+                Debug.LogWarning($"[ApiClient] Request FAILED {method} {endpoint} - {message}");
                 onError?.Invoke(message);
                 yield break;
             }
 
             var responseText = request.downloadHandler.text;
+            Debug.Log($"[ApiClient] Response {method} {endpoint} code={request.responseCode} length={(responseText?.Length ?? 0)}");
             if (string.IsNullOrEmpty(responseText))
             {
+                Debug.LogWarning($"[ApiClient] Empty response from server for {endpoint}");
                 onError?.Invoke("Empty response from server.");
                 yield break;
             }
 
             try
             {
+                Debug.Log($"[ApiClient] Parsing response for {endpoint}");
                 onSuccess?.Invoke(responseText);
+                Debug.Log($"[ApiClient] Successfully parsed response for {endpoint}");
             }
             catch (Exception ex)
             {
+                LogResponseDiagnostics(endpoint, responseText);
                 Debug.LogError($"JSON parse error at '{endpoint}': {ex.Message}\nResponse: {responseText}");
                 onError?.Invoke($"JSON parse error: {ex.Message}");
             }
         }
+    }
+
+    private void LogResponseDiagnostics(string endpoint, string responseText)
+    {
+        if (string.IsNullOrEmpty(responseText))
+        {
+            Debug.LogWarning($"Response diagnostics ({endpoint}): empty body");
+            return;
+        }
+
+        var builder = new StringBuilder();
+        builder.Append($"Response diagnostics ({endpoint}): length={responseText.Length}, preview=");
+
+        var charsToInspect = Math.Min(32, responseText.Length);
+        for (int i = 0; i < charsToInspect; i++)
+        {
+            var c = responseText[i];
+            builder.AppendFormat("\\u{0:X4}", (int)c);
+            if (i < charsToInspect - 1)
+            {
+                builder.Append(' ');
+            }
+        }
+
+        Debug.LogWarning(builder.ToString());
     }
 }
 
