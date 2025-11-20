@@ -47,9 +47,10 @@ public class BoardView : MonoBehaviour
             if (cell == null) continue;
 
             var symbol = board != null && i < board.Length ? board[i] : null;
-            cell.SetMark(symbol);
+            bool cellEmpty = IsSymbolEmpty(symbol);
+            cell.SetMark(cellEmpty ? null : symbol?.Trim());
 
-            bool canInteract = !boardHasServerData || (effectiveAllowInteraction && string.IsNullOrEmpty(symbol));
+            bool canInteract = !boardHasServerData || (effectiveAllowInteraction && cellEmpty);
             cell.SetInteractable(canInteract);
         }
     }
@@ -71,6 +72,14 @@ public class BoardView : MonoBehaviour
     private void HandleCellClick(int index)
     {
         onCellClicked?.Invoke(index);
+    }
+
+    private static bool IsSymbolEmpty(string symbol)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) return true;
+        return string.Equals(symbol, "null", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(symbol, "empty", StringComparison.OrdinalIgnoreCase)
+               || symbol == "-";
     }
 }
 

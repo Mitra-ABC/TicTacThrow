@@ -44,7 +44,7 @@ public class BoardCell : MonoBehaviour
     {
         if (label != null)
         {
-            label.text = string.IsNullOrEmpty(symbol) ? string.Empty : symbol;
+            label.text = string.IsNullOrWhiteSpace(symbol) ? string.Empty : symbol;
         }
     }
 

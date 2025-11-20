@@ -522,7 +522,7 @@ public class GameManager : MonoBehaviour
         if (!IsLocalTurn()) return;
         if (currentRoomState?.board == null) return;
         if (index < 0 || index >= currentRoomState.board.Length) return;
-        if (!string.IsNullOrEmpty(currentRoomState.board[index]))
+        if (!IsBoardCellEmpty(currentRoomState.board[index]))
         {
             return;
         }
@@ -545,6 +545,14 @@ public class GameManager : MonoBehaviour
     {
         if (!currentTurnPlayerId.HasValue || currentTurnPlayerId.Value == 0) return false;
         return currentTurnPlayerId.Value == localPlayerId;
+    }
+
+    private static bool IsBoardCellEmpty(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return true;
+        return string.Equals(value, "null", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(value, "empty", StringComparison.OrdinalIgnoreCase)
+               || value == "-";
     }
 
     private bool EnsurePlayerCreated()
