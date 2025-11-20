@@ -14,7 +14,27 @@ public static class MiniJSON
     public static object Deserialize(string json)
     {
         if (string.IsNullOrEmpty(json)) return null;
+        json = TrimBomAndNulls(json);
         return Parser.Parse(json);
+    }
+
+    private static string TrimBomAndNulls(string json)
+    {
+        if (string.IsNullOrEmpty(json)) return json;
+
+        int start = 0;
+        while (start < json.Length && (json[start] == '\uFEFF' || json[start] == '\u0000'))
+        {
+            start++;
+        }
+
+        int end = json.Length - 1;
+        while (end >= start && (json[end] == '\u0000' || json[end] == '\uFEFF'))
+        {
+            end--;
+        }
+
+        return json.Substring(start, end - start + 1);
     }
 
     public static string Serialize(object obj)
