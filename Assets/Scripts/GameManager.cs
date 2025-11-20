@@ -518,16 +518,14 @@ public class GameManager : MonoBehaviour
 
     private void OnCellClicked(int index)
     {
-        if (currentState != GameState.InGame) return;
-        if (!IsLocalTurn()) return;
-        if (currentRoomState?.board == null) return;
-        if (index < 0 || index >= currentRoomState.board.Length) return;
-        if (!IsBoardCellEmpty(currentRoomState.board[index]))
+        var blockReason = GetClickBlockReason(index);
+        if (blockReason != null)
         {
+            Debug.LogWarning($"[GameManager] Ignoring click on cell {index}: {blockReason}");
             return;
         }
 
-        Debug.Log($"[GameManager] Make move button clicked (cellIndex={index})");
+        Debug.Log($"[GameManager] Make move button clicked (cellIndex={index}) currentTurn={currentRoomState?.currentTurnPlayerId} localPlayerId={localPlayerId}");
         StartCoroutine(HandlePlayMove(index));
     }
 
@@ -553,6 +551,37 @@ public class GameManager : MonoBehaviour
         return string.Equals(value, "null", StringComparison.OrdinalIgnoreCase)
                || string.Equals(value, "empty", StringComparison.OrdinalIgnoreCase)
                || value == "-";
+    }
+
+    private string GetClickBlockReason(int index)
+    {
+        if (currentState != GameState.InGame)
+        {
+            return $"state is {currentState}";
+        }
+
+        if (currentRoomState?.board == null)
+        {
+            return "board is null";
+        }
+
+        if (index < 0 || index >= currentRoomState.board.Length)
+        {
+            return $"index {index} out of range ({currentRoomState.board.Length})";
+        }
+
+        if (!IsLocalTurn())
+        {
+            return $"not local turn (localPlayerId={localPlayerId}, currentTurn={currentRoomState?.currentTurnPlayerId})";
+        }
+
+        var value = currentRoomState.board[index];
+        if (!IsBoardCellEmpty(value))
+        {
+            return $"cell already filled with '{value}'";
+        }
+
+        return null;
     }
 
     private bool EnsurePlayerCreated()
