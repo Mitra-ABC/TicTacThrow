@@ -251,9 +251,23 @@ public static class MiniJSON
             }
         }
 
-        private char PeekChar => Convert.ToChar(json.Peek());
+        private char PeekChar
+        {
+            get
+            {
+                var peek = json.Peek();
+                return peek == -1 ? '\0' : Convert.ToChar(peek);
+            }
+        }
 
-        private char NextChar => Convert.ToChar(json.Read());
+        private char NextChar
+        {
+            get
+            {
+                var next = json.Read();
+                return next == -1 ? '\0' : Convert.ToChar(next);
+            }
+        }
 
         private string NextWord
         {
@@ -336,7 +350,7 @@ public static class MiniJSON
 
         private static bool IsWordBreak(char c)
         {
-            return char.IsWhiteSpace(c) || WORD_BREAK.IndexOf(c) != -1;
+            return c == '\0' || char.IsWhiteSpace(c) || WORD_BREAK.IndexOf(c) != -1;
         }
     }
 
