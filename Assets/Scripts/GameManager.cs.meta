@@ -1,2 +1,30 @@
 fileFormatVersion: 2
 guid: e2c35bbfa78c50447a7a6bade62f24f7
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - apiClient: {instanceID: 0}
+  - boardView: {instanceID: 0}
+  - enterNicknamePanel: {fileID: 519471102536886288, guid: d52cc89634d34c44e813e69eabbde478, type: 3}
+  - chooseModePanel: {instanceID: 0}
+  - joinRoomPanel: {instanceID: 0}
+  - waitingPanel: {instanceID: 0}
+  - inGamePanel: {instanceID: 0}
+  - finishedPanel: {instanceID: 0}
+  - nicknameInput: {fileID: 5794026064452176471, guid: ea984d7301b70334ba05c684a4cede1f, type: 3}
+  - playerInfoLabel: {fileID: 4548698357907182594, guid: 4cccd941c3fa61e45b10401a2e5523cc, type: 3}
+  - joinRoomInput: {instanceID: 0}
+  - waitingStatusLabel: {instanceID: 0}
+  - shareRoomIdLabel: {instanceID: 0}
+  - roomIdLabel: {instanceID: 0}
+  - playersLabel: {instanceID: 0}
+  - turnLabel: {instanceID: 0}
+  - statusLabel: {instanceID: 0}
+  - resultLabel: {instanceID: 0}
+  - errorLabel: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
