@@ -672,7 +672,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        turnLabel.text = currentTurnPlayer.Value == apiClient.CurrentPlayerId
+        turnLabel.text = (apiClient != null && currentTurnPlayer.Value == apiClient.CurrentPlayerId)
             ? GameStrings.YourTurn
             : GameStrings.OpponentTurn;
     }
@@ -728,6 +728,7 @@ public class GameManager : MonoBehaviour
     private bool IsLocalTurn(int? currentTurnPlayerId)
     {
         if (!currentTurnPlayerId.HasValue || currentTurnPlayerId.Value == 0) return false;
+        if (apiClient == null) return false;
         return currentTurnPlayerId.Value == apiClient.CurrentPlayerId;
     }
 
@@ -758,7 +759,7 @@ public class GameManager : MonoBehaviour
 
         if (!IsLocalTurn())
         {
-            return $"not local turn (localPlayerId={apiClient.CurrentPlayerId}, currentTurn={currentRoomState?.currentTurnPlayerId})";
+            return $"not local turn (localPlayerId={apiClient?.CurrentPlayerId}, currentTurn={currentRoomState?.currentTurnPlayerId})";
         }
 
         var value = currentRoomState.board[index];
