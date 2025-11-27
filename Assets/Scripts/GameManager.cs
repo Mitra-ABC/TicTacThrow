@@ -608,30 +608,49 @@ public class GameManager : MonoBehaviour
 
     private void DetermineLocalSymbolFromJoin(JoinRoomResponse response)
     {
-        var playerId = apiClient.CurrentPlayerId;
+        var playerId = apiClient?.CurrentPlayerId ?? 0;
+        Debug.Log($"[GameManager] DetermineLocalSymbolFromJoin: playerId={playerId}");
+        Debug.Log($"[GameManager] player1: id={response.player1?.id}, symbol={response.player1?.symbol}");
+        Debug.Log($"[GameManager] player2: id={response.player2?.id}, symbol={response.player2?.symbol}");
+        
         if (response.player1 != null && response.player1.id == playerId)
         {
             localPlayerSymbol = response.player1.symbol;
+            Debug.Log($"[GameManager] Assigned symbol from player1: {localPlayerSymbol}");
         }
         else if (response.player2 != null && response.player2.id == playerId)
         {
             localPlayerSymbol = response.player2.symbol;
+            Debug.Log($"[GameManager] Assigned symbol from player2: {localPlayerSymbol}");
+        }
+        else
+        {
+            Debug.LogWarning($"[GameManager] Could not determine symbol! playerId={playerId} doesn't match player1.id={response.player1?.id} or player2.id={response.player2?.id}");
         }
     }
 
     private void ApplyRoomState(RoomStateResponse state)
     {
         currentRoomState = state;
-        var playerId = apiClient.CurrentPlayerId;
+        var playerId = apiClient?.CurrentPlayerId ?? 0;
+
+        Debug.Log($"[GameManager] ApplyRoomState: playerId={playerId}, localPlayerSymbol={localPlayerSymbol}, status={state.status}, result={state.result}");
 
         if (state.players != null)
         {
-            if (localPlayerSymbol == null)
+            if (string.IsNullOrEmpty(localPlayerSymbol))
             {
+                Debug.Log($"[GameManager] localPlayerSymbol is empty, trying to determine from players...");
                 if (state.players.player1 != null && state.players.player1.id == playerId)
+                {
                     localPlayerSymbol = state.players.player1.symbol;
+                    Debug.Log($"[GameManager] Assigned symbol from player1: {localPlayerSymbol}");
+                }
                 else if (state.players.player2 != null && state.players.player2.id == playerId)
+                {
                     localPlayerSymbol = state.players.player2.symbol;
+                    Debug.Log($"[GameManager] Assigned symbol from player2: {localPlayerSymbol}");
+                }
             }
         }
 
@@ -696,6 +715,8 @@ public class GameManager : MonoBehaviour
     {
         if (resultLabel == null) return;
         
+        Debug.Log($"[GameManager] ShowGameResult: result='{result}', localPlayerSymbol='{localPlayerSymbol}'");
+        
         if (string.IsNullOrEmpty(result))
         {
             resultLabel.text = GameStrings.ResultUnknown;
@@ -708,7 +729,18 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        if (string.Equals(result, localPlayerSymbol, StringComparison.OrdinalIgnoreCase))
+        // Ensure localPlayerSymbol is set
+        if (string.IsNullOrEmpty(localPlayerSymbol))
+        {
+            Debug.LogWarning("[GameManager] localPlayerSymbol is not set!");
+            resultLabel.text = GameStrings.ResultUnknown;
+            return;
+        }
+
+        bool isWinner = string.Equals(result, localPlayerSymbol, StringComparison.OrdinalIgnoreCase);
+        Debug.Log($"[GameManager] isWinner={isWinner}");
+        
+        if (isWinner)
         {
             resultLabel.text = GameStrings.YouWin;
         }
