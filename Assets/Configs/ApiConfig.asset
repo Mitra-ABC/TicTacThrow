@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7743551275274f84faf3fe9578ff0256, type: 3}
   m_Name: ApiConfig
   m_EditorClassIdentifier: 
-  baseUrl: http://172.20.10.10:3000
+  baseUrl: https://api.mbking.info
