@@ -570,7 +570,7 @@ public class GameManager : MonoBehaviour
             // Update form title
             if (authFormTitle != null)
             {
-                authFormTitle.text = isRegisterMode ? "ثبت‌نام" : "ورود";
+                authFormTitle.text = isRegisterMode ? GameStrings.RegisterButton : GameStrings.LoginButton;
             }
 
             // Show/hide nickname field
@@ -579,7 +579,7 @@ public class GameManager : MonoBehaviour
             // Update submit button text
             if (submitAuthButtonText != null)
             {
-                submitAuthButtonText.text = isRegisterMode ? "ثبت‌نام" : "ورود";
+                submitAuthButtonText.text = isRegisterMode ? GameStrings.RegisterButton : GameStrings.LoginButton;
             }
         }
 
