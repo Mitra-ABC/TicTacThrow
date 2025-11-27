@@ -12,7 +12,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private BoardView boardView;
 
     [Header("Panels")]
-    [SerializeField] private GameObject authPanel;
+    [SerializeField] private GameObject authChoicePanel;
+    [SerializeField] private GameObject authFormPanel;
     [SerializeField] private GameObject lobbyPanel;
     [SerializeField] private GameObject joinRoomPanel;
     [SerializeField] private GameObject waitingPanel;
@@ -20,12 +21,19 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject finishedPanel;
     [SerializeField] private GameObject loadingOverlay;
 
-    [Header("Auth Panel")]
+    [Header("Auth Choice Panel")]
+    [SerializeField] private Button chooseLoginButton;
+    [SerializeField] private Button chooseRegisterButton;
+
+    [Header("Auth Form Panel")]
+    [SerializeField] private TMP_Text authFormTitle;
     [SerializeField] private TMP_InputField usernameInput;
     [SerializeField] private TMP_InputField passwordInput;
-    [SerializeField] private TMP_InputField nicknameInput; // Optional - only needed for registration
-    [SerializeField] private Button loginButton;
-    [SerializeField] private Button registerButton;
+    [SerializeField] private GameObject nicknameFieldContainer; // Container to show/hide
+    [SerializeField] private TMP_InputField nicknameInput;
+    [SerializeField] private Button submitAuthButton;
+    [SerializeField] private TMP_Text submitAuthButtonText;
+    [SerializeField] private Button backFromAuthFormButton;
     [SerializeField] private TMP_Text authStatusLabel;
 
     [Header("Lobby Panel")]
@@ -60,9 +68,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMP_Text errorLabel;
     [SerializeField] private float pollIntervalSeconds = 2f;
 
-    private GameState currentState = GameState.Auth;
+    private GameState currentState = GameState.AuthChoice;
     private Coroutine pollingCoroutine;
     private bool requestInFlight;
+    private bool isRegisterMode; // true = Register, false = Login
 
     private int currentRoomId;
     private string localPlayerSymbol;
@@ -70,7 +79,8 @@ public class GameManager : MonoBehaviour
 
     private enum GameState
     {
-        Auth,
+        AuthChoice,
+        AuthForm,
         Lobby,
         JoinRoom,
         WaitingForOpponent,
@@ -110,7 +120,7 @@ public class GameManager : MonoBehaviour
             {
                 authManager.ValidateSession(
                     onValid: () => SetState(GameState.Lobby),
-                    onInvalid: error => SetState(GameState.Auth)
+                    onInvalid: error => SetState(GameState.AuthChoice)
                 );
             }
             else
@@ -121,15 +131,19 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            SetState(GameState.Auth);
+            SetState(GameState.AuthChoice);
         }
     }
 
     private void SetupButtonListeners()
     {
-        // Auth buttons
-        loginButton?.onClick.AddListener(OnLoginClicked);
-        registerButton?.onClick.AddListener(OnRegisterClicked);
+        // Auth choice buttons
+        chooseLoginButton?.onClick.AddListener(OnChooseLoginClicked);
+        chooseRegisterButton?.onClick.AddListener(OnChooseRegisterClicked);
+
+        // Auth form buttons
+        submitAuthButton?.onClick.AddListener(OnSubmitAuthClicked);
+        backFromAuthFormButton?.onClick.AddListener(OnBackToAuthChoice);
 
         // Lobby buttons
         createRoomButton?.onClick.AddListener(OnCreateRoomClicked);
@@ -150,34 +164,37 @@ public class GameManager : MonoBehaviour
 
     // ============ Authentication ============
 
-    public void OnLoginClicked()
+    // ============ Auth Choice ============
+
+    public void OnChooseLoginClicked()
     {
-        if (requestInFlight) return;
-
-        var username = usernameInput?.text?.Trim() ?? string.Empty;
-        var password = passwordInput?.text ?? string.Empty;
-
-        if (string.IsNullOrEmpty(username))
-        {
-            ShowError(GameStrings.UsernameRequired);
-            return;
-        }
-        if (string.IsNullOrEmpty(password))
-        {
-            ShowError(GameStrings.PasswordRequired);
-            return;
-        }
-
-        StartCoroutine(HandleLogin(username, password));
+        isRegisterMode = false;
+        ClearError();
+        ClearAuthInputs();
+        SetState(GameState.AuthForm);
     }
 
-    public void OnRegisterClicked()
+    public void OnChooseRegisterClicked()
+    {
+        isRegisterMode = true;
+        ClearError();
+        ClearAuthInputs();
+        SetState(GameState.AuthForm);
+    }
+
+    public void OnBackToAuthChoice()
+    {
+        ClearError();
+        ClearAuthInputs();
+        SetState(GameState.AuthChoice);
+    }
+
+    public void OnSubmitAuthClicked()
     {
         if (requestInFlight) return;
 
         var username = usernameInput?.text?.Trim() ?? string.Empty;
         var password = passwordInput?.text ?? string.Empty;
-        var nickname = nicknameInput?.text?.Trim() ?? string.Empty;
 
         if (string.IsNullOrEmpty(username))
         {
@@ -189,13 +206,28 @@ public class GameManager : MonoBehaviour
             ShowError(GameStrings.PasswordRequired);
             return;
         }
-        if (password.Length < 4)
-        {
-            ShowError(GameStrings.PasswordTooShort);
-            return;
-        }
 
-        StartCoroutine(HandleRegister(username, password, nickname));
+        if (isRegisterMode)
+        {
+            if (password.Length < 4)
+            {
+                ShowError(GameStrings.PasswordTooShort);
+                return;
+            }
+            var nickname = nicknameInput?.text?.Trim() ?? string.Empty;
+            StartCoroutine(HandleRegister(username, password, nickname));
+        }
+        else
+        {
+            StartCoroutine(HandleLogin(username, password));
+        }
+    }
+
+    private void ClearAuthInputs()
+    {
+        if (usernameInput != null) usernameInput.text = string.Empty;
+        if (passwordInput != null) passwordInput.text = string.Empty;
+        if (nicknameInput != null) nicknameInput.text = string.Empty;
     }
 
     public void OnLogoutClicked()
@@ -215,7 +247,7 @@ public class GameManager : MonoBehaviour
         currentRoomState = null;
         boardView?.Clear();
         ClearInputs();
-        SetState(GameState.Auth);
+        SetState(GameState.AuthChoice);
     }
 
     private IEnumerator HandleLogin(string username, string password)
@@ -524,15 +556,35 @@ public class GameManager : MonoBehaviour
     private void UpdateUI()
     {
         // Panel visibility
-        authPanel?.SetActive(currentState == GameState.Auth);
+        authChoicePanel?.SetActive(currentState == GameState.AuthChoice);
+        authFormPanel?.SetActive(currentState == GameState.AuthForm);
         lobbyPanel?.SetActive(currentState == GameState.Lobby);
         joinRoomPanel?.SetActive(currentState == GameState.JoinRoom);
         waitingPanel?.SetActive(currentState == GameState.WaitingForOpponent);
         inGamePanel?.SetActive(currentState == GameState.InGame);
         finishedPanel?.SetActive(currentState == GameState.GameFinished);
 
+        // Auth form state - show/hide nickname field based on mode
+        if (currentState == GameState.AuthForm)
+        {
+            // Update form title
+            if (authFormTitle != null)
+            {
+                authFormTitle.text = isRegisterMode ? "ثبت‌نام" : "ورود";
+            }
+
+            // Show/hide nickname field
+            nicknameFieldContainer?.SetActive(isRegisterMode);
+
+            // Update submit button text
+            if (submitAuthButtonText != null)
+            {
+                submitAuthButtonText.text = isRegisterMode ? "ثبت‌نام" : "ورود";
+            }
+        }
+
         // Update labels based on state
-        if (currentState == GameState.Lobby && apiClient.CurrentPlayer != null)
+        if (currentState == GameState.Lobby && apiClient != null && apiClient.CurrentPlayer != null)
         {
             var player = apiClient.CurrentPlayer;
             welcomeLabel?.SetText(string.Format(GameStrings.WelcomeFormat, player.nickname ?? player.username));
@@ -722,9 +774,9 @@ public class GameManager : MonoBehaviour
 
     private bool EnsureLoggedIn()
     {
-        if (apiClient.IsLoggedIn) return true;
+        if (apiClient != null && apiClient.IsLoggedIn) return true;
         ShowError(GameStrings.NotLoggedIn);
-        SetState(GameState.Auth);
+        SetState(GameState.AuthChoice);
         return false;
     }
 
