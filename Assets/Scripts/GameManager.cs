@@ -104,13 +104,21 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         // Check if already logged in (persisted session)
-        if (apiClient.IsLoggedIn)
+        if (apiClient != null && apiClient.IsLoggedIn)
         {
             // Validate the token is still valid
-            authManager.ValidateSession(
-                onValid: () => SetState(GameState.Lobby),
-                onInvalid: error => SetState(GameState.Auth)
-            );
+            if (authManager != null)
+            {
+                authManager.ValidateSession(
+                    onValid: () => SetState(GameState.Lobby),
+                    onInvalid: error => SetState(GameState.Auth)
+                );
+            }
+            else
+            {
+                Debug.LogWarning("[GameManager] AuthManager not found, skipping session validation");
+                SetState(GameState.Lobby);
+            }
         }
         else
         {
@@ -194,7 +202,15 @@ public class GameManager : MonoBehaviour
     public void OnLogoutClicked()
     {
         StopPolling();
-        authManager.Logout();
+        if (authManager != null)
+        {
+            authManager.Logout();
+        }
+        else
+        {
+            // Fallback: clear session directly via ApiClient
+            apiClient?.Logout();
+        }
         currentRoomId = 0;
         localPlayerSymbol = null;
         currentRoomState = null;
