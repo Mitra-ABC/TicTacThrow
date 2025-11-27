@@ -23,10 +23,9 @@ public class GameManager : MonoBehaviour
     [Header("Auth Panel")]
     [SerializeField] private TMP_InputField usernameInput;
     [SerializeField] private TMP_InputField passwordInput;
-    [SerializeField] private TMP_InputField nicknameInput;
+    [SerializeField] private TMP_InputField nicknameInput; // Optional - only needed for registration
     [SerializeField] private Button loginButton;
     [SerializeField] private Button registerButton;
-    [SerializeField] private GameObject registerFields;
     [SerializeField] private TMP_Text authStatusLabel;
 
     [Header("Lobby Panel")]
