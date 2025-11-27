@@ -3,10 +3,24 @@ using UnityEngine;
 
 public static class ApiResponseParser
 {
-    public static PlayerResponse ParsePlayerResponse(string json)
+    // ============ Authentication Responses ============
+
+    public static RegisterResponse ParseRegisterResponse(string json)
     {
-        return Deserialize<PlayerResponse>(json, nameof(PlayerResponse));
+        return Deserialize<RegisterResponse>(json, nameof(RegisterResponse));
     }
+
+    public static LoginResponse ParseLoginResponse(string json)
+    {
+        return Deserialize<LoginResponse>(json, nameof(LoginResponse));
+    }
+
+    public static PlayerMeResponse ParsePlayerMeResponse(string json)
+    {
+        return Deserialize<PlayerMeResponse>(json, nameof(PlayerMeResponse));
+    }
+
+    // ============ Room Responses ============
 
     public static CreateRoomResponse ParseCreateRoomResponse(string json)
     {
@@ -27,6 +41,15 @@ public static class ApiResponseParser
     {
         return Deserialize<MoveResponse>(json, nameof(MoveResponse));
     }
+
+    // ============ Error Response ============
+
+    public static ErrorResponse ParseErrorResponse(string json)
+    {
+        return Deserialize<ErrorResponse>(json, nameof(ErrorResponse));
+    }
+
+    // ============ Helper ============
 
     private static T Deserialize<T>(string json, string typeName)
     {
@@ -51,4 +74,3 @@ public static class ApiResponseParser
         }
     }
 }
-

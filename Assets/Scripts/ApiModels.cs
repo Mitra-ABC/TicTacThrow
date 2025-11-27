@@ -1,11 +1,54 @@
 using System;
 
+// ============ Authentication Models ============
+
 [Serializable]
-public class PlayerResponse
+public class RegisterRequest
+{
+    public string username;
+    public string password;
+    public string nickname; // optional, defaults to username
+}
+
+[Serializable]
+public class RegisterResponse
 {
     public int playerId;
+    public string username;
     public string nickname;
 }
+
+[Serializable]
+public class LoginRequest
+{
+    public string username;
+    public string password;
+}
+
+[Serializable]
+public class LoginResponse
+{
+    public string token;
+    public Player player;
+}
+
+[Serializable]
+public class Player
+{
+    public int id;
+    public string username;
+    public string nickname;
+}
+
+[Serializable]
+public class PlayerMeResponse
+{
+    public int playerId;
+    public string username;
+    public string nickname;
+}
+
+// ============ Room Models ============
 
 [Serializable]
 public class CreateRoomResponse
@@ -18,14 +61,14 @@ public class CreateRoomResponse
 public class JoinRoomResponse
 {
     public int roomId;
-    public PlayerInfo player1;
-    public PlayerInfo player2;
+    public PlayerInRoom player1;
+    public PlayerInRoom player2;
     public string status;
     public int currentTurnPlayerId;
 }
 
 [Serializable]
-public class PlayerInfo
+public class PlayerInRoom
 {
     public int id;
     public string symbol;
@@ -46,16 +89,14 @@ public class RoomStateResponse
 [Serializable]
 public class RoomPlayers
 {
-    public PlayerDetails player1;
-    public PlayerDetails player2;
+    public PlayerInRoom player1;
+    public PlayerInRoom player2;
 }
 
 [Serializable]
-public class PlayerDetails
+public class MoveRequest
 {
-    public int id;
-    public string nickname;
-    public string symbol;
+    public int cellIndex;
 }
 
 [Serializable]
@@ -68,28 +109,10 @@ public class MoveResponse
     public string result;
 }
 
-[Serializable]
-public class CreatePlayerRequest
-{
-    public string nickname;
-}
+// ============ Error Response ============
 
 [Serializable]
-public class CreateRoomRequest
+public class ErrorResponse
 {
-    public int playerId;
+    public string error;
 }
-
-[Serializable]
-public class JoinRoomRequest
-{
-    public int playerId;
-}
-
-[Serializable]
-public class MoveRequest
-{
-    public int playerId;
-    public int cellIndex;
-}
-
