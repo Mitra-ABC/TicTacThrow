@@ -355,6 +355,10 @@ public class GameManager : MonoBehaviour
         requestInFlight = true;
         ClearError();
         ShowLoading(true);
+        
+        // Reset state before creating new room
+        localPlayerSymbol = null;
+        currentRoomState = null;
 
         yield return apiClient.CreateRoom(
             response =>
@@ -381,6 +385,9 @@ public class GameManager : MonoBehaviour
         requestInFlight = true;
         ClearError();
         ShowLoading(true);
+        
+        // Reset symbol before joining - will be set from join response
+        localPlayerSymbol = null;
 
         yield return apiClient.JoinRoom(roomId,
             response =>
@@ -636,21 +643,23 @@ public class GameManager : MonoBehaviour
 
         Debug.Log($"[GameManager] ApplyRoomState: playerId={playerId}, localPlayerSymbol={localPlayerSymbol}, status={state.status}, result={state.result}");
 
+        // Always update localPlayerSymbol from room state to ensure it's correct
         if (state.players != null)
         {
-            if (string.IsNullOrEmpty(localPlayerSymbol))
+            string newSymbol = null;
+            if (state.players.player1 != null && state.players.player1.id == playerId)
             {
-                Debug.Log($"[GameManager] localPlayerSymbol is empty, trying to determine from players...");
-                if (state.players.player1 != null && state.players.player1.id == playerId)
-                {
-                    localPlayerSymbol = state.players.player1.symbol;
-                    Debug.Log($"[GameManager] Assigned symbol from player1: {localPlayerSymbol}");
-                }
-                else if (state.players.player2 != null && state.players.player2.id == playerId)
-                {
-                    localPlayerSymbol = state.players.player2.symbol;
-                    Debug.Log($"[GameManager] Assigned symbol from player2: {localPlayerSymbol}");
-                }
+                newSymbol = state.players.player1.symbol;
+            }
+            else if (state.players.player2 != null && state.players.player2.id == playerId)
+            {
+                newSymbol = state.players.player2.symbol;
+            }
+
+            if (!string.IsNullOrEmpty(newSymbol) && newSymbol != localPlayerSymbol)
+            {
+                Debug.Log($"[GameManager] Updating localPlayerSymbol: '{localPlayerSymbol}' -> '{newSymbol}'");
+                localPlayerSymbol = newSymbol;
             }
         }
 
