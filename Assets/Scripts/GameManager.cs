@@ -15,7 +15,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject authChoicePanel;
     [SerializeField] private GameObject authFormPanel;
     [SerializeField] private GameObject lobbyPanel;
-    [SerializeField] private GameObject friendlyGamePanel;
     [SerializeField] private GameObject joinRoomPanel;
     [SerializeField] private GameObject waitingPanel;
     [SerializeField] private GameObject matchmakingPanel;
