@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject authChoicePanel;
     [SerializeField] private GameObject authFormPanel;
     [SerializeField] private GameObject lobbyPanel;
+    [SerializeField] private GameObject friendlyGamePanel;
     [SerializeField] private GameObject joinRoomPanel;
     [SerializeField] private GameObject waitingPanel;
     [SerializeField] private GameObject matchmakingPanel;
@@ -42,12 +43,17 @@ public class GameManager : MonoBehaviour
     [Header("Lobby Panel")]
     [SerializeField] private TMP_Text welcomeLabel;
     [SerializeField] private TMP_Text playerInfoLabel;
-    [SerializeField] private Button createRoomButton;
-    [SerializeField] private Button joinRoomModeButton;
-    [SerializeField] private Button playOnlineButton;
+    [SerializeField] private Button competitiveGameButton; // بازی مسابقه‌ای (Matchmaking)
+    [SerializeField] private Button friendlyGameButton; // بازی دوستانه
     [SerializeField] private Button leaderboardButton;
     [SerializeField] private Button myStatsButton;
     [SerializeField] private Button logoutButton;
+
+    [Header("Friendly Game Panel")]
+    [SerializeField] private GameObject friendlyGamePanel;
+    [SerializeField] private Button createRoomButton;
+    [SerializeField] private Button joinRoomModeButton;
+    [SerializeField] private Button backFromFriendlyGameButton;
 
     [Header("Join Room Panel")]
     [SerializeField] private TMP_InputField joinRoomInput;
@@ -109,6 +115,7 @@ public class GameManager : MonoBehaviour
         AuthChoice,
         AuthForm,
         Lobby,
+        FriendlyGame, // صفحه بازی دوستانه
         JoinRoom,
         WaitingForOpponent,
         Matchmaking,
@@ -176,12 +183,16 @@ public class GameManager : MonoBehaviour
         backFromAuthFormButton?.onClick.AddListener(OnBackToAuthChoice);
 
         // Lobby buttons
-        createRoomButton?.onClick.AddListener(OnCreateRoomClicked);
-        joinRoomModeButton?.onClick.AddListener(OnJoinRoomModeClicked);
-        playOnlineButton?.onClick.AddListener(OnPlayOnlineClicked);
+        competitiveGameButton?.onClick.AddListener(OnCompetitiveGameClicked);
+        friendlyGameButton?.onClick.AddListener(OnFriendlyGameClicked);
         leaderboardButton?.onClick.AddListener(OnLeaderboardClicked);
         myStatsButton?.onClick.AddListener(OnMyStatsClicked);
         logoutButton?.onClick.AddListener(OnLogoutClicked);
+
+        // Friendly Game Panel buttons
+        createRoomButton?.onClick.AddListener(OnCreateRoomClicked);
+        joinRoomModeButton?.onClick.AddListener(OnJoinRoomModeClicked);
+        backFromFriendlyGameButton?.onClick.AddListener(OnBackFromFriendlyGame);
 
         // Join room buttons
         submitJoinButton?.onClick.AddListener(OnSubmitJoinRoom);
@@ -352,6 +363,7 @@ public class GameManager : MonoBehaviour
     public void OnJoinRoomModeClicked()
     {
         if (!EnsureLoggedIn()) return;
+        if (currentState != GameState.FriendlyGame) return; // فقط از صفحه FriendlyGame
         SetState(GameState.JoinRoom);
         ClearError();
         if (joinRoomInput != null) joinRoomInput.text = string.Empty;
@@ -385,7 +397,16 @@ public class GameManager : MonoBehaviour
         localPlayerSymbol = null;
         currentRoomState = null;
         boardView?.Clear();
-        SetState(GameState.Lobby);
+        
+        // اگر از JoinRoom یا WaitingForOpponent برگشتیم، به FriendlyGame برگرد
+        if (currentState == GameState.JoinRoom || currentState == GameState.WaitingForOpponent)
+        {
+            SetState(GameState.FriendlyGame);
+        }
+        else
+        {
+            SetState(GameState.Lobby);
+        }
     }
 
     public void OnPlayAgain()
@@ -609,6 +630,7 @@ public class GameManager : MonoBehaviour
         authChoicePanel?.SetActive(currentState == GameState.AuthChoice);
         authFormPanel?.SetActive(currentState == GameState.AuthForm);
         lobbyPanel?.SetActive(currentState == GameState.Lobby);
+        friendlyGamePanel?.SetActive(currentState == GameState.FriendlyGame);
         joinRoomPanel?.SetActive(currentState == GameState.JoinRoom);
         waitingPanel?.SetActive(currentState == GameState.WaitingForOpponent);
         matchmakingPanel?.SetActive(currentState == GameState.Matchmaking);
@@ -907,15 +929,28 @@ public class GameManager : MonoBehaviour
         if (joinRoomInput != null) joinRoomInput.text = string.Empty;
     }
 
-    // ============ Matchmaking ============
+    // ============ Lobby Navigation ============
 
-    public void OnPlayOnlineClicked()
+    public void OnCompetitiveGameClicked()
     {
         if (!EnsureLoggedIn()) return;
         if (requestInFlight) return;
 
         StartCoroutine(HandleQueueMatchmaking());
     }
+
+    public void OnFriendlyGameClicked()
+    {
+        if (!EnsureLoggedIn()) return;
+        SetState(GameState.FriendlyGame);
+    }
+
+    public void OnBackFromFriendlyGame()
+    {
+        SetState(GameState.Lobby);
+    }
+
+    // ============ Matchmaking ============
 
     public void OnCancelMatchmakingClicked()
     {
