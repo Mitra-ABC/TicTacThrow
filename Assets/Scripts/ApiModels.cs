@@ -109,6 +109,61 @@ public class MoveResponse
     public string result;
 }
 
+// ============ Matchmaking Models ============
+
+[Serializable]
+public class MatchmakingResponse
+{
+    public string mode; // "matched" or "waiting"
+    public int roomId;
+    public string status;
+    public PlayerInRoom player1;
+    public PlayerInRoom player2;
+    public int currentTurnPlayerId; // Use -1 to represent null
+}
+
+[Serializable]
+public class CancelMatchmakingResponse
+{
+    public string message;
+}
+
+// ============ Leaderboard Models ============
+
+[Serializable]
+public class LeaderboardResponse
+{
+    public string season; // Format: "YYYY-MM"
+    public LeaderboardPlayer[] players;
+}
+
+[Serializable]
+public class LeaderboardPlayer
+{
+    public int rank;
+    public int playerId;
+    public string nickname;
+    public int rating;
+    public int wins;
+    public int losses;
+    public int draws;
+    public int gamesPlayed;
+}
+
+[Serializable]
+public class MyStatsResponse
+{
+    public string season; // Format: "YYYY-MM"
+    public int playerId;
+    public string nickname;
+    public int rating; // Use -1 to represent null
+    public int wins;
+    public int losses;
+    public int draws;
+    public int gamesPlayed;
+    public int rank; // Use -1 to represent null
+}
+
 // ============ Error Response ============
 
 [Serializable]

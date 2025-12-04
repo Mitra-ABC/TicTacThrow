@@ -56,6 +56,32 @@ public static class GameStrings
     // ============ Results ============
     public const string ResultDraw = "draw";
 
+    // ============ Matchmaking ============
+    public const string QueueMatchmaking = "Queue for Matchmaking";
+    public const string CancelMatchmaking = "Cancel Matchmaking";
+    public const string SearchingForOpponent = "Searching for opponent...";
+    public const string MatchmakingWaiting = "Waiting for opponent...";
+    public const string MatchmakingMatched = "Match found!";
+    public const string MatchmakingCancelled = "Matchmaking cancelled";
+    public const string MatchmakingFailed = "Matchmaking failed";
+
+    // ============ Leaderboard ============
+    public const string LeaderboardTitle = "Leaderboard";
+    public const string MyStatsTitle = "My Stats";
+    public const string SeasonFormat = "Season: {0}";
+    public const string RankFormat = "Rank: {0}";
+    public const string RatingFormat = "Rating: {0}";
+    public const string WinsFormat = "Wins: {0}";
+    public const string LossesFormat = "Losses: {0}";
+    public const string DrawsFormat = "Draws: {0}";
+    public const string GamesPlayedFormat = "Games Played: {0}";
+    public const string NoRating = "No rating yet";
+    public const string NoRank = "Unranked";
+    public const string LoadingLeaderboard = "Loading leaderboard...";
+    public const string LoadingStats = "Loading stats...";
+    public const string LeaderboardError = "Failed to load leaderboard";
+    public const string StatsError = "Failed to load stats";
+
     // ============ Buttons ============
     public const string LoginButton = "Login";
     public const string RegisterButton = "Register";
@@ -64,4 +90,8 @@ public static class GameStrings
     public const string JoinRoomButton = "Join Room";
     public const string BackButton = "Back";
     public const string PlayAgainButton = "Play Again";
+    public const string PlayOnlineButton = "Play Online";
+    public const string LeaderboardButton = "Leaderboard";
+    public const string MyStatsButton = "My Stats";
+    public const string RefreshButton = "Refresh";
 }

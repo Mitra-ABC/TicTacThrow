@@ -238,6 +238,76 @@ public class ApiClient : MonoBehaviour
             onError);
     }
 
+    // ============ Matchmaking Endpoints ============
+
+    public IEnumerator QueueMatchmaking(Action<MatchmakingResponse> onSuccess, Action<string> onError)
+    {
+        // Empty request body - player ID comes from JWT
+        yield return SendRequest("/api/matchmaking/queue", UnityWebRequest.kHttpVerbPOST, "{}", true,
+            response =>
+            {
+                var data = ApiResponseParser.ParseMatchmakingResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
+    public IEnumerator CancelMatchmaking(Action<CancelMatchmakingResponse> onSuccess, Action<string> onError)
+    {
+        // Empty request body - player ID comes from JWT
+        yield return SendRequest("/api/matchmaking/cancel", UnityWebRequest.kHttpVerbPOST, "{}", true,
+            response =>
+            {
+                var data = ApiResponseParser.ParseCancelMatchmakingResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
+    // ============ Leaderboard Endpoints ============
+
+    public IEnumerator GetLeaderboard(string season, int limit, Action<LeaderboardResponse> onSuccess, Action<string> onError)
+    {
+        // Build query string
+        var queryParams = new System.Collections.Generic.List<string>();
+        if (!string.IsNullOrEmpty(season))
+        {
+            queryParams.Add($"season={UnityWebRequest.EscapeURL(season)}");
+        }
+        if (limit > 0)
+        {
+            queryParams.Add($"limit={limit}");
+        }
+        
+        var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+        var endpoint = $"/api/leaderboard{queryString}";
+
+        // Leaderboard is public, no auth required
+        yield return SendRequest(endpoint, UnityWebRequest.kHttpVerbGET, null, false,
+            response =>
+            {
+                var data = ApiResponseParser.ParseLeaderboardResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
+    public IEnumerator GetMyStats(string season, Action<MyStatsResponse> onSuccess, Action<string> onError)
+    {
+        // Build query string
+        var queryString = !string.IsNullOrEmpty(season) ? $"?season={UnityWebRequest.EscapeURL(season)}" : "";
+        var endpoint = $"/api/leaderboard/me{queryString}";
+
+        // My stats requires authentication
+        yield return SendRequest(endpoint, UnityWebRequest.kHttpVerbGET, null, true,
+            response =>
+            {
+                var data = ApiResponseParser.ParseMyStatsResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
     // ============ Core Request Method ============
 
     private IEnumerator SendRequest(string endpoint, string method, string jsonBody, bool requiresAuth, Action<string> onSuccess, Action<string> onError)

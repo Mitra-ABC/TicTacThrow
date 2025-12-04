@@ -42,6 +42,30 @@ public static class ApiResponseParser
         return Deserialize<MoveResponse>(json, nameof(MoveResponse));
     }
 
+    // ============ Matchmaking Responses ============
+
+    public static MatchmakingResponse ParseMatchmakingResponse(string json)
+    {
+        return Deserialize<MatchmakingResponse>(json, nameof(MatchmakingResponse));
+    }
+
+    public static CancelMatchmakingResponse ParseCancelMatchmakingResponse(string json)
+    {
+        return Deserialize<CancelMatchmakingResponse>(json, nameof(CancelMatchmakingResponse));
+    }
+
+    // ============ Leaderboard Responses ============
+
+    public static LeaderboardResponse ParseLeaderboardResponse(string json)
+    {
+        return Deserialize<LeaderboardResponse>(json, nameof(LeaderboardResponse));
+    }
+
+    public static MyStatsResponse ParseMyStatsResponse(string json)
+    {
+        return Deserialize<MyStatsResponse>(json, nameof(MyStatsResponse));
+    }
+
     // ============ Error Response ============
 
     public static ErrorResponse ParseErrorResponse(string json)
