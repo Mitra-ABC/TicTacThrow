@@ -73,7 +73,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Transform leaderboardContent;
     [SerializeField] private GameObject leaderboardItemPrefab;
     [SerializeField] private Button closeLeaderboardButton;
-    [SerializeField] private Button refreshLeaderboardButton;
 
     [Header("My Stats Panel")]
     [SerializeField] private TMP_Text myStatsSeasonLabel;
@@ -205,7 +204,6 @@ public class GameManager : MonoBehaviour
 
         // Leaderboard buttons
         closeLeaderboardButton?.onClick.AddListener(OnCloseLeaderboard);
-        refreshLeaderboardButton?.onClick.AddListener(OnRefreshLeaderboard);
 
         // My Stats buttons
         closeMyStatsButton?.onClick.AddListener(OnCloseMyStats);
@@ -1051,11 +1049,6 @@ public class GameManager : MonoBehaviour
     public void OnCloseMyStats()
     {
         SetState(GameState.Lobby);
-    }
-
-    public void OnRefreshLeaderboard()
-    {
-        LoadLeaderboard();
     }
 
     private void LoadLeaderboard()
