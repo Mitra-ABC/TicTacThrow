@@ -22,7 +22,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject finishedPanel;
     [SerializeField] private GameObject leaderboardPanel;
     [SerializeField] private GameObject myStatsPanel;
-    [SerializeField] private GameObject walletPanel;
     [SerializeField] private GameObject loadingOverlay;
 
     [Header("Auth Choice Panel")]
