@@ -66,7 +66,10 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextSelector_A.cs" />
     <Compile Include="Assets\Scripts\ApiClient.cs" />
     <Compile Include="Assets\Scripts\LeaderboardItem.cs" />
+<<<<<<< Updated upstream
     <Compile Include="Assets\Scripts\BoosterItem.cs" />
+=======
+>>>>>>> Stashed changes
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark02.cs" />
     <Compile Include="Assets\Scripts\GameStrings.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_ExampleScript_01.cs" />
