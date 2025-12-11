@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject finishedPanel;
     [SerializeField] private GameObject leaderboardPanel;
     [SerializeField] private GameObject myStatsPanel;
+    [SerializeField] private GameObject walletPanel;
     [SerializeField] private GameObject loadingOverlay;
 
     [Header("Auth Choice Panel")]
@@ -84,6 +85,30 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMP_Text myStatsGamesLabel;
     [SerializeField] private Button closeMyStatsButton;
 
+    [Header("Lobby Panel - Wallet")]
+    [SerializeField] private TMP_Text coinsLabel;
+    [SerializeField] private TMP_Text heartsLabel;
+    [SerializeField] private Button storeButton;
+    [SerializeField] private Button walletButton;
+
+    [Header("Store Panel")]
+    [SerializeField] private GameObject storePanel;
+    [SerializeField] private TMP_Text storeTitle;
+    [SerializeField] private Button buyHeartButton;
+    [SerializeField] private TMP_Text heartPriceLabel;
+    [SerializeField] private Transform coinPacksContent; // برای لیست Coin Packs
+    [SerializeField] private GameObject coinPackItemPrefab; // Prefab برای هر Coin Pack
+    [SerializeField] private Transform boostersContent; // برای لیست Boosters
+    [SerializeField] private GameObject boosterItemPrefab; // Prefab برای هر Booster
+    [SerializeField] private Button closeStoreButton;
+
+    [Header("Wallet Panel")]
+    [SerializeField] private GameObject walletPanel;
+    [SerializeField] private TMP_Text walletCoinsLabel;
+    [SerializeField] private TMP_Text walletHeartsLabel;
+    [SerializeField] private TMP_Text nextHeartLabel;
+    [SerializeField] private Button closeWalletButton;
+
     [Header("In Game Panel")]
     [SerializeField] private TMP_Text roomIdLabel;
     [SerializeField] private TMP_Text playersLabel;
@@ -120,7 +145,9 @@ public class GameManager : MonoBehaviour
         InGame,
         GameFinished,
         Leaderboard,
-        MyStats
+        MyStats,
+        Store,
+        Wallet
     }
 
     // ============ Lifecycle ============
@@ -153,15 +180,19 @@ public class GameManager : MonoBehaviour
             // Validate the token is still valid
             if (authManager != null)
             {
-                authManager.ValidateSession(
-                    onValid: () => SetState(GameState.Lobby),
-                    onInvalid: error => SetState(GameState.AuthChoice)
-                );
+            authManager.ValidateSession(
+                onValid: () => {
+                    SetState(GameState.Lobby);
+                    RefreshWallet();
+                },
+                onInvalid: error => SetState(GameState.AuthChoice)
+            );
             }
             else
             {
                 Debug.LogWarning("[GameManager] AuthManager not found, skipping session validation");
                 SetState(GameState.Lobby);
+                RefreshWallet();
             }
         }
         else
@@ -207,6 +238,13 @@ public class GameManager : MonoBehaviour
 
         // My Stats buttons
         closeMyStatsButton?.onClick.AddListener(OnCloseMyStats);
+
+        // Wallet & Store buttons
+        storeButton?.onClick.AddListener(OnStoreClicked);
+        walletButton?.onClick.AddListener(OnWalletClicked);
+        buyHeartButton?.onClick.AddListener(OnBuyHeartClicked);
+        closeStoreButton?.onClick.AddListener(OnCloseStore);
+        closeWalletButton?.onClick.AddListener(OnCloseWallet);
 
         // Finished buttons
         playAgainButton?.onClick.AddListener(OnPlayAgain);
@@ -635,6 +673,8 @@ public class GameManager : MonoBehaviour
         finishedPanel?.SetActive(currentState == GameState.GameFinished);
         leaderboardPanel?.SetActive(currentState == GameState.Leaderboard);
         myStatsPanel?.SetActive(currentState == GameState.MyStats);
+        storePanel?.SetActive(currentState == GameState.Store);
+        walletPanel?.SetActive(currentState == GameState.Wallet);
 
         // Auth form state - show/hide nickname field based on mode
         if (currentState == GameState.AuthForm)
@@ -1175,5 +1215,299 @@ public class GameManager : MonoBehaviour
         {
             myStatsGamesLabel.text = string.Format(GameStrings.GamesPlayedFormat, response.gamesPlayed);
         }
+    }
+
+    // ============ Wallet & Store ============
+
+    public void OnStoreClicked()
+    {
+        if (!EnsureLoggedIn()) return;
+        SetState(GameState.Store);
+        LoadEconomyConfig();
+    }
+
+    public void OnWalletClicked()
+    {
+        if (!EnsureLoggedIn()) return;
+        SetState(GameState.Wallet);
+        LoadWallet();
+    }
+
+    public void OnCloseStore()
+    {
+        SetState(GameState.Lobby);
+    }
+
+    public void OnCloseWallet()
+    {
+        SetState(GameState.Lobby);
+    }
+
+    public void OnBuyHeartClicked()
+    {
+        if (!EnsureLoggedIn()) return;
+        if (requestInFlight) return;
+        StartCoroutine(HandleBuyHeart());
+    }
+
+    private IEnumerator HandleBuyHeart()
+    {
+        requestInFlight = true;
+        ClearError();
+        ShowLoading(true);
+
+        yield return apiClient.BuyHeart(
+            response =>
+            {
+                ShowLoading(false);
+                Debug.Log($"[GameManager] Heart purchased! Coins: {response.wallet.coins}, Hearts: {response.wallet.hearts}");
+                UpdateWalletDisplay(response.wallet);
+                ShowError("Heart purchased successfully!");
+            },
+            error =>
+            {
+                ShowLoading(false);
+                ShowError(error);
+            });
+
+        requestInFlight = false;
+    }
+
+    private void LoadWallet()
+    {
+        StartCoroutine(HandleLoadWallet());
+    }
+
+    private IEnumerator HandleLoadWallet()
+    {
+        ShowLoading(true);
+        ClearError();
+
+        yield return apiClient.GetWallet(
+            response =>
+            {
+                ShowLoading(false);
+                DisplayWallet(response);
+            },
+            error =>
+            {
+                ShowLoading(false);
+                ShowError(error);
+            });
+    }
+
+    private void DisplayWallet(WalletResponse response)
+    {
+        if (walletCoinsLabel != null)
+        {
+            walletCoinsLabel.text = string.Format(GameStrings.CoinsFormat, response.coins);
+        }
+
+        if (walletHeartsLabel != null)
+        {
+            walletHeartsLabel.text = string.Format(GameStrings.HeartsFormat, response.hearts, response.maxHearts);
+        }
+
+        if (nextHeartLabel != null)
+        {
+            if (!string.IsNullOrEmpty(response.nextHeartAt) && response.hearts < response.maxHearts)
+            {
+                // می‌توانید زمان را parse کنید و نمایش دهید
+                nextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, "Calculating...");
+            }
+            else
+            {
+                nextHeartLabel.text = GameStrings.HeartsFull;
+            }
+        }
+    }
+
+    private void LoadEconomyConfig()
+    {
+        StartCoroutine(HandleLoadEconomyConfig());
+    }
+
+    private IEnumerator HandleLoadEconomyConfig()
+    {
+        ShowLoading(true);
+        ClearError();
+
+        yield return apiClient.GetEconomyConfig(
+            response =>
+            {
+                ShowLoading(false);
+                DisplayEconomyConfig(response);
+            },
+            error =>
+            {
+                ShowLoading(false);
+                ShowError(error);
+            });
+    }
+
+    private void DisplayEconomyConfig(EconomyConfigResponse config)
+    {
+        // نمایش قیمت Heart
+        if (heartPriceLabel != null)
+        {
+            heartPriceLabel.text = string.Format(GameStrings.HeartPriceFormat, config.settings.heartPriceCoins);
+        }
+
+        // نمایش Coin Packs
+        if (coinPacksContent != null)
+        {
+            // پاک کردن لیست قبلی
+            foreach (Transform child in coinPacksContent)
+            {
+                Destroy(child.gameObject);
+            }
+
+            // اضافه کردن Coin Packs
+            if (config.coinPacks != null && coinPackItemPrefab != null)
+            {
+                foreach (var pack in config.coinPacks)
+                {
+                    if (!pack.isActive) continue; // فقط بسته‌های فعال
+
+                    var item = Instantiate(coinPackItemPrefab, coinPacksContent);
+                    var itemScript = item.GetComponent<CoinPackItem>();
+                    if (itemScript != null)
+                    {
+                        itemScript.SetCoinPack(pack, OnCoinPackClicked);
+                    }
+                }
+            }
+        }
+
+        // نمایش Boosters
+        if (boostersContent != null)
+        {
+            // پاک کردن لیست قبلی
+            foreach (Transform child in boostersContent)
+            {
+                Destroy(child.gameObject);
+            }
+
+            // اضافه کردن Boosters
+            if (config.boosterTypes != null && boosterItemPrefab != null)
+            {
+                foreach (var booster in config.boosterTypes)
+                {
+                    if (!booster.isActive) continue; // فقط بوسترهای فعال
+
+                    var item = Instantiate(boosterItemPrefab, boostersContent);
+                    var itemScript = item.GetComponent<BoosterItem>();
+                    if (itemScript != null)
+                    {
+                        itemScript.SetBooster(booster, OnBoosterClicked);
+                    }
+                }
+            }
+        }
+    }
+
+    private void OnCoinPackClicked(string coinPackCode)
+    {
+        // برای تست/توسعه - اعطای coin pack
+        StartCoroutine(HandleGrantCoinPack(coinPackCode));
+    }
+
+    private IEnumerator HandleGrantCoinPack(string coinPackCode)
+    {
+        requestInFlight = true;
+        ClearError();
+        ShowLoading(true);
+
+        yield return apiClient.GrantCoinPack(coinPackCode,
+            response =>
+            {
+                ShowLoading(false);
+                Debug.Log($"[GameManager] Coins granted: {response.coinsGranted}, New balance: {response.wallet.coins}");
+                UpdateWalletDisplay(response.wallet);
+                ShowError($"Coins granted: {response.coinsGranted}!");
+            },
+            error =>
+            {
+                ShowLoading(false);
+                ShowError(error);
+            });
+
+        requestInFlight = false;
+    }
+
+    private void OnBoosterClicked(string boosterCode)
+    {
+        if (!EnsureLoggedIn()) return;
+        if (requestInFlight) return;
+        StartCoroutine(HandleBuyBooster(boosterCode));
+    }
+
+    private IEnumerator HandleBuyBooster(string boosterCode)
+    {
+        requestInFlight = true;
+        ClearError();
+        ShowLoading(true);
+
+        yield return apiClient.BuyBooster(boosterCode,
+            response =>
+            {
+                ShowLoading(false);
+                Debug.Log($"[GameManager] Booster purchased! Code: {response.booster.code}");
+                UpdateWalletDisplay(response.wallet);
+                ShowError($"Booster purchased: {response.booster.displayName}!");
+            },
+            error =>
+            {
+                ShowLoading(false);
+                ShowError(error);
+            });
+
+        requestInFlight = false;
+    }
+
+    // به‌روزرسانی نمایش wallet در Lobby
+    private void UpdateWalletDisplay(WalletInfo wallet)
+    {
+        if (coinsLabel != null)
+        {
+            coinsLabel.text = string.Format(GameStrings.CoinsFormat, wallet.coins);
+        }
+
+        if (heartsLabel != null)
+        {
+            heartsLabel.text = string.Format(GameStrings.HeartsFormat, wallet.hearts, wallet.maxHearts);
+        }
+    }
+
+    // متد برای به‌روزرسانی wallet بعد از هر عملیات
+    public void RefreshWallet()
+    {
+        if (currentState == GameState.Lobby || currentState == GameState.Wallet)
+        {
+            LoadWallet();
+        }
+        else
+        {
+            // فقط نمایش در Lobby را به‌روزرسانی کن
+            StartCoroutine(HandleRefreshWalletOnly());
+        }
+    }
+
+    private IEnumerator HandleRefreshWalletOnly()
+    {
+        yield return apiClient.GetWallet(
+            response =>
+            {
+                UpdateWalletDisplay(new WalletInfo
+                {
+                    coins = response.coins,
+                    hearts = response.hearts,
+                    maxHearts = response.maxHearts
+                });
+            },
+            error =>
+            {
+                Debug.LogWarning($"[GameManager] Failed to refresh wallet: {error}");
+            });
     }
 }

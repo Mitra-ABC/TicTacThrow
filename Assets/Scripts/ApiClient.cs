@@ -182,6 +182,17 @@ public class ApiClient : MonoBehaviour
             onError);
     }
 
+    public IEnumerator GetWallet(Action<WalletResponse> onSuccess, Action<string> onError)
+    {
+        yield return SendRequest("/api/players/me/wallet", UnityWebRequest.kHttpVerbGET, null, true,
+            response =>
+            {
+                var data = ApiResponseParser.ParseWalletResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
     // ============ Room Endpoints ============
 
     public IEnumerator CreateRoom(Action<CreateRoomResponse> onSuccess, Action<string> onError)
@@ -303,6 +314,75 @@ public class ApiClient : MonoBehaviour
             response =>
             {
                 var data = ApiResponseParser.ParseMyStatsResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
+    // ============ Economy Endpoints ============
+
+    public IEnumerator GetEconomyConfig(Action<EconomyConfigResponse> onSuccess, Action<string> onError)
+    {
+        // Economy config is public, no auth required
+        yield return SendRequest("/api/economy/config", UnityWebRequest.kHttpVerbGET, null, false,
+            response =>
+            {
+                var data = ApiResponseParser.ParseEconomyConfigResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
+    // ============ Store Endpoints ============
+
+    public IEnumerator BuyHeart(Action<BuyHeartResponse> onSuccess, Action<string> onError)
+    {
+        // Empty request body
+        yield return SendRequest("/api/store/buy-heart", UnityWebRequest.kHttpVerbPOST, "{}", true,
+            response =>
+            {
+                var data = ApiResponseParser.ParseBuyHeartResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
+    public IEnumerator BuyBooster(string boosterCode, Action<BuyBoosterResponse> onSuccess, Action<string> onError)
+    {
+        var payload = new BuyBoosterRequest { boosterCode = boosterCode };
+        var json = JsonUtility.ToJson(payload);
+
+        yield return SendRequest("/api/store/buy-booster", UnityWebRequest.kHttpVerbPOST, json, true,
+            response =>
+            {
+                var data = ApiResponseParser.ParseBuyBoosterResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
+    public IEnumerator GetCoinPacks(Action<CoinPacksResponse> onSuccess, Action<string> onError)
+    {
+        // Coin packs list is public, no auth required
+        yield return SendRequest("/api/store/coin-packs", UnityWebRequest.kHttpVerbGET, null, false,
+            response =>
+            {
+                var data = ApiResponseParser.ParseCoinPacksResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
+    public IEnumerator GrantCoinPack(string coinPackCode, Action<GrantCoinPackResponse> onSuccess, Action<string> onError)
+    {
+        var payload = new GrantCoinPackRequest { coinPackCode = coinPackCode };
+        var json = JsonUtility.ToJson(payload);
+
+        // For testing/development only
+        yield return SendRequest("/api/store/grant-coin-pack", UnityWebRequest.kHttpVerbPOST, json, true,
+            response =>
+            {
+                var data = ApiResponseParser.ParseGrantCoinPackResponse(response);
                 onSuccess?.Invoke(data);
             },
             onError);

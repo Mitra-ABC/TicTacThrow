@@ -82,6 +82,35 @@ public static class GameStrings
     public const string LeaderboardError = "Failed to load leaderboard";
     public const string StatsError = "Failed to load stats";
 
+    // ============ Economy & Wallet ============
+    public const string CoinsFormat = "Coins: {0}";
+    public const string HeartsFormat = "Hearts: {0}/{1}";
+    public const string NextHeartFormat = "Next heart in: {0}";
+    public const string HeartsFull = "Hearts full";
+    public const string NotEnoughCoins = "Not enough coins";
+    public const string NotEnoughHearts = "Not enough hearts";
+    public const string HeartsAtMax = "Already at maximum hearts";
+    public const string LoadingWallet = "Loading wallet...";
+    public const string WalletError = "Failed to load wallet";
+
+    // ============ Store ============
+    public const string StoreTitle = "Store";
+    public const string BuyHeartButton = "Buy Heart";
+    public const string BuyBoosterButton = "Buy Booster";
+    public const string HeartPriceFormat = "Price: {0} coins";
+    public const string BoosterPriceFormat = "Price: {0} coins";
+    public const string BoosterDurationFormat = "Duration: {0} minutes";
+    public const string BuySuccess = "Purchase successful!";
+    public const string BuyFailed = "Purchase failed";
+    public const string LoadingStore = "Loading store...";
+    public const string StoreError = "Failed to load store";
+
+    // ============ Boosters ============
+    public const string ActiveBoosters = "Active Boosters";
+    public const string NoActiveBoosters = "No active boosters";
+    public const string BoosterExpiresFormat = "Expires: {0}";
+    public const string BoosterExpired = "Expired";
+
     // ============ Buttons ============
     public const string LoginButton = "Login";
     public const string RegisterButton = "Register";
@@ -94,4 +123,6 @@ public static class GameStrings
     public const string LeaderboardButton = "Leaderboard";
     public const string MyStatsButton = "My Stats";
     public const string RefreshButton = "Refresh";
+    public const string StoreButton = "Store";
+    public const string WalletButton = "Wallet";
 }

@@ -66,6 +66,42 @@ public static class ApiResponseParser
         return Deserialize<MyStatsResponse>(json, nameof(MyStatsResponse));
     }
 
+    // ============ Wallet Responses ============
+
+    public static WalletResponse ParseWalletResponse(string json)
+    {
+        return Deserialize<WalletResponse>(json, nameof(WalletResponse));
+    }
+
+    // ============ Economy Responses ============
+
+    public static EconomyConfigResponse ParseEconomyConfigResponse(string json)
+    {
+        return Deserialize<EconomyConfigResponse>(json, nameof(EconomyConfigResponse));
+    }
+
+    // ============ Store Responses ============
+
+    public static BuyHeartResponse ParseBuyHeartResponse(string json)
+    {
+        return Deserialize<BuyHeartResponse>(json, nameof(BuyHeartResponse));
+    }
+
+    public static BuyBoosterResponse ParseBuyBoosterResponse(string json)
+    {
+        return Deserialize<BuyBoosterResponse>(json, nameof(BuyBoosterResponse));
+    }
+
+    public static CoinPacksResponse ParseCoinPacksResponse(string json)
+    {
+        return Deserialize<CoinPacksResponse>(json, nameof(CoinPacksResponse));
+    }
+
+    public static GrantCoinPackResponse ParseGrantCoinPackResponse(string json)
+    {
+        return Deserialize<GrantCoinPackResponse>(json, nameof(GrantCoinPackResponse));
+    }
+
     // ============ Error Response ============
 
     public static ErrorResponse ParseErrorResponse(string json)

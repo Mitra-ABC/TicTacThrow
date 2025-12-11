@@ -7,15 +7,31 @@
 [Ll]ogs/
 [Mm]emoryCaptures/
 UserSettings/
+.utmp/
 
 # IDE folders
 .vscode/
 .vs/
 .idea/
+*.sln
+*.csproj
+.vsconfig
 
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
+*.ico
 
 # Unity packages
 *.unitypackage
+
+# Build outputs
+apk/
+*.apk
+
+# Unity upgrade logs
+UpgradeLog.htm
+
+# Documentation (optional - keep if needed)
+# *.md

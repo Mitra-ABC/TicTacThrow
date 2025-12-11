@@ -48,6 +48,27 @@ public class PlayerMeResponse
     public string nickname;
 }
 
+// ============ Wallet Models ============
+
+[Serializable]
+public class WalletResponse
+{
+    public int playerId;
+    public int coins;
+    public int hearts;
+    public int maxHearts;
+    public string nextHeartAt; // ISO 8601 format, null if hearts full
+    public BoosterInfo[] activeBoosters;
+}
+
+[Serializable]
+public class BoosterInfo
+{
+    public string code;
+    public string displayName;
+    public string expiresAt; // ISO 8601 format
+}
+
 // ============ Room Models ============
 
 [Serializable]
@@ -164,10 +185,110 @@ public class MyStatsResponse
     public int rank; // Use -1 to represent null
 }
 
+// ============ Economy Models ============
+
+[Serializable]
+public class EconomyConfigResponse
+{
+    public EconomySettings settings;
+    public BoosterType[] boosterTypes;
+    public CoinPack[] coinPacks;
+}
+
+[Serializable]
+public class EconomySettings
+{
+    public int heartPriceCoins;
+    public int heartRegenIntervalMinutes;
+    public int maxHeartsDefault;
+    public string coinsPerWinFormula;
+    public int drawHeartChange;
+}
+
+[Serializable]
+public class BoosterType
+{
+    public int id;
+    public string code;
+    public string displayName;
+    public string description;
+    public int priceCoins;
+    public int durationMinutes;
+    public bool isActive;
+}
+
+[Serializable]
+public class CoinPack
+{
+    public int id;
+    public string code;
+    public string displayName;
+    public string description;
+    public int coinsAmount;
+    public int bonusCoinsAmount;
+    public int sortOrder;
+    public string platformProductId;
+    public bool isActive;
+}
+
+// ============ Store Models ============
+
+[Serializable]
+public class BuyHeartResponse
+{
+    public bool success;
+    public WalletInfo wallet;
+}
+
+[Serializable]
+public class WalletInfo
+{
+    public int coins;
+    public int hearts;
+    public int maxHearts;
+}
+
+[Serializable]
+public class BuyBoosterRequest
+{
+    public string boosterCode;
+}
+
+[Serializable]
+public class BuyBoosterResponse
+{
+    public bool success;
+    public WalletInfo wallet;
+    public BoosterInfo booster;
+    public BoosterInfo[] activeBoosters;
+}
+
+[Serializable]
+public class CoinPacksResponse
+{
+    public CoinPack[] coinPacks;
+}
+
+[Serializable]
+public class GrantCoinPackRequest
+{
+    public string coinPackCode;
+}
+
+[Serializable]
+public class GrantCoinPackResponse
+{
+    public bool success;
+    public int coinsGranted;
+    public WalletInfo wallet;
+}
+
 // ============ Error Response ============
 
 [Serializable]
 public class ErrorResponse
 {
     public string error;
+    public string message; // Optional additional message
+    public int hearts; // Optional, for not_enough_hearts error
 }
