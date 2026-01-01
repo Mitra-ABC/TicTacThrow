@@ -17,13 +17,7 @@
 
 ## 1. نصب کتابخانه Socket.IO
 
-### مرحله 1.1: دانلود SocketIOUnity
-
-1. به این آدرس بروید: https://github.com/ItIsMeCall911/SocketIOUnity
-2. روی دکمه **Code** → **Download ZIP** کلیک کنید
-3. فایل ZIP را دانلود و Extract کنید
-
-### مرحله 1.2: اضافه کردن به Unity
+### مرحله 1.1: نصب SocketIOUnity
 
 **روش 1: از طریق Unity Package Manager (توصیه می‌شود)**
 
@@ -32,22 +26,25 @@
 3. **Add package from git URL** را انتخاب کنید
 4. این URL را وارد کنید:
    ```
-   https://github.com/ItIsMeCall911/SocketIOUnity.git
+   https://github.com/itisnajim/SocketIOUnity.git
    ```
 5. روی **Add** کلیک کنید
 6. صبر کنید تا دانلود و نصب شود
 
 **روش 2: Manual Installation**
 
-1. پوشه `SocketIOUnity` را از فایل Extract شده کپی کنید
-2. در Unity، به **Assets** بروید
-3. پوشه را در **Assets** Paste کنید
-4. Unity به صورت خودکار فایل‌ها را Import می‌کند
+1. به این آدرس بروید: https://github.com/itisnajim/SocketIOUnity
+2. روی دکمه **Code** → **Download ZIP** کلیک کنید
+3. فایل ZIP را دانلود و Extract کنید
+4. پوشه `Runtime` را از فایل Extract شده کپی کنید
+5. در Unity، به **Assets** بروید
+6. پوشه را در **Assets** Paste کنید
+7. Unity به صورت خودکار فایل‌ها را Import می‌کند
 
-### مرحله 1.3: بررسی نصب
+### مرحله 1.2: بررسی نصب
 
 1. در Unity، به **Assets** بروید
-2. به دنبال پوشه `SocketIOUnity` بگردید
+2. به دنبال پوشه `Runtime` یا `SocketIOUnity` بگردید
 3. اگر پوشه وجود دارد، نصب موفق بوده است
 
 **⚠️ نکته:** اگر خطای کامپایل دارید، مطمئن شوید که همه فایل‌های کتابخانه Import شده‌اند.
@@ -63,8 +60,8 @@
 3. روی آن دوبار کلیک کنید تا در Visual Studio/IDE باز شود
 4. بررسی کنید که این using statements وجود دارند:
    ```csharp
+   using SocketIOUnity;
    using SocketIOClient;
-   using SocketIOClient.Newtonsoft.Json;
    using SocketIOClient.Transport;
    ```
 

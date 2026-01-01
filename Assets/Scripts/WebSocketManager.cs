@@ -2,8 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using SocketIOUnity;
 using SocketIOClient;
-using SocketIOClient.Newtonsoft.Json;
 using SocketIOClient.Transport;
 
 /// <summary>
@@ -12,7 +12,7 @@ using SocketIOClient.Transport;
 /// </summary>
 public class WebSocketManager : MonoBehaviour
 {
-    private SocketIO socket;
+    private SocketIOUnity socket;
     private string serverUrl = "ws://localhost:3000";
     private string authToken = "";
     private int currentRoomId = 0;
@@ -89,9 +89,13 @@ public class WebSocketManager : MonoBehaviour
             LogWarning($"Could not extract player ID from token: {e.Message}");
         }
         
+        // Convert ws:// to http:// or https:// to wss:// for URI
+        string httpUrl = serverUrl.Replace("ws://", "http://").Replace("wss://", "https://");
+        var uri = new Uri(httpUrl);
+        
         var options = new SocketIOOptions
         {
-            Auth = new Dictionary<string, string>
+            Query = new Dictionary<string, string>
             {
                 { "token", token }
             },
@@ -101,7 +105,7 @@ public class WebSocketManager : MonoBehaviour
             ReconnectionDelay = 1000
         };
         
-        socket = new SocketIO(serverUrl, options);
+        socket = new SocketIOUnity(uri, options);
         
         // Connection events
         socket.OnConnected += (sender, e) =>
@@ -136,7 +140,9 @@ public class WebSocketManager : MonoBehaviour
     {
         try
         {
-            yield return socket.ConnectAsync();
+            socket.Connect();
+            // Wait a bit for connection to establish
+            yield return new WaitForSeconds(0.5f);
         }
         catch (Exception e)
         {
@@ -152,8 +158,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<RoomCreateSuccessData>(json);
+                var data = response.GetValue<RoomCreateSuccessData>();
                 currentRoomId = data.roomId;
                 Log($"Room created: {data.roomId}");
                 OnRoomCreated?.Invoke(data.roomId);
@@ -172,8 +177,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<ErrorData>(json);
+                var data = response.GetValue<ErrorData>();
                 LogError($"Room create failed: {data.error}");
                 OnError?.Invoke(data.error);
             }
@@ -188,8 +192,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<RoomJoinData>(json);
+                var data = response.GetValue<RoomJoinData>();
                 currentRoomId = data.roomId;
                 Log($"Room joined: {data.roomId}");
                 OnRoomJoined?.Invoke(data);
@@ -208,8 +211,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<ErrorData>(json);
+                var data = response.GetValue<ErrorData>();
                 LogError($"Room join failed: {data.error}");
                 OnError?.Invoke(data.error);
             }
@@ -224,8 +226,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<RoomJoinData>(json);
+                var data = response.GetValue<RoomJoinData>();
                 Log($"Room joined event: {data.roomId}");
                 OnRoomJoined?.Invoke(data);
             }
@@ -240,8 +241,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<RoomMoveData>(json);
+                var data = response.GetValue<RoomMoveData>();
                 Log($"Room move: {data.roomId}, Turn: {data.currentTurnPlayerId}");
                 OnRoomMove?.Invoke(data);
             }
@@ -256,8 +256,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<RoomFinishedData>(json);
+                var data = response.GetValue<RoomFinishedData>();
                 Log($"Room finished: {data.roomId}, Result: {data.result}");
                 OnRoomFinished?.Invoke(data);
             }
@@ -272,8 +271,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<GameMoveSuccessData>(json);
+                var data = response.GetValue<GameMoveSuccessData>();
                 Log($"Move successful: Room {data.roomId}, Cell {data.cellIndex}");
             }
             catch (Exception e)
@@ -287,8 +285,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<ErrorData>(json);
+                var data = response.GetValue<ErrorData>();
                 LogError($"Move failed: {data.error}");
                 OnError?.Invoke(data.error);
             }
@@ -306,8 +303,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<MatchmakingQueueSuccessData>(json);
+                var data = response.GetValue<MatchmakingQueueSuccessData>();
                 Log($"Matchmaking queue: {data.mode}, Room: {data.roomId}");
                 
                 if (data.mode == "matched")
@@ -349,8 +345,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<MatchmakingQueueErrorData>(json);
+                var data = response.GetValue<MatchmakingQueueErrorData>();
                 LogError($"Matchmaking queue failed: {data.error}");
                 if (data.error == "not_enough_hearts")
                 {
@@ -369,8 +364,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<MatchmakingMatchedData>(json);
+                var data = response.GetValue<MatchmakingMatchedData>();
                 currentRoomId = data.roomId;
                 Log($"Matchmaking matched: Room {data.roomId}");
                 OnMatchmakingMatched?.Invoke(data);
@@ -389,8 +383,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<MatchmakingMatchedData>(json);
+                var data = response.GetValue<MatchmakingMatchedData>();
                 currentRoomId = data.roomId;
                 Log($"Bot added to room: {data.roomId}");
                 data.isBot = true;
@@ -416,8 +409,7 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var json = response.GetValue<string>();
-                var data = JsonUtility.FromJson<ErrorData>(json);
+                var data = response.GetValue<ErrorData>();
                 LogError($"Matchmaking cancel failed: {data.error}");
                 OnError?.Invoke(data.error);
             }
@@ -432,7 +424,7 @@ public class WebSocketManager : MonoBehaviour
     {
         if (socket != null && socket.Connected)
         {
-            socket.DisconnectAsync();
+            socket.Disconnect();
         }
     }
     
@@ -445,7 +437,7 @@ public class WebSocketManager : MonoBehaviour
             return;
         }
         
-        socket.EmitAsync("room:create");
+        socket.Emit("room:create");
     }
     
     public void JoinRoom(int roomId)
@@ -456,7 +448,7 @@ public class WebSocketManager : MonoBehaviour
             return;
         }
         
-        socket.EmitAsync("room:join", new { roomId });
+        socket.Emit("room:join", new { roomId });
     }
     
     public void SubscribeToRoom(int roomId)
@@ -467,7 +459,7 @@ public class WebSocketManager : MonoBehaviour
             return;
         }
         
-        socket.EmitAsync("subscribe:room", roomId);
+        socket.Emit("subscribe:room", roomId);
     }
     
     public void UnsubscribeFromRoom(int roomId)
@@ -478,7 +470,7 @@ public class WebSocketManager : MonoBehaviour
             return;
         }
         
-        socket.EmitAsync("unsubscribe:room", roomId);
+        socket.Emit("unsubscribe:room", roomId);
     }
     
     // Game Operations
@@ -490,7 +482,7 @@ public class WebSocketManager : MonoBehaviour
             return;
         }
         
-        socket.EmitAsync("game:move", new { roomId, cellIndex });
+        socket.Emit("game:move", new { roomId, cellIndex });
     }
     
     // Matchmaking Operations
@@ -502,7 +494,7 @@ public class WebSocketManager : MonoBehaviour
             return;
         }
         
-        socket.EmitAsync("matchmaking:queue");
+        socket.Emit("matchmaking:queue");
     }
     
     public void CancelMatchmaking()
@@ -513,7 +505,7 @@ public class WebSocketManager : MonoBehaviour
             return;
         }
         
-        socket.EmitAsync("matchmaking:cancel");
+        socket.Emit("matchmaking:cancel");
     }
     
     public bool IsConnected => socket != null && socket.Connected;

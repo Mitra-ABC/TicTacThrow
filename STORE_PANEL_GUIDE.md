@@ -195,7 +195,7 @@ public IEnumerator Login(string username, string password)
 You need to use a Socket.IO client library for Unity. Recommended options:
 
 1. **SocketIOUnity** (Recommended)
-   - GitHub: https://github.com/ItIsMeCall911/SocketIOUnity
+   - GitHub: https://github.com/itisnajim/SocketIOUnity
    - Install via Unity Package Manager or download from GitHub
 
 2. **Socket.IO Client for Unity**
