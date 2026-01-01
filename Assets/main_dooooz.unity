@@ -2571,7 +2571,7 @@ MonoBehaviour:
   apiClient: {fileID: 788625995}
   authManager: {fileID: 387142098}
   boardView: {fileID: 636770866}
-  webSocketManager: {fileID: 0}
+  webSocketManager: {fileID: 651240623}
   authChoicePanel: {fileID: 1894550817}
   authFormPanel: {fileID: 493521276}
   lobbyPanel: {fileID: 212865001}
@@ -6475,6 +6475,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 638279721}
   m_CullTransparentMesh: 1
+--- !u!1 &651240622
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 651240624}
+  - component: {fileID: 651240623}
+  m_Layer: 0
+  m_Name: WebSocketManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &651240623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 651240622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2eccce1a87e9a594e8765f55c2640ccb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  verboseLogging: 1
+--- !u!4 &651240624
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 651240622}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 485.11652, y: 262.55612, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &654162029
 GameObject:
   m_ObjectHideFlags: 0
@@ -7844,7 +7889,7 @@ GameObject:
   - component: {fileID: 788625996}
   - component: {fileID: 788625995}
   m_Layer: 0
-  m_Name: Systems
+  m_Name: ApiClient
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7865,7 +7910,7 @@ MonoBehaviour:
   apiConfig: {fileID: 11400000, guid: 493ffa6fad495ff4f8f8ea9acc768689, type: 2}
   baseUrlOverride: 
   requestTimeoutSeconds: 10
-  verboseLogging: 0
+  verboseLogging: 1
 --- !u!4 &788625996
 Transform:
   m_ObjectHideFlags: 0
@@ -15455,7 +15500,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 68356218}
   m_Direction: 0
   m_Value: 1
-  m_Size: 0.9999998
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -19392,7 +19437,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1149658624}
   m_Direction: 0
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.99999994
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -20961,3 +21006,4 @@ SceneRoots:
   - {fileID: 788625996}
   - {fileID: 333748397}
   - {fileID: 387142099}
+  - {fileID: 651240624}
