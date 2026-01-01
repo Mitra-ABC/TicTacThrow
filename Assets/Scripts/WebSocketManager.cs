@@ -8,10 +8,14 @@ using SocketIOClient.Transport;
 /// <summary>
 /// Manages WebSocket connection using Socket.IO for real-time game communication.
 /// Handles room operations, matchmaking, and game moves via WebSocket.
+/// 
+/// Requires: SocketIOUnity library from https://github.com/itisnajim/SocketIOUnity
+/// Install via Unity Package Manager: https://github.com/itisnajim/SocketIOUnity.git
 /// </summary>
 public class WebSocketManager : MonoBehaviour
 {
-    private SocketIOUnity.SocketIOUnity socket;
+    // SocketIOUnity class is in global namespace (no namespace prefix needed)
+    private SocketIOUnity socket;
     private string serverUrl = "ws://localhost:3000";
     private string authToken = "";
     private int currentRoomId = 0;
@@ -104,7 +108,7 @@ public class WebSocketManager : MonoBehaviour
             ReconnectionDelay = 1000
         };
         
-        socket = new SocketIOUnity.SocketIOUnity(uri, options);
+        socket = new SocketIOUnity(uri, options);
         
         // Connection events
         socket.OnConnected += (sender, e) =>
