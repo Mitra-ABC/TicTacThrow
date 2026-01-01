@@ -124,44 +124,101 @@ public class ApiClient : MonoBehaviour
 
     public IEnumerator Register(string username, string password, string nickname, Action<RegisterResponse> onSuccess, Action<string> onError)
     {
-        var payload = new RegisterRequest
+        // Use form-data instead of JSON
+        WWWForm form = new WWWForm();
+        form.AddField("username", username);
+        form.AddField("password", password);
+        if (!string.IsNullOrEmpty(nickname))
         {
-            username = username,
-            password = password,
-            nickname = string.IsNullOrEmpty(nickname) ? null : nickname
-        };
-        var json = JsonUtility.ToJson(payload);
+            form.AddField("nickname", nickname);
+        }
 
-        yield return SendRequest("/api/auth/register", UnityWebRequest.kHttpVerbPOST, json, false,
-            response =>
+        var url = $"{BaseUrl}/api/auth/register";
+        Log($"[ApiClient] Sending POST {url} (form-data)");
+
+        using (var request = UnityWebRequest.Post(url, form))
+        {
+            request.downloadHandler = new DownloadHandlerBuffer();
+            
+            if (requestTimeoutSeconds > 0f)
             {
-                var data = ApiResponseParser.ParseRegisterResponse(response);
+                request.timeout = Mathf.CeilToInt(requestTimeoutSeconds);
+            }
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                var errorMessage = ExtractErrorMessage(request);
+                LogWarning($"[ApiClient] Register FAILED - {errorMessage}");
+                onError?.Invoke(errorMessage);
+                yield break;
+            }
+
+            var responseText = request.downloadHandler.text;
+            Log($"[ApiClient] Register response: {responseText}");
+
+            try
+            {
+                var data = ApiResponseParser.ParseRegisterResponse(responseText);
                 onSuccess?.Invoke(data);
-            },
-            onError);
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"[ApiClient] Register parse error: {ex.Message}");
+                onError?.Invoke($"JSON parse error: {ex.Message}");
+            }
+        }
     }
 
     public IEnumerator Login(string username, string password, Action<LoginResponse> onSuccess, Action<string> onError)
     {
-        var payload = new LoginRequest
-        {
-            username = username,
-            password = password
-        };
-        var json = JsonUtility.ToJson(payload);
+        // Use form-data instead of JSON
+        WWWForm form = new WWWForm();
+        form.AddField("username", username);
+        form.AddField("password", password);
 
-        yield return SendRequest("/api/auth/login", UnityWebRequest.kHttpVerbPOST, json, false,
-            response =>
+        var url = $"{BaseUrl}/api/auth/login";
+        Log($"[ApiClient] Sending POST {url} (form-data)");
+
+        using (var request = UnityWebRequest.Post(url, form))
+        {
+            request.downloadHandler = new DownloadHandlerBuffer();
+            
+            if (requestTimeoutSeconds > 0f)
             {
-                var data = ApiResponseParser.ParseLoginResponse(response);
+                request.timeout = Mathf.CeilToInt(requestTimeoutSeconds);
+            }
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                var errorMessage = ExtractErrorMessage(request);
+                LogWarning($"[ApiClient] Login FAILED - {errorMessage}");
+                onError?.Invoke(errorMessage);
+                yield break;
+            }
+
+            var responseText = request.downloadHandler.text;
+            Log($"[ApiClient] Login response: {responseText}");
+
+            try
+            {
+                var data = ApiResponseParser.ParseLoginResponse(responseText);
                 if (data != null && !string.IsNullOrEmpty(data.token))
                 {
                     SaveToken(data.token);
                     SavePlayer(data.player);
                 }
                 onSuccess?.Invoke(data);
-            },
-            onError);
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"[ApiClient] Login parse error: {ex.Message}");
+                onError?.Invoke($"JSON parse error: {ex.Message}");
+            }
+        }
     }
 
     public void Logout()
@@ -337,28 +394,91 @@ public class ApiClient : MonoBehaviour
 
     public IEnumerator BuyHeart(Action<BuyHeartResponse> onSuccess, Action<string> onError)
     {
-        // Empty request body
-        yield return SendRequest("/api/store/buy-heart", UnityWebRequest.kHttpVerbPOST, "{}", true,
-            response =>
+        // Use form-data (empty form)
+        WWWForm form = new WWWForm();
+
+        var url = $"{BaseUrl}/api/store/buy-heart";
+        Log($"[ApiClient] Sending POST {url} (form-data)");
+
+        using (var request = UnityWebRequest.Post(url, form))
+        {
+            request.downloadHandler = new DownloadHandlerBuffer();
+            AddAuthHeader(request);
+            
+            if (requestTimeoutSeconds > 0f)
             {
-                var data = ApiResponseParser.ParseBuyHeartResponse(response);
+                request.timeout = Mathf.CeilToInt(requestTimeoutSeconds);
+            }
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                var errorMessage = ExtractErrorMessage(request);
+                LogWarning($"[ApiClient] BuyHeart FAILED - {errorMessage}");
+                onError?.Invoke(errorMessage);
+                yield break;
+            }
+
+            var responseText = request.downloadHandler.text;
+            Log($"[ApiClient] BuyHeart response: {responseText}");
+
+            try
+            {
+                var data = ApiResponseParser.ParseBuyHeartResponse(responseText);
                 onSuccess?.Invoke(data);
-            },
-            onError);
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"[ApiClient] BuyHeart parse error: {ex.Message}");
+                onError?.Invoke($"JSON parse error: {ex.Message}");
+            }
+        }
     }
 
     public IEnumerator BuyBooster(string boosterCode, Action<BuyBoosterResponse> onSuccess, Action<string> onError)
     {
-        var payload = new BuyBoosterRequest { boosterCode = boosterCode };
-        var json = JsonUtility.ToJson(payload);
+        // Use form-data
+        WWWForm form = new WWWForm();
+        form.AddField("boosterCode", boosterCode);
 
-        yield return SendRequest("/api/store/buy-booster", UnityWebRequest.kHttpVerbPOST, json, true,
-            response =>
+        var url = $"{BaseUrl}/api/store/buy-booster";
+        Log($"[ApiClient] Sending POST {url} (form-data)");
+
+        using (var request = UnityWebRequest.Post(url, form))
+        {
+            request.downloadHandler = new DownloadHandlerBuffer();
+            AddAuthHeader(request);
+            
+            if (requestTimeoutSeconds > 0f)
             {
-                var data = ApiResponseParser.ParseBuyBoosterResponse(response);
+                request.timeout = Mathf.CeilToInt(requestTimeoutSeconds);
+            }
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                var errorMessage = ExtractErrorMessage(request);
+                LogWarning($"[ApiClient] BuyBooster FAILED - {errorMessage}");
+                onError?.Invoke(errorMessage);
+                yield break;
+            }
+
+            var responseText = request.downloadHandler.text;
+            Log($"[ApiClient] BuyBooster response: {responseText}");
+
+            try
+            {
+                var data = ApiResponseParser.ParseBuyBoosterResponse(responseText);
                 onSuccess?.Invoke(data);
-            },
-            onError);
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"[ApiClient] BuyBooster parse error: {ex.Message}");
+                onError?.Invoke($"JSON parse error: {ex.Message}");
+            }
+        }
     }
 
     public IEnumerator GetCoinPacks(Action<CoinPacksResponse> onSuccess, Action<string> onError)

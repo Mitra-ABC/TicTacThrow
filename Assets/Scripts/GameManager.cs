@@ -10,6 +10,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private ApiClient apiClient;
     [SerializeField] private AuthManager authManager;
     [SerializeField] private BoardView boardView;
+    [SerializeField] private WebSocketManager webSocketManager;
 
     [Header("Panels")]
     [SerializeField] private GameObject authChoicePanel;
@@ -163,12 +164,37 @@ public class GameManager : MonoBehaviour
             authManager = FindObjectOfType<AuthManager>();
         }
 
+        if (webSocketManager == null)
+        {
+            webSocketManager = FindObjectOfType<WebSocketManager>();
+            if (webSocketManager == null)
+            {
+                var wsObject = new GameObject("WebSocketManager");
+                webSocketManager = wsObject.AddComponent<WebSocketManager>();
+            }
+        }
+
         if (boardView != null)
         {
             boardView.Initialize(OnCellClicked);
         }
 
         SetupButtonListeners();
+        SetupWebSocketListeners();
+    }
+    
+    private void SetupWebSocketListeners()
+    {
+        if (webSocketManager == null) return;
+        
+        webSocketManager.OnRoomCreated += OnWebSocketRoomCreated;
+        webSocketManager.OnRoomJoined += OnWebSocketRoomJoined;
+        webSocketManager.OnRoomMove += OnWebSocketRoomMove;
+        webSocketManager.OnRoomFinished += OnWebSocketRoomFinished;
+        webSocketManager.OnMatchmakingMatched += OnWebSocketMatchmakingMatched;
+        webSocketManager.OnError += OnWebSocketError;
+        webSocketManager.OnConnected += OnWebSocketConnected;
+        webSocketManager.OnDisconnected += OnWebSocketDisconnected;
     }
 
     private void Start()
@@ -349,6 +375,16 @@ public class GameManager : MonoBehaviour
             response =>
             {
                 Debug.Log($"[GameManager] Login success: {response.player.nickname}");
+                
+                // Connect to WebSocket after login
+                if (webSocketManager != null && !string.IsNullOrEmpty(response.token))
+                {
+                    // Set WebSocket server URL from ApiClient base URL
+                    string wsUrl = apiClient.BaseUrl.Replace("http://", "ws://").Replace("https://", "wss://");
+                    webSocketManager.SetServerUrl(wsUrl);
+                    webSocketManager.Connect(response.token);
+                }
+                
                 SetState(GameState.Lobby);
             },
             error =>
@@ -450,6 +486,12 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator HandleCreateRoom()
     {
+        if (webSocketManager == null || !webSocketManager.IsConnected)
+        {
+            ShowError("WebSocket not connected. Please wait...");
+            yield break;
+        }
+        
         requestInFlight = true;
         ClearError();
         ShowLoading(true);
@@ -458,28 +500,35 @@ public class GameManager : MonoBehaviour
         localPlayerSymbol = null;
         currentRoomState = null;
 
-        yield return apiClient.CreateRoom(
-            response =>
-            {
-                currentRoomId = response.roomId;
-                localPlayerSymbol = GameStrings.SymbolX; // Room creator is always X
-                Debug.Log($"[GameManager] Room created: {currentRoomId}");
-                waitingStatusLabel?.SetText(GameStrings.WaitingForOpponent);
-                shareRoomIdLabel?.SetText(string.Format(GameStrings.ShareRoomFormat, currentRoomId));
-                SetState(GameState.WaitingForOpponent);
-                StartWaitingForOpponent();
-            },
-            error =>
-            {
-                ShowError(error);
-            });
-
+        // Use WebSocket instead of REST API
+        webSocketManager.CreateRoom();
+        
+        // Wait a bit for WebSocket response
+        yield return new WaitForSeconds(0.5f);
+        
         ShowLoading(false);
         requestInFlight = false;
+    }
+    
+    private void OnWebSocketRoomCreated(int roomId)
+    {
+        currentRoomId = roomId;
+        localPlayerSymbol = GameStrings.SymbolX; // Room creator is always X
+        Debug.Log($"[GameManager] Room created via WebSocket: {currentRoomId}");
+        waitingStatusLabel?.SetText(GameStrings.WaitingForOpponent);
+        shareRoomIdLabel?.SetText(string.Format(GameStrings.ShareRoomFormat, currentRoomId));
+        SetState(GameState.WaitingForOpponent);
+        // No need to poll - WebSocket will send room:joined event
     }
 
     private IEnumerator HandleJoinRoom(int roomId)
     {
+        if (webSocketManager == null || !webSocketManager.IsConnected)
+        {
+            ShowError("WebSocket not connected. Please wait...");
+            yield break;
+        }
+        
         requestInFlight = true;
         ClearError();
         ShowLoading(true);
@@ -487,22 +536,41 @@ public class GameManager : MonoBehaviour
         // Reset symbol before joining - will be set from join response
         localPlayerSymbol = null;
 
-        yield return apiClient.JoinRoom(roomId,
-            response =>
-            {
-                currentRoomId = response.roomId;
-                Debug.Log($"[GameManager] Joined room: {currentRoomId}");
-                DetermineLocalSymbolFromJoin(response);
-                StartCoroutine(HandleFetchRoomState());
-            },
-            error =>
-            {
-                ShowError(error);
-                SetState(GameState.JoinRoom);
-            });
-
+        // Use WebSocket instead of REST API
+        webSocketManager.JoinRoom(roomId);
+        
+        // Wait a bit for WebSocket response
+        yield return new WaitForSeconds(0.5f);
+        
         ShowLoading(false);
         requestInFlight = false;
+    }
+    
+    private void OnWebSocketRoomJoined(RoomJoinData data)
+    {
+        currentRoomId = data.roomId;
+        Debug.Log($"[GameManager] Joined room via WebSocket: {currentRoomId}");
+        
+        // Determine local symbol
+        var playerId = apiClient?.CurrentPlayerId ?? 0;
+        if (data.player1 != null && data.player1.id == playerId)
+        {
+            localPlayerSymbol = data.player1.symbol;
+        }
+        else if (data.player2 != null && data.player2.id == playerId)
+        {
+            localPlayerSymbol = data.player2.symbol;
+        }
+        
+        // Update room state from WebSocket data
+        if (data.status == GameStrings.StatusInProgress)
+        {
+            SetState(GameState.InGame);
+        }
+        else if (data.status == GameStrings.StatusWaiting)
+        {
+            SetState(GameState.WaitingForOpponent);
+        }
     }
 
     private IEnumerator HandleFetchRoomState()
@@ -544,35 +612,75 @@ public class GameManager : MonoBehaviour
     {
         if (currentRoomId <= 0) yield break;
         if (!IsLocalTurn()) yield break;
+        
+        if (webSocketManager == null || !webSocketManager.IsConnected)
+        {
+            ShowError("WebSocket not connected!");
+            yield break;
+        }
 
         requestInFlight = true;
         ClearError();
 
-        yield return apiClient.PlayMove(currentRoomId, cellIndex,
-            response =>
-            {
-                currentRoomState = new RoomStateResponse
-                {
-                    roomId = response.roomId,
-                    status = response.status,
-                    board = response.board,
-                    currentTurnPlayerId = response.currentTurnPlayerId,
-                    result = response.result,
-                    players = currentRoomState?.players
-                };
-
-                boardView?.RenderBoard(response.board, IsLocalTurn(response.currentTurnPlayerId));
-                UpdateTurnLabel(response.currentTurnPlayerId);
-                HandleStatusTransition(response.status, response.result);
-
-                if (response.status == GameStrings.StatusInProgress && response.currentTurnPlayerId != apiClient.CurrentPlayerId)
-                {
-                    StartInGamePolling();
-                }
-            },
-            ShowError);
-
+        // Use WebSocket instead of REST API
+        webSocketManager.MakeMove(currentRoomId, cellIndex);
+        
+        // Wait a bit for WebSocket response
+        yield return new WaitForSeconds(0.3f);
+        
         requestInFlight = false;
+    }
+    
+    private void OnWebSocketRoomMove(RoomMoveData data)
+    {
+        if (data.roomId != currentRoomId) return;
+        
+        // Update board state
+        if (currentRoomState == null)
+        {
+            currentRoomState = new RoomStateResponse
+            {
+                roomId = data.roomId,
+                board = data.board,
+                currentTurnPlayerId = data.currentTurnPlayerId,
+                status = GameStrings.StatusInProgress
+            };
+        }
+        else
+        {
+            currentRoomState.board = data.board;
+            currentRoomState.currentTurnPlayerId = data.currentTurnPlayerId;
+        }
+        
+        boardView?.RenderBoard(data.board, IsLocalTurn(data.currentTurnPlayerId));
+        UpdateTurnLabel(data.currentTurnPlayerId);
+    }
+    
+    private void OnWebSocketRoomFinished(RoomFinishedData data)
+    {
+        if (data.roomId != currentRoomId) return;
+        
+        // Update final state
+        if (currentRoomState == null)
+        {
+            currentRoomState = new RoomStateResponse
+            {
+                roomId = data.roomId,
+                board = data.board,
+                result = data.result,
+                status = GameStrings.StatusFinished
+            };
+        }
+        else
+        {
+            currentRoomState.board = data.board;
+            currentRoomState.result = data.result;
+            currentRoomState.status = GameStrings.StatusFinished;
+        }
+        
+        boardView?.RenderBoard(data.board, false);
+        ShowGameResult(data.result);
+        SetState(GameState.GameFinished);
     }
 
     // ============ Polling ============
@@ -995,60 +1103,90 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator HandleQueueMatchmaking()
     {
+        if (webSocketManager == null || !webSocketManager.IsConnected)
+        {
+            ShowError("WebSocket not connected. Please wait...");
+            yield break;
+        }
+        
         requestInFlight = true;
         ClearError();
         ShowLoading(true);
         SetState(GameState.Matchmaking);
 
-        yield return apiClient.QueueMatchmaking(
-            response =>
-            {
-                if (response.mode == "matched")
-                {
-                    // بازی فوراً شروع شد
-                    currentRoomId = response.roomId;
-                    DetermineLocalSymbolFromMatchmaking(response);
-                    StartCoroutine(HandleFetchRoomState());
-                }
-                else if (response.mode == "waiting")
-                {
-                    // در انتظار حریف
-                    currentRoomId = response.roomId;
-                    if (matchmakingStatusLabel != null)
-                    {
-                        matchmakingStatusLabel.text = GameStrings.MatchmakingWaiting;
-                    }
-                    // شروع polling
-                    StartCoroutine(PollRoomStateUntilStarted());
-                }
-            },
-            error =>
-            {
-                ShowError(error);
-                SetState(GameState.Lobby);
-            });
-
+        // Use WebSocket instead of REST API
+        webSocketManager.QueueMatchmaking();
+        
+        // Wait a bit for WebSocket response
+        yield return new WaitForSeconds(0.5f);
+        
         ShowLoading(false);
         requestInFlight = false;
+    }
+    
+    private void OnWebSocketMatchmakingMatched(MatchmakingMatchedData data)
+    {
+        currentRoomId = data.roomId;
+        Debug.Log($"[GameManager] Matchmaking matched via WebSocket: Room {data.roomId}");
+        
+        // Determine local symbol from room data
+        var playerId = apiClient?.CurrentPlayerId ?? 0;
+        if (data.room != null)
+        {
+            if (data.room.player1_id == playerId)
+            {
+                localPlayerSymbol = data.room.player1_symbol;
+            }
+            else if (data.room.player2_id == playerId)
+            {
+                localPlayerSymbol = data.room.player2_symbol;
+            }
+        }
+        
+        if (data.status == GameStrings.StatusInProgress)
+        {
+            SetState(GameState.InGame);
+        }
+        else
+        {
+            SetState(GameState.WaitingForOpponent);
+        }
     }
 
     private IEnumerator HandleCancelMatchmaking()
     {
+        if (webSocketManager == null || !webSocketManager.IsConnected)
+        {
+            ShowError("WebSocket not connected!");
+            yield break;
+        }
+        
         requestInFlight = true;
         ClearError();
 
-        yield return apiClient.CancelMatchmaking(
-            response =>
-            {
-                Debug.Log(response.message);
-                SetState(GameState.Lobby);
-            },
-            error =>
-            {
-                ShowError(error);
-            });
-
+        // Use WebSocket instead of REST API
+        webSocketManager.CancelMatchmaking();
+        
+        // Wait a bit for WebSocket response
+        yield return new WaitForSeconds(0.3f);
+        
+        SetState(GameState.Lobby);
         requestInFlight = false;
+    }
+    
+    private void OnWebSocketConnected()
+    {
+        Debug.Log("[GameManager] WebSocket connected");
+    }
+    
+    private void OnWebSocketDisconnected(string reason)
+    {
+        Debug.LogWarning($"[GameManager] WebSocket disconnected: {reason}");
+    }
+    
+    private void OnWebSocketError(string error)
+    {
+        ShowError(error);
     }
 
     private void DetermineLocalSymbolFromMatchmaking(MatchmakingResponse response)

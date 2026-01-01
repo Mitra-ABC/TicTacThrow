@@ -292,3 +292,106 @@ public class ErrorResponse
     public string message; // Optional additional message
     public int hearts; // Optional, for not_enough_hearts error
 }
+
+// ============ WebSocket Models ============
+
+[Serializable]
+public class TokenPayload
+{
+    public int sub; // Player ID in JWT
+    public string username;
+}
+
+[Serializable]
+public class RoomCreateSuccessData
+{
+    public int roomId;
+    public string status;
+}
+
+[Serializable]
+public class RoomJoinData
+{
+    public int roomId;
+    public string status;
+    public PlayerData player1;
+    public PlayerData player2;
+    public int currentTurnPlayerId;
+}
+
+[Serializable]
+public class PlayerData
+{
+    public int id;
+    public string symbol;
+}
+
+[Serializable]
+public class RoomMoveData
+{
+    public int roomId;
+    public string[] board;
+    public int currentTurnPlayerId;
+}
+
+[Serializable]
+public class RoomFinishedData
+{
+    public int roomId;
+    public string[] board;
+    public string result; // "X", "O", or "draw"
+}
+
+[Serializable]
+public class GameMoveSuccessData
+{
+    public int roomId;
+    public int cellIndex;
+}
+
+[Serializable]
+public class MatchmakingQueueSuccessData
+{
+    public string mode; // "matched" or "waiting"
+    public int roomId;
+    public string status;
+    public PlayerData player1;
+    public PlayerData player2;
+    public int? currentTurnPlayerId;
+}
+
+[Serializable]
+public class MatchmakingQueueErrorData
+{
+    public string error;
+    public string message;
+    public int hearts;
+}
+
+[Serializable]
+public class MatchmakingMatchedData
+{
+    public string mode;
+    public int roomId;
+    public string status;
+    public RoomData room;
+    public bool isBot;
+}
+
+[Serializable]
+public class RoomData
+{
+    public int room_id;
+    public int player1_id;
+    public int player2_id;
+    public string player1_symbol;
+    public string player2_symbol;
+    public string status;
+    public int current_turn_player_id;
+}
+
+[Serializable]
+public class ErrorData
+{
+    public string error;
+}
