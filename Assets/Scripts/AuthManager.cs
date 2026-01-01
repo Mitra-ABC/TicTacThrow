@@ -23,7 +23,7 @@ public class AuthManager : MonoBehaviour
     {
         if (apiClient == null)
         {
-            apiClient = FindObjectOfType<ApiClient>();
+            apiClient = FindAnyObjectByType<ApiClient>();
         }
     }
 

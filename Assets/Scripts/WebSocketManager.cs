@@ -141,16 +141,26 @@ public class WebSocketManager : MonoBehaviour
     
     private IEnumerator ConnectCoroutine()
     {
+        bool connectionFailed = false;
+        string errorMessage = "";
+        
         try
         {
             socket.Connect();
-            // Wait a bit for connection to establish
-            yield return new WaitForSeconds(0.5f);
         }
         catch (Exception e)
         {
-            LogError($"Failed to connect WebSocket: {e.Message}");
-            OnError?.Invoke($"Connection failed: {e.Message}");
+            connectionFailed = true;
+            errorMessage = e.Message;
+        }
+        
+        // Wait a bit for connection to establish
+        yield return new WaitForSeconds(0.5f);
+        
+        if (connectionFailed)
+        {
+            LogError($"Failed to connect WebSocket: {errorMessage}");
+            OnError?.Invoke($"Connection failed: {errorMessage}");
         }
     }
     

@@ -156,17 +156,17 @@ public class GameManager : MonoBehaviour
     {
         if (apiClient == null)
         {
-            apiClient = FindObjectOfType<ApiClient>();
+            apiClient = FindAnyObjectByType<ApiClient>();
         }
 
         if (authManager == null)
         {
-            authManager = FindObjectOfType<AuthManager>();
+            authManager = FindAnyObjectByType<AuthManager>();
         }
 
         if (webSocketManager == null)
         {
-            webSocketManager = FindObjectOfType<WebSocketManager>();
+            webSocketManager = FindAnyObjectByType<WebSocketManager>();
             if (webSocketManager == null)
             {
                 var wsObject = new GameObject("WebSocketManager");

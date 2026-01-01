@@ -403,7 +403,13 @@ public class ApiClient : MonoBehaviour
         using (var request = UnityWebRequest.Post(url, form))
         {
             request.downloadHandler = new DownloadHandlerBuffer();
-            AddAuthHeader(request);
+            
+            // Add Authorization header
+            var token = GetToken();
+            if (!string.IsNullOrEmpty(token))
+            {
+                request.SetRequestHeader("Authorization", $"Bearer {token}");
+            }
             
             if (requestTimeoutSeconds > 0f)
             {
@@ -448,7 +454,13 @@ public class ApiClient : MonoBehaviour
         using (var request = UnityWebRequest.Post(url, form))
         {
             request.downloadHandler = new DownloadHandlerBuffer();
-            AddAuthHeader(request);
+            
+            // Add Authorization header
+            var token = GetToken();
+            if (!string.IsNullOrEmpty(token))
+            {
+                request.SetRequestHeader("Authorization", $"Bearer {token}");
+            }
             
             if (requestTimeoutSeconds > 0f)
             {
