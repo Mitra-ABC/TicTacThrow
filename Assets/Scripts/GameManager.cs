@@ -209,6 +209,8 @@ public class GameManager : MonoBehaviour
                 onValid: () => {
                     SetState(GameState.Lobby);
                     RefreshWallet();
+                    // Auto-connect WebSocket with saved token
+                    AutoConnectWebSocket();
                 },
                 onInvalid: error => SetState(GameState.AuthChoice)
             );
@@ -218,11 +220,33 @@ public class GameManager : MonoBehaviour
                 Debug.LogWarning("[GameManager] AuthManager not found, skipping session validation");
                 SetState(GameState.Lobby);
                 RefreshWallet();
+                // Auto-connect WebSocket with saved token
+                AutoConnectWebSocket();
             }
         }
         else
         {
             SetState(GameState.AuthChoice);
+        }
+    }
+    
+    private void AutoConnectWebSocket()
+    {
+        if (webSocketManager != null && apiClient != null)
+        {
+            string token = apiClient.GetToken();
+            if (!string.IsNullOrEmpty(token))
+            {
+                // Set WebSocket server URL from ApiClient base URL
+                string wsUrl = apiClient.BaseUrl.Replace("http://", "ws://").Replace("https://", "wss://");
+                webSocketManager.SetServerUrl(wsUrl);
+                webSocketManager.Connect(token);
+                Debug.Log("[GameManager] Auto-connecting WebSocket with saved token");
+            }
+            else
+            {
+                Debug.LogWarning("[GameManager] No token found for WebSocket auto-connect");
+            }
         }
     }
 

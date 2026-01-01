@@ -21,6 +21,10 @@ public class WebSocketManager : MonoBehaviour
     private int currentRoomId = 0;
     private int myPlayerId = 0;
     
+    // Thread-safe event queue for main thread execution
+    private readonly System.Collections.Generic.Queue<System.Action> mainThreadQueue = new System.Collections.Generic.Queue<System.Action>();
+    private readonly object queueLock = new object();
+    
     // Singleton pattern
     public static WebSocketManager Instance { get; private set; }
     
@@ -52,6 +56,37 @@ public class WebSocketManager : MonoBehaviour
     void OnDestroy()
     {
         Disconnect();
+    }
+    
+    void Update()
+    {
+        // Process queued actions from background threads on main thread
+        lock (queueLock)
+        {
+            while (mainThreadQueue.Count > 0)
+            {
+                var action = mainThreadQueue.Dequeue();
+                try
+                {
+                    action?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    LogError($"Error executing queued action: {e.Message}");
+                }
+            }
+        }
+    }
+    
+    // Helper method to queue actions for main thread execution
+    private void QueueOnMainThread(System.Action action)
+    {
+        if (action == null) return;
+        
+        lock (queueLock)
+        {
+            mainThreadQueue.Enqueue(action);
+        }
     }
     
     public void SetServerUrl(string url)
@@ -122,23 +157,32 @@ public class WebSocketManager : MonoBehaviour
         
         socket = new SocketIOUnity(uri, options);
         
-        // Connection events
+        // Connection events (queue to main thread)
         socket.OnConnected += (sender, e) =>
         {
-            Log("WebSocket Connected!");
-            OnConnected?.Invoke();
+            QueueOnMainThread(() =>
+            {
+                Log("WebSocket Connected!");
+                OnConnected?.Invoke();
+            });
         };
         
         socket.OnDisconnected += (sender, e) =>
         {
-            Log($"WebSocket Disconnected: {e}");
-            OnDisconnected?.Invoke(e);
+            QueueOnMainThread(() =>
+            {
+                Log($"WebSocket Disconnected: {e}");
+                OnDisconnected?.Invoke(e);
+            });
         };
         
         socket.OnError += (sender, e) =>
         {
-            LogError($"WebSocket Error: {e}");
-            OnError?.Invoke(e);
+            QueueOnMainThread(() =>
+            {
+                LogError($"WebSocket Error: {e}");
+                OnError?.Invoke(e);
+            });
         };
         
         // Room events
@@ -184,16 +228,19 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<RoomCreateSuccessData>();
-                currentRoomId = data.roomId;
-                Log($"Room created: {data.roomId}");
-                OnRoomCreated?.Invoke(data.roomId);
-                
-                // Auto subscribe to room
-                SubscribeToRoom(data.roomId);
+                QueueOnMainThread(() =>
+                {
+                    currentRoomId = data.roomId;
+                    Log($"Room created: {data.roomId}");
+                    OnRoomCreated?.Invoke(data.roomId);
+                    
+                    // Auto subscribe to room
+                    SubscribeToRoom(data.roomId);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling room:create:success: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling room:create:success: {e.Message}"));
             }
         });
         
@@ -203,12 +250,15 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<ErrorData>();
-                LogError($"Room create failed: {data.error}");
-                OnError?.Invoke(data.error);
+                QueueOnMainThread(() =>
+                {
+                    LogError($"Room create failed: {data.error}");
+                    OnError?.Invoke(data.error);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling room:create:error: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling room:create:error: {e.Message}"));
             }
         });
         
@@ -218,16 +268,19 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<RoomJoinData>();
-                currentRoomId = data.roomId;
-                Log($"Room joined: {data.roomId}");
-                OnRoomJoined?.Invoke(data);
-                
-                // Auto subscribe to room
-                SubscribeToRoom(data.roomId);
+                QueueOnMainThread(() =>
+                {
+                    currentRoomId = data.roomId;
+                    Log($"Room joined: {data.roomId}");
+                    OnRoomJoined?.Invoke(data);
+                    
+                    // Auto subscribe to room
+                    SubscribeToRoom(data.roomId);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling room:join:success: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling room:join:success: {e.Message}"));
             }
         });
         
@@ -237,12 +290,15 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<ErrorData>();
-                LogError($"Room join failed: {data.error}");
-                OnError?.Invoke(data.error);
+                QueueOnMainThread(() =>
+                {
+                    LogError($"Room join failed: {data.error}");
+                    OnError?.Invoke(data.error);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling room:join:error: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling room:join:error: {e.Message}"));
             }
         });
         
@@ -252,12 +308,15 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<RoomJoinData>();
-                Log($"Room joined event: {data.roomId}");
-                OnRoomJoined?.Invoke(data);
+                QueueOnMainThread(() =>
+                {
+                    Log($"Room joined event: {data.roomId}");
+                    OnRoomJoined?.Invoke(data);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling room:joined: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling room:joined: {e.Message}"));
             }
         });
         
@@ -267,12 +326,15 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<RoomMoveData>();
-                Log($"Room move: {data.roomId}, Turn: {data.currentTurnPlayerId}");
-                OnRoomMove?.Invoke(data);
+                QueueOnMainThread(() =>
+                {
+                    Log($"Room move: {data.roomId}, Turn: {data.currentTurnPlayerId}");
+                    OnRoomMove?.Invoke(data);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling room:move: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling room:move: {e.Message}"));
             }
         });
         
@@ -282,12 +344,15 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<RoomFinishedData>();
-                Log($"Room finished: {data.roomId}, Result: {data.result}");
-                OnRoomFinished?.Invoke(data);
+                QueueOnMainThread(() =>
+                {
+                    Log($"Room finished: {data.roomId}, Result: {data.result}");
+                    OnRoomFinished?.Invoke(data);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling room:finished: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling room:finished: {e.Message}"));
             }
         });
         
@@ -297,11 +362,11 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<GameMoveSuccessData>();
-                Log($"Move successful: Room {data.roomId}, Cell {data.cellIndex}");
+                QueueOnMainThread(() => Log($"Move successful: Room {data.roomId}, Cell {data.cellIndex}"));
             }
             catch (Exception e)
             {
-                LogError($"Error handling game:move:success: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling game:move:success: {e.Message}"));
             }
         });
         
@@ -311,12 +376,15 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<ErrorData>();
-                LogError($"Move failed: {data.error}");
-                OnError?.Invoke(data.error);
+                QueueOnMainThread(() =>
+                {
+                    LogError($"Move failed: {data.error}");
+                    OnError?.Invoke(data.error);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling game:move:error: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling game:move:error: {e.Message}"));
             }
         });
     }
@@ -329,39 +397,42 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<MatchmakingQueueSuccessData>();
-                Log($"Matchmaking queue: {data.mode}, Room: {data.roomId}");
-                
-                if (data.mode == "matched")
+                QueueOnMainThread(() =>
                 {
-                    currentRoomId = data.roomId;
-                    // Auto subscribe to room
-                    SubscribeToRoom(data.roomId);
+                    Log($"Matchmaking queue: {data.mode}, Room: {data.roomId}");
                     
-                    // Convert to MatchmakingMatchedData
-                    var matchedData = new MatchmakingMatchedData
+                    if (data.mode == "matched")
                     {
-                        mode = data.mode,
-                        roomId = data.roomId,
-                        status = data.status,
-                        room = new RoomData
+                        currentRoomId = data.roomId;
+                        // Auto subscribe to room
+                        SubscribeToRoom(data.roomId);
+                        
+                        // Convert to MatchmakingMatchedData
+                        var matchedData = new MatchmakingMatchedData
                         {
-                            room_id = data.roomId,
-                            player1_id = data.player1?.id ?? 0,
-                            player2_id = data.player2?.id ?? 0,
-                            player1_symbol = data.player1?.symbol ?? "",
-                            player2_symbol = data.player2?.symbol ?? "",
+                            mode = data.mode,
+                            roomId = data.roomId,
                             status = data.status,
-                            current_turn_player_id = data.currentTurnPlayerId ?? 0
-                        },
-                        isBot = false
-                    };
-                    OnMatchmakingMatched?.Invoke(matchedData);
-                }
-                // If mode is "waiting", wait for matchmaking:matched or matchmaking:bot_added
+                            room = new RoomData
+                            {
+                                room_id = data.roomId,
+                                player1_id = data.player1?.id ?? 0,
+                                player2_id = data.player2?.id ?? 0,
+                                player1_symbol = data.player1?.symbol ?? "",
+                                player2_symbol = data.player2?.symbol ?? "",
+                                status = data.status,
+                                current_turn_player_id = data.currentTurnPlayerId ?? 0
+                            },
+                            isBot = false
+                        };
+                        OnMatchmakingMatched?.Invoke(matchedData);
+                    }
+                    // If mode is "waiting", wait for matchmaking:matched or matchmaking:bot_added
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling matchmaking:queue:success: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling matchmaking:queue:success: {e.Message}"));
             }
         });
         
@@ -371,16 +442,19 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<MatchmakingQueueErrorData>();
-                LogError($"Matchmaking queue failed: {data.error}");
-                if (data.error == "not_enough_hearts")
+                QueueOnMainThread(() =>
                 {
-                    LogError($"Not enough hearts! You have {data.hearts} hearts.");
-                }
-                OnError?.Invoke(data.error);
+                    LogError($"Matchmaking queue failed: {data.error}");
+                    if (data.error == "not_enough_hearts")
+                    {
+                        LogError($"Not enough hearts! You have {data.hearts} hearts.");
+                    }
+                    OnError?.Invoke(data.error);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling matchmaking:queue:error: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling matchmaking:queue:error: {e.Message}"));
             }
         });
         
@@ -390,16 +464,19 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<MatchmakingMatchedData>();
-                currentRoomId = data.roomId;
-                Log($"Matchmaking matched: Room {data.roomId}");
-                OnMatchmakingMatched?.Invoke(data);
-                
-                // Auto subscribe to room
-                SubscribeToRoom(data.roomId);
+                QueueOnMainThread(() =>
+                {
+                    currentRoomId = data.roomId;
+                    Log($"Matchmaking matched: Room {data.roomId}");
+                    OnMatchmakingMatched?.Invoke(data);
+                    
+                    // Auto subscribe to room
+                    SubscribeToRoom(data.roomId);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling matchmaking:matched: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling matchmaking:matched: {e.Message}"));
             }
         });
         
@@ -409,24 +486,27 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<MatchmakingMatchedData>();
-                currentRoomId = data.roomId;
-                Log($"Bot added to room: {data.roomId}");
-                data.isBot = true;
-                OnMatchmakingMatched?.Invoke(data);
-                
-                // Auto subscribe to room
-                SubscribeToRoom(data.roomId);
+                QueueOnMainThread(() =>
+                {
+                    currentRoomId = data.roomId;
+                    Log($"Bot added to room: {data.roomId}");
+                    data.isBot = true;
+                    OnMatchmakingMatched?.Invoke(data);
+                    
+                    // Auto subscribe to room
+                    SubscribeToRoom(data.roomId);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling matchmaking:bot_added: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling matchmaking:bot_added: {e.Message}"));
             }
         });
         
         // Matchmaking cancel success
         socket.On("matchmaking:cancel:success", (response) =>
         {
-            Log("Matchmaking cancelled");
+            QueueOnMainThread(() => Log("Matchmaking cancelled"));
         });
         
         // Matchmaking cancel error
@@ -435,12 +515,15 @@ public class WebSocketManager : MonoBehaviour
             try
             {
                 var data = response.GetValue<ErrorData>();
-                LogError($"Matchmaking cancel failed: {data.error}");
-                OnError?.Invoke(data.error);
+                QueueOnMainThread(() =>
+                {
+                    LogError($"Matchmaking cancel failed: {data.error}");
+                    OnError?.Invoke(data.error);
+                });
             }
             catch (Exception e)
             {
-                LogError($"Error handling matchmaking:cancel:error: {e.Message}");
+                QueueOnMainThread(() => LogError($"Error handling matchmaking:cancel:error: {e.Message}"));
             }
         });
     }
