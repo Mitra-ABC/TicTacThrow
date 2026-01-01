@@ -67,7 +67,15 @@ public class WebSocketManager : MonoBehaviour
             return;
         }
         
+        if (string.IsNullOrEmpty(token))
+        {
+            LogError("Cannot connect: Token is null or empty");
+            OnError?.Invoke("No token provided");
+            return;
+        }
+        
         authToken = token;
+        Log($"Connecting to WebSocket with token (length: {token.Length})");
         
         // Extract player ID from token (JWT uses 'sub' field)
         try
@@ -99,6 +107,10 @@ public class WebSocketManager : MonoBehaviour
         var options = new SocketIOOptions
         {
             Query = new Dictionary<string, string>
+            {
+                { "token", token }
+            },
+            Auth = new Dictionary<string, string>
             {
                 { "token", token }
             },
