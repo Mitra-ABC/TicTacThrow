@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using SocketIOUnity;
 using SocketIOClient;
 using SocketIOClient.Transport;
 
@@ -12,7 +11,7 @@ using SocketIOClient.Transport;
 /// </summary>
 public class WebSocketManager : MonoBehaviour
 {
-    private SocketIOUnity socket;
+    private SocketIOUnity.SocketIOUnity socket;
     private string serverUrl = "ws://localhost:3000";
     private string authToken = "";
     private int currentRoomId = 0;
@@ -105,7 +104,7 @@ public class WebSocketManager : MonoBehaviour
             ReconnectionDelay = 1000
         };
         
-        socket = new SocketIOUnity(uri, options);
+        socket = new SocketIOUnity.SocketIOUnity(uri, options);
         
         // Connection events
         socket.OnConnected += (sender, e) =>

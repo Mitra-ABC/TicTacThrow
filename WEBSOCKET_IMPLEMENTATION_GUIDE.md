@@ -60,10 +60,11 @@
 3. روی آن دوبار کلیک کنید تا در Visual Studio/IDE باز شود
 4. بررسی کنید که این using statements وجود دارند:
    ```csharp
-   using SocketIOUnity;
    using SocketIOClient;
    using SocketIOClient.Transport;
    ```
+   
+   **نکته:** `SocketIOUnity` یک type است نه namespace، بنابراین نباید در using statement باشد. از `SocketIOUnity.SocketIOUnity` به صورت fully qualified استفاده می‌شود.
 
 **اگر خطای کامپایل دارید:**
 - مطمئن شوید کتابخانه Socket.IO نصب شده است
