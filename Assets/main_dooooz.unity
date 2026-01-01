@@ -2571,6 +2571,7 @@ MonoBehaviour:
   apiClient: {fileID: 788625995}
   authManager: {fileID: 387142098}
   boardView: {fileID: 636770866}
+  webSocketManager: {fileID: 0}
   authChoicePanel: {fileID: 1894550817}
   authFormPanel: {fileID: 493521276}
   lobbyPanel: {fileID: 212865001}
