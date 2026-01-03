@@ -356,27 +356,6 @@ public class ApiClient : MonoBehaviour
         }
     }
 
-            var responseText = request.downloadHandler.text;
-            Log($"[ApiClient] Login response: {responseText}");
-
-            try
-            {
-                var data = ApiResponseParser.ParseLoginResponse(responseText);
-                if (data != null && !string.IsNullOrEmpty(data.token))
-                {
-                    SaveToken(data.token);
-                    SavePlayer(data.player);
-                }
-                onSuccess?.Invoke(data);
-            }
-            catch (Exception ex)
-            {
-                LogWarning($"[ApiClient] Login parse error: {ex.Message}");
-                onError?.Invoke($"JSON parse error: {ex.Message}");
-            }
-        }
-    }
-
     public void Logout()
     {
         ClearSession();
