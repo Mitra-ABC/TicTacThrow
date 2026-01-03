@@ -400,44 +400,91 @@ public class WebSocketManager : MonoBehaviour
                 string rawJson = response.ToString();
                 Log($"Matchmaking queue:success raw response: {rawJson}");
                 
-                var data = response.GetValue<MatchmakingQueueSuccessData>();
+                // Server sends an array: [{"mode":"waiting","roomId":34,"status":"waiting"}]
+                // Parse manually since GetValue doesn't handle arrays well
+                MatchmakingQueueSuccessData data = null;
+                
+                try
+                {
+                    // Try to get as array first (if SocketIO supports it)
+                    try
+                    {
+                        var dataArray = response.GetValue<MatchmakingQueueSuccessData[]>();
+                        if (dataArray != null && dataArray.Length > 0)
+                        {
+                            data = dataArray[0];
+                            Log("Parsed matchmaking:queue:success as array");
+                        }
+                        else
+                        {
+                            throw new Exception("Array is null or empty");
+                        }
+                    }
+                    catch
+                    {
+                        // If array parsing fails, try manual JSON parsing
+                        // Remove array brackets: [{"mode":"waiting",...}] -> {"mode":"waiting",...}
+                        string jsonStr = rawJson.Trim();
+                        if (jsonStr.StartsWith("[") && jsonStr.EndsWith("]"))
+                        {
+                            jsonStr = jsonStr.Substring(1, jsonStr.Length - 2).Trim();
+                        }
+                        data = JsonUtility.FromJson<MatchmakingQueueSuccessData>(jsonStr);
+                        Log("Parsed matchmaking:queue:success manually from JSON");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Failed to parse matchmaking:queue:success response: {ex.Message}");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse matchmaking response"));
+                    return;
+                }
+                
+                if (data == null)
+                {
+                    LogError("Failed to parse matchmaking:queue:success: data is null");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse matchmaking response"));
+                    return;
+                }
+                
+                var finalData = data; // Capture for closure
                 QueueOnMainThread(() =>
                 {
-                    Log($"Matchmaking queue: mode='{data.mode}', Room: {data.roomId}, Status: '{data.status}'");
+                    Log($"Matchmaking queue: mode='{finalData.mode}', Room: {finalData.roomId}, Status: '{finalData.status}'");
                     
-                    if (data.roomId <= 0)
+                    if (finalData.roomId <= 0)
                     {
-                        LogError($"Invalid room ID in matchmaking:queue:success: {data.roomId}");
+                        LogError($"Invalid room ID in matchmaking:queue:success: {finalData.roomId}");
                     }
                     
-                    if (data.mode == "matched")
+                    if (finalData.mode == "matched")
                     {
-                        if (data.roomId <= 0)
+                        if (finalData.roomId <= 0)
                         {
                             LogError("Cannot process matched mode: roomId is invalid");
                             OnError?.Invoke("Invalid room ID received from matchmaking");
                             return;
                         }
                         
-                        currentRoomId = data.roomId;
+                        currentRoomId = finalData.roomId;
                         // Auto subscribe to room
-                        SubscribeToRoom(data.roomId);
+                        SubscribeToRoom(finalData.roomId);
                         
                         // Convert to MatchmakingMatchedData
                         var matchedData = new MatchmakingMatchedData
                         {
-                            mode = data.mode,
-                            roomId = data.roomId,
-                            status = data.status,
+                            mode = finalData.mode,
+                            roomId = finalData.roomId,
+                            status = finalData.status,
                             room = new RoomData
                             {
-                                room_id = data.roomId,
-                                player1_id = data.player1?.id ?? 0,
-                                player2_id = data.player2?.id ?? 0,
-                                player1_symbol = data.player1?.symbol ?? "",
-                                player2_symbol = data.player2?.symbol ?? "",
-                                status = data.status,
-                                current_turn_player_id = data.currentTurnPlayerId ?? 0
+                                room_id = finalData.roomId,
+                                player1_id = finalData.player1?.id ?? 0,
+                                player2_id = finalData.player2?.id ?? 0,
+                                player1_symbol = finalData.player1?.symbol ?? "",
+                                player2_symbol = finalData.player2?.symbol ?? "",
+                                status = finalData.status,
+                                current_turn_player_id = finalData.currentTurnPlayerId ?? 0
                             },
                             isBot = false
                         };
