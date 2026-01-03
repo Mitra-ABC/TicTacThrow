@@ -800,7 +800,16 @@ public class GameManager : MonoBehaviour
 
         if (newState == GameState.InGame)
         {
-            StartInGamePolling();
+            // Don't start polling for matchmaking - use WebSocket events only
+            // Polling is only for friendly games that might not have WebSocket
+            if (previousState != GameState.Matchmaking)
+            {
+                StartInGamePolling();
+            }
+            else
+            {
+                Debug.Log("[GameManager] InGame from Matchmaking - using WebSocket events only, no polling");
+            }
         }
         else if (newState == GameState.GameFinished)
         {
@@ -1210,8 +1219,34 @@ public class GameManager : MonoBehaviour
         {
             // Game is already in progress, go directly to InGame
             SetState(GameState.InGame);
-            // Fetch room state to get board and current turn
-            StartCoroutine(HandleFetchRoomState());
+            
+            // Initialize room state from matchmaking data (don't use REST API)
+            // Create a basic room state - board will be updated by room:move event
+            if (currentRoomState == null && data.room != null)
+            {
+                currentRoomState = new RoomStateResponse
+                {
+                    roomId = data.roomId,
+                    status = GameStrings.StatusInProgress,
+                    currentTurnPlayerId = data.room.current_turn_player_id,
+                    board = new string[9] // Initialize empty board - will be updated by room:move
+                };
+                
+                // Initialize board with empty cells
+                for (int i = 0; i < 9; i++)
+                {
+                    currentRoomState.board[i] = null;
+                }
+                
+                Debug.Log($"[GameManager] Initialized room state from matchmaking data. Current turn: {data.room.current_turn_player_id}");
+                
+                // Render empty board - it will be updated when room:move arrives
+                boardView?.RenderBoard(currentRoomState.board, IsLocalTurn(data.room.current_turn_player_id));
+                UpdateTurnLabel(data.room.current_turn_player_id);
+            }
+            
+            // Don't fetch from REST API - wait for WebSocket events (room:move, room:joined)
+            Debug.Log("[GameManager] Matchmaking matched with in_progress status. Waiting for WebSocket events to update board.");
         }
         else if (data.status == GameStrings.StatusWaiting)
         {
@@ -1227,9 +1262,9 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // Unknown status, fetch room state to determine next state
-            Debug.LogWarning($"[GameManager] Unknown status in matchmaking matched: {data.status}, fetching room state");
-            StartCoroutine(HandleFetchRoomState());
+            // Unknown status, wait for WebSocket events instead of REST API
+            Debug.LogWarning($"[GameManager] Unknown status in matchmaking matched: {data.status}, waiting for WebSocket events");
+            // Don't fetch from REST API - wait for WebSocket events
         }
     }
 
