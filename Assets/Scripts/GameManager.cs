@@ -122,10 +122,8 @@ public class GameManager : MonoBehaviour
 
     [Header("General")]
     [SerializeField] private TMP_Text errorLabel;
-    [SerializeField] private float pollIntervalSeconds = 2f;
 
     private GameState currentState = GameState.AuthChoice;
-    private Coroutine pollingCoroutine;
     private bool requestInFlight;
     private bool isRegisterMode; // true = Register, false = Login
 
@@ -370,7 +368,6 @@ public class GameManager : MonoBehaviour
 
     public void OnLogoutClicked()
     {
-        StopPolling();
         if (authManager != null)
         {
             authManager.Logout();
@@ -486,7 +483,6 @@ public class GameManager : MonoBehaviour
 
     public void OnBackToLobby()
     {
-        StopPolling();
         currentRoomId = 0;
         localPlayerSymbol = null;
         currentRoomState = null;
@@ -613,25 +609,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private IEnumerator HandleFetchRoomState()
-    {
-        if (currentRoomId <= 0) yield break;
-
-        yield return apiClient.GetRoom(currentRoomId,
-            state =>
-            {
-                ApplyRoomState(state);
-                if (state.status == GameStrings.StatusInProgress)
-                {
-                    SetState(GameState.InGame);
-                }
-                else if (state.status == GameStrings.StatusFinished)
-                {
-                    SetState(GameState.GameFinished);
-                }
-            },
-            ShowError);
-    }
 
     // ============ Gameplay ============
 
@@ -774,64 +751,6 @@ public class GameManager : MonoBehaviour
         SetState(GameState.GameFinished);
     }
 
-    // ============ Polling ============
-
-    private void StartWaitingForOpponent()
-    {
-        StopPolling();
-        pollingCoroutine = StartCoroutine(PollRoomStateUntilStarted());
-    }
-
-    private IEnumerator PollRoomStateUntilStarted()
-    {
-        while (currentState == GameState.WaitingForOpponent || currentState == GameState.Matchmaking)
-        {
-            yield return HandleFetchRoomState();
-            if (currentRoomState != null && currentRoomState.status == GameStrings.StatusInProgress)
-            {
-                SetState(GameState.InGame);
-                StartInGamePolling();
-                yield break;
-            }
-            yield return new WaitForSeconds(pollIntervalSeconds);
-        }
-    }
-
-    private void StartInGamePolling()
-    {
-        StopPolling();
-        if (currentState != GameState.InGame) return;
-
-        if (currentRoomState != null && IsLocalTurn(currentRoomState.currentTurnPlayerId))
-        {
-            boardView?.RenderBoard(currentRoomState.board, true);
-            return;
-        }
-
-        pollingCoroutine = StartCoroutine(PollRoomStateWhileNotLocalTurn());
-    }
-
-    private IEnumerator PollRoomStateWhileNotLocalTurn()
-    {
-        while (currentState == GameState.InGame && !IsLocalTurn())
-        {
-            yield return HandleFetchRoomState();
-            if (currentRoomState != null && currentRoomState.status == GameStrings.StatusFinished)
-            {
-                yield break;
-            }
-            yield return new WaitForSeconds(pollIntervalSeconds);
-        }
-    }
-
-    private void StopPolling()
-    {
-        if (pollingCoroutine != null)
-        {
-            StopCoroutine(pollingCoroutine);
-            pollingCoroutine = null;
-        }
-    }
 
     // ============ State Management ============
 
@@ -844,25 +763,13 @@ public class GameManager : MonoBehaviour
 
         if (newState == GameState.InGame)
         {
-            // Don't start polling for matchmaking - use WebSocket events only
-            // Polling is only for friendly games that might not have WebSocket
-            if (previousState != GameState.Matchmaking)
-        {
-            StartInGamePolling();
-            }
-            else
-            {
-                Debug.Log("[GameManager] InGame from Matchmaking - using WebSocket events only, no polling");
-            }
+            // WebSocket events will handle all state updates
+            // No polling needed - room:move events will update the board
+            Debug.Log("[GameManager] InGame state - using WebSocket events only, no polling");
         }
         else if (newState == GameState.GameFinished)
         {
-            StopPolling();
             boardView?.RenderBoard(currentRoomState?.board, false);
-        }
-        else if (newState != GameState.WaitingForOpponent && newState != GameState.Matchmaking)
-        {
-            StopPolling();
         }
     }
 
