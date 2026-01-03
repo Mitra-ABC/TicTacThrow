@@ -4,6 +4,17 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
+// Certificate handler to bypass SSL certificate validation (for development only)
+// WARNING: This is not secure for production use
+public class BypassCertificateHandler : CertificateHandler
+{
+    protected override bool ValidateCertificate(byte[] certificateData)
+    {
+        // Accept all certificates (for development only)
+        return true;
+    }
+}
+
 public class ApiClient : MonoBehaviour
 {
     private const string TOKEN_KEY = "TicTacThrow_JWT_Token";
@@ -140,6 +151,9 @@ public class ApiClient : MonoBehaviour
         {
             request.downloadHandler = new DownloadHandlerBuffer();
             
+            // Add certificate handler to bypass SSL certificate validation (for development)
+            request.certificateHandler = new BypassCertificateHandler();
+            
             if (requestTimeoutSeconds > 0f)
             {
                 request.timeout = Mathf.CeilToInt(requestTimeoutSeconds);
@@ -184,6 +198,10 @@ public class ApiClient : MonoBehaviour
         using (var request = UnityWebRequest.Post(url, form))
         {
             request.downloadHandler = new DownloadHandlerBuffer();
+            
+            // Add certificate handler to bypass SSL certificate validation (for development)
+            // WARNING: This is not secure for production use
+            request.certificateHandler = new BypassCertificateHandler();
             
             if (requestTimeoutSeconds > 0f)
             {
@@ -404,6 +422,9 @@ public class ApiClient : MonoBehaviour
         {
             request.downloadHandler = new DownloadHandlerBuffer();
             
+            // Add certificate handler to bypass SSL certificate validation (for development)
+            request.certificateHandler = new BypassCertificateHandler();
+            
             // Add Authorization header
             var token = GetToken();
             if (!string.IsNullOrEmpty(token))
@@ -454,6 +475,9 @@ public class ApiClient : MonoBehaviour
         using (var request = UnityWebRequest.Post(url, form))
         {
             request.downloadHandler = new DownloadHandlerBuffer();
+            
+            // Add certificate handler to bypass SSL certificate validation (for development)
+            request.certificateHandler = new BypassCertificateHandler();
             
             // Add Authorization header
             var token = GetToken();
@@ -531,6 +555,10 @@ public class ApiClient : MonoBehaviour
         {
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Accept", "application/json");
+            
+            // Add certificate handler to bypass SSL certificate validation (for development)
+            // WARNING: This is not secure for production use
+            request.certificateHandler = new BypassCertificateHandler();
 
             // Add Authorization header if required
             if (requiresAuth)
