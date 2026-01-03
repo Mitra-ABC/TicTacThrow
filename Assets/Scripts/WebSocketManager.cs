@@ -34,6 +34,7 @@ public class WebSocketManager : MonoBehaviour
     public event Action<RoomMoveData> OnRoomMove;
     public event Action<RoomFinishedData> OnRoomFinished;
     public event Action<MatchmakingMatchedData> OnMatchmakingMatched;
+    public event Action OnMatchmakingCanceled;
     public event Action<string> OnError;
     public event Action OnConnected;
     public event Action<string> OnDisconnected;
@@ -801,7 +802,11 @@ public class WebSocketManager : MonoBehaviour
         // Matchmaking cancel success
         socket.On("matchmaking:cancel:success", (response) =>
         {
-            QueueOnMainThread(() => Log("Matchmaking cancelled"));
+            QueueOnMainThread(() =>
+            {
+                Log("Matchmaking cancelled");
+                OnMatchmakingCanceled?.Invoke();
+            });
         });
         
         // Matchmaking cancel error

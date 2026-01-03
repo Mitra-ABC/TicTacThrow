@@ -190,6 +190,7 @@ public class GameManager : MonoBehaviour
         webSocketManager.OnRoomMove += OnWebSocketRoomMove;
         webSocketManager.OnRoomFinished += OnWebSocketRoomFinished;
         webSocketManager.OnMatchmakingMatched += OnWebSocketMatchmakingMatched;
+        webSocketManager.OnMatchmakingCanceled += OnWebSocketMatchmakingCanceled;
         webSocketManager.OnError += OnWebSocketError;
         webSocketManager.OnConnected += OnWebSocketConnected;
         webSocketManager.OnDisconnected += OnWebSocketDisconnected;
@@ -445,9 +446,19 @@ public class GameManager : MonoBehaviour
 
     public void OnCreateRoomClicked()
     {
-        if (!EnsureLoggedIn()) return;
-        if (requestInFlight) return;
+        Debug.Log("[GameManager] OnCreateRoomClicked called");
+        if (!EnsureLoggedIn())
+        {
+            Debug.Log("[GameManager] Not logged in, returning");
+            return;
+        }
+        if (requestInFlight)
+        {
+            Debug.Log("[GameManager] Request in flight, returning");
+            return;
+        }
 
+        Debug.Log("[GameManager] Starting HandleCreateRoom coroutine");
         StartCoroutine(HandleCreateRoom());
     }
 
@@ -514,12 +525,15 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator HandleCreateRoom()
     {
+        Debug.Log("[GameManager] HandleCreateRoom started");
         if (webSocketManager == null || !webSocketManager.IsConnected)
         {
+            Debug.LogWarning("[GameManager] WebSocket not connected");
             ShowError("WebSocket not connected. Please wait...");
             yield break;
         }
         
+        Debug.Log("[GameManager] Setting requestInFlight = true");
         requestInFlight = true;
         ClearError();
         ShowLoading(true);
@@ -529,24 +543,59 @@ public class GameManager : MonoBehaviour
         currentRoomState = null;
 
         // Use WebSocket instead of REST API
+        Debug.Log("[GameManager] Calling webSocketManager.CreateRoom()");
         webSocketManager.CreateRoom();
         
-        // Wait a bit for WebSocket response
-        yield return new WaitForSeconds(0.5f);
-        
-        ShowLoading(false);
-        requestInFlight = false;
+        // Don't reset requestInFlight here - let OnWebSocketRoomCreated or OnWebSocketError handle it
+        // This ensures buttons stay disabled until we get a response
     }
     
     private void OnWebSocketRoomCreated(int roomId)
-            {
+    {
+        Debug.Log($"[GameManager] OnWebSocketRoomCreated called with roomId: {roomId}");
         currentRoomId = roomId;
-                localPlayerSymbol = GameStrings.SymbolX; // Room creator is always X
+        localPlayerSymbol = GameStrings.SymbolX; // Room creator is always X
         Debug.Log($"[GameManager] Room created via WebSocket: {currentRoomId}");
-                waitingStatusLabel?.SetText(GameStrings.WaitingForOpponent);
-                shareRoomIdLabel?.SetText(string.Format(GameStrings.ShareRoomFormat, currentRoomId));
-                SetState(GameState.WaitingForOpponent);
-        // No need to poll - WebSocket will send room:joined event
+        
+        // Reset request flag since WebSocket response arrived
+        Debug.Log("[GameManager] Resetting requestInFlight = false");
+        requestInFlight = false;
+        ShowLoading(false);
+        
+        // Initialize room state with player1 (room creator) info
+        var playerId = apiClient?.CurrentPlayerId ?? 0;
+        var playerNickname = apiClient?.CurrentPlayer?.nickname ?? apiClient?.CurrentPlayer?.username ?? $"Player {playerId}";
+        
+        currentRoomState = new RoomStateResponse
+        {
+            roomId = roomId,
+            status = GameStrings.StatusWaiting,
+            players = new RoomPlayers
+            {
+                player1 = new PlayerInRoom
+                {
+                    id = playerId,
+                    symbol = GameStrings.SymbolX,
+                    nickname = playerNickname
+                },
+                player2 = null // Will be set when player2 joins via room:joined event
+            },
+            board = new string[9]
+        };
+        
+        // Initialize empty board
+        for (int i = 0; i < 9; i++)
+        {
+            currentRoomState.board[i] = null;
+        }
+        
+        // Update player info display
+        UpdatePlayerInfo(currentRoomState);
+        
+        waitingStatusLabel?.SetText(GameStrings.WaitingForOpponent);
+        shareRoomIdLabel?.SetText(string.Format(GameStrings.ShareRoomFormat, currentRoomId));
+        SetState(GameState.WaitingForOpponent);
+        // No need to poll - WebSocket will send room:joined event when player2 joins
     }
 
     private IEnumerator HandleJoinRoom(int roomId)
@@ -567,17 +616,18 @@ public class GameManager : MonoBehaviour
         // Use WebSocket instead of REST API
         webSocketManager.JoinRoom(roomId);
         
-        // Wait a bit for WebSocket response
-        yield return new WaitForSeconds(0.5f);
-
-        ShowLoading(false);
-        requestInFlight = false;
+        // Don't reset requestInFlight here - let OnWebSocketRoomJoined or OnWebSocketError handle it
+        // This ensures buttons stay disabled until we get a response
     }
     
     private void OnWebSocketRoomJoined(RoomJoinData data)
     {
         currentRoomId = data.roomId;
         Debug.Log($"[GameManager] Joined room via WebSocket: {currentRoomId}");
+        
+        // Reset request flag since WebSocket response arrived
+        requestInFlight = false;
+        ShowLoading(false);
         
         // Determine local symbol
         var playerId = apiClient?.CurrentPlayerId ?? 0;
@@ -589,6 +639,38 @@ public class GameManager : MonoBehaviour
         {
             localPlayerSymbol = data.player2.symbol;
         }
+        
+        // Update room state with player info from WebSocket data
+        if (currentRoomState == null)
+        {
+            currentRoomState = new RoomStateResponse
+            {
+                roomId = data.roomId,
+                status = data.status,
+                currentTurnPlayerId = data.currentTurnPlayerId,
+                players = new RoomPlayers
+                {
+                    player1 = ConvertPlayerDataToPlayerInRoom(data.player1),
+                    player2 = ConvertPlayerDataToPlayerInRoom(data.player2)
+                },
+                board = new string[9] // Initialize empty board
+            };
+        }
+        else
+        {
+            currentRoomState.roomId = data.roomId;
+            currentRoomState.status = data.status;
+            currentRoomState.currentTurnPlayerId = data.currentTurnPlayerId;
+            if (currentRoomState.players == null)
+            {
+                currentRoomState.players = new RoomPlayers();
+            }
+            currentRoomState.players.player1 = ConvertPlayerDataToPlayerInRoom(data.player1);
+            currentRoomState.players.player2 = ConvertPlayerDataToPlayerInRoom(data.player2);
+        }
+        
+        // Update player info display
+        UpdatePlayerInfo(currentRoomState);
         
         // Update room state from WebSocket data
         // IMPORTANT: If we're in Matchmaking state, don't go to WaitingForOpponent
@@ -607,6 +689,58 @@ public class GameManager : MonoBehaviour
             }
             // If we're in Matchmaking, stay in Matchmaking state and wait for game to start
         }
+    }
+    
+    // Helper method to convert PlayerData to PlayerInRoom (with nickname lookup)
+    private PlayerInRoom ConvertPlayerDataToPlayerInRoom(PlayerData playerData)
+    {
+        if (playerData == null) return null;
+        
+        // Try to get nickname from current player if it's us
+        string nickname = null;
+        if (apiClient != null && apiClient.CurrentPlayerId == playerData.id)
+        {
+            nickname = apiClient.CurrentPlayer?.nickname ?? apiClient.CurrentPlayer?.username;
+        }
+        
+        // If we don't have nickname, use a placeholder
+        if (string.IsNullOrEmpty(nickname))
+        {
+            nickname = $"Player {playerData.id}";
+        }
+        
+        return new PlayerInRoom
+        {
+            id = playerData.id,
+            symbol = playerData.symbol,
+            nickname = nickname
+        };
+    }
+    
+    // Helper method to create PlayerInRoom from RoomData (for matchmaking)
+    private PlayerInRoom CreatePlayerInRoomFromRoomData(int playerId, string symbol)
+    {
+        if (playerId <= 0 || string.IsNullOrEmpty(symbol)) return null;
+        
+        // Try to get nickname from current player if it's us
+        string nickname = null;
+        if (apiClient != null && apiClient.CurrentPlayerId == playerId)
+        {
+            nickname = apiClient.CurrentPlayer?.nickname ?? apiClient.CurrentPlayer?.username;
+        }
+        
+        // If we don't have nickname, use a placeholder
+        if (string.IsNullOrEmpty(nickname))
+        {
+            nickname = $"Player {playerId}";
+        }
+        
+        return new PlayerInRoom
+        {
+            id = playerId,
+            symbol = symbol,
+            nickname = nickname
+        };
     }
 
 
@@ -1124,15 +1258,16 @@ public class GameManager : MonoBehaviour
         // Use WebSocket instead of REST API
         webSocketManager.QueueMatchmaking();
         
-        // Wait a bit for WebSocket response
-        yield return new WaitForSeconds(0.5f);
-        
-        ShowLoading(false);
-        requestInFlight = false;
+        // Don't reset requestInFlight here - let OnWebSocketMatchmakingMatched or OnWebSocketError handle it
+        // This ensures buttons stay disabled until we get a response
     }
     
     private void OnWebSocketMatchmakingMatched(MatchmakingMatchedData data)
     {
+        // Reset request flag since WebSocket response arrived
+        requestInFlight = false;
+        ShowLoading(false);
+        
         if (data.roomId <= 0)
         {
             Debug.LogError($"[GameManager] Invalid room ID in matchmaking matched: {data.roomId}");
@@ -1175,13 +1310,18 @@ public class GameManager : MonoBehaviour
             // Initialize room state from matchmaking data (don't use REST API)
             // Create a basic room state - board will be updated by room:move event
             if (currentRoomState == null && data.room != null)
-                    {
+            {
                 currentRoomState = new RoomStateResponse
                 {
                     roomId = data.roomId,
                     status = GameStrings.StatusInProgress,
                     currentTurnPlayerId = data.room.current_turn_player_id,
-                    board = new string[9] // Initialize empty board - will be updated by room:move
+                    board = new string[9], // Initialize empty board - will be updated by room:move
+                    players = new RoomPlayers
+                    {
+                        player1 = CreatePlayerInRoomFromRoomData(data.room.player1_id, data.room.player1_symbol),
+                        player2 = CreatePlayerInRoomFromRoomData(data.room.player2_id, data.room.player2_symbol)
+                    }
                 };
                 
                 // Initialize board with empty cells
@@ -1207,6 +1347,7 @@ public class GameManager : MonoBehaviour
                 
                 UpdateTurnLabel(data.room.current_turn_player_id);
                 UpdateStatus(GameStrings.StatusInProgress);
+                UpdatePlayerInfo(currentRoomState);
             }
             
             // Don't fetch from REST API - wait for WebSocket events (room:move, room:joined)
@@ -1246,11 +1387,19 @@ public class GameManager : MonoBehaviour
         // Use WebSocket instead of REST API
         webSocketManager.CancelMatchmaking();
         
-        // Wait a bit for WebSocket response
-        yield return new WaitForSeconds(0.3f);
+        // Don't reset requestInFlight here - let OnWebSocketMatchmakingCanceled or OnWebSocketError handle it
+        // This ensures buttons stay disabled until we get a response
+    }
+    
+    private void OnWebSocketMatchmakingCanceled()
+    {
+        Debug.Log("[GameManager] Matchmaking cancelled via WebSocket");
         
-                SetState(GameState.Lobby);
+        // Reset request flag since WebSocket response arrived
         requestInFlight = false;
+        ShowLoading(false);
+        
+        SetState(GameState.Lobby);
     }
     
     private void OnWebSocketConnected()
@@ -1266,6 +1415,9 @@ public class GameManager : MonoBehaviour
     private void OnWebSocketError(string error)
     {
         ShowError(error);
+        // Reset request flag on error so buttons work again
+        requestInFlight = false;
+        ShowLoading(false);
     }
 
     private void DetermineLocalSymbolFromMatchmaking(MatchmakingResponse response)
