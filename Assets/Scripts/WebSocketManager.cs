@@ -325,16 +325,24 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
+                // Log raw response for debugging
+                string rawJson = response.ToString();
+                Log($"Room move raw response: {rawJson}");
+                
                 var data = response.GetValue<RoomMoveData>();
                 QueueOnMainThread(() =>
                 {
-                    Log($"Room move: {data.roomId}, Turn: {data.currentTurnPlayerId}");
+                    Log($"Room move: Room {data.roomId}, Turn: {data.currentTurnPlayerId}, Board length: {data.board?.Length ?? 0}");
+                    if (data.board != null && data.board.Length > 0)
+                    {
+                        Log($"Room move board: [{string.Join(",", data.board)}]");
+                    }
                     OnRoomMove?.Invoke(data);
                 });
             }
             catch (Exception e)
             {
-                QueueOnMainThread(() => LogError($"Error handling room:move: {e.Message}"));
+                QueueOnMainThread(() => LogError($"Error handling room:move: {e.Message}\nStackTrace: {e.StackTrace}"));
             }
         });
         
@@ -756,6 +764,13 @@ public class WebSocketManager : MonoBehaviour
             return;
         }
         
+        if (roomId <= 0)
+        {
+            LogError($"Cannot subscribe to invalid room ID: {roomId}");
+            return;
+        }
+        
+        Log($"Subscribing to room {roomId}");
         socket.Emit("subscribe:room", roomId);
     }
     

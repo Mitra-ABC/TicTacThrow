@@ -673,17 +673,25 @@ public class GameManager : MonoBehaviour
     
     private void OnWebSocketRoomMove(RoomMoveData data)
     {
-        if (data.roomId != currentRoomId) return;
+        if (data.roomId != currentRoomId)
+        {
+            Debug.LogWarning($"[GameManager] Ignoring room:move for room {data.roomId} (current room: {currentRoomId})");
+            return;
+        }
+        
+        Debug.Log($"[GameManager] Received room:move for room {data.roomId}. Current turn: {data.currentTurnPlayerId}, Board length: {data.board?.Length ?? 0}");
         
         // If we're in Matchmaking state and receive a move, transition to InGame
         if (currentState == GameState.Matchmaking)
         {
+            Debug.Log("[GameManager] Transitioning from Matchmaking to InGame due to room:move");
             SetState(GameState.InGame);
         }
         
         // Update board state
         if (currentRoomState == null)
         {
+            Debug.Log("[GameManager] Creating new room state from room:move");
             currentRoomState = new RoomStateResponse
             {
                 roomId = data.roomId,
@@ -694,22 +702,49 @@ public class GameManager : MonoBehaviour
         }
         else
         {
+            Debug.Log($"[GameManager] Updating existing room state. Board cells: {string.Join(",", data.board ?? new string[0])}");
             currentRoomState.board = data.board;
             currentRoomState.currentTurnPlayerId = data.currentTurnPlayerId;
             currentRoomState.status = GameStrings.StatusInProgress;
         }
         
-        boardView?.RenderBoard(data.board, IsLocalTurn(data.currentTurnPlayerId));
+        // Render board with updated state
+        bool isLocalTurn = IsLocalTurn(data.currentTurnPlayerId);
+        Debug.Log($"[GameManager] Rendering board. IsLocalTurn: {isLocalTurn}, CurrentTurnPlayerId: {data.currentTurnPlayerId}, MyPlayerId: {apiClient?.CurrentPlayerId ?? 0}");
+        
+        if (boardView != null)
+        {
+            boardView.RenderBoard(data.board, isLocalTurn);
+        }
+        else
+        {
+            Debug.LogError("[GameManager] boardView is null! Cannot render board.");
+        }
+        
         UpdateTurnLabel(data.currentTurnPlayerId);
+        UpdateStatus(GameStrings.StatusInProgress);
+        
+        // Update player info if available in room state
+        if (currentRoomState != null && currentRoomState.players != null)
+        {
+            UpdatePlayerInfo(currentRoomState);
+        }
     }
     
     private void OnWebSocketRoomFinished(RoomFinishedData data)
     {
-        if (data.roomId != currentRoomId) return;
+        if (data.roomId != currentRoomId)
+        {
+            Debug.LogWarning($"[GameManager] Ignoring room:finished for room {data.roomId} (current room: {currentRoomId})");
+            return;
+        }
+        
+        Debug.Log($"[GameManager] Received room:finished for room {data.roomId}. Result: {data.result}");
         
         // Update final state
         if (currentRoomState == null)
         {
+            Debug.Log("[GameManager] Creating new room state from room:finished");
             currentRoomState = new RoomStateResponse
             {
                 roomId = data.roomId,
@@ -720,12 +755,21 @@ public class GameManager : MonoBehaviour
         }
         else
         {
+            Debug.Log($"[GameManager] Updating room state to finished. Result: {data.result}");
             currentRoomState.board = data.board;
             currentRoomState.result = data.result;
             currentRoomState.status = GameStrings.StatusFinished;
         }
         
-        boardView?.RenderBoard(data.board, false);
+        if (boardView != null)
+        {
+            boardView.RenderBoard(data.board, false);
+        }
+        else
+        {
+            Debug.LogError("[GameManager] boardView is null! Cannot render final board.");
+        }
+        
         ShowGameResult(data.result);
         SetState(GameState.GameFinished);
     }
@@ -1218,6 +1262,7 @@ public class GameManager : MonoBehaviour
         if (data.status == GameStrings.StatusInProgress)
         {
             // Game is already in progress, go directly to InGame
+            Debug.Log("[GameManager] Matchmaking matched with in_progress status. Transitioning to InGame.");
             SetState(GameState.InGame);
             
             // Initialize room state from matchmaking data (don't use REST API)
@@ -1238,15 +1283,27 @@ public class GameManager : MonoBehaviour
                     currentRoomState.board[i] = null;
                 }
                 
-                Debug.Log($"[GameManager] Initialized room state from matchmaking data. Current turn: {data.room.current_turn_player_id}");
+                Debug.Log($"[GameManager] Initialized room state from matchmaking data. Current turn: {data.room.current_turn_player_id}, MyPlayerId: {apiClient?.CurrentPlayerId ?? 0}");
                 
                 // Render empty board - it will be updated when room:move arrives
-                boardView?.RenderBoard(currentRoomState.board, IsLocalTurn(data.room.current_turn_player_id));
+                bool isLocalTurn = IsLocalTurn(data.room.current_turn_player_id);
+                Debug.Log($"[GameManager] Rendering initial board. IsLocalTurn: {isLocalTurn}");
+                
+                if (boardView != null)
+                {
+                    boardView.RenderBoard(currentRoomState.board, isLocalTurn);
+                }
+                else
+                {
+                    Debug.LogError("[GameManager] boardView is null! Cannot render initial board.");
+                }
+                
                 UpdateTurnLabel(data.room.current_turn_player_id);
+                UpdateStatus(GameStrings.StatusInProgress);
             }
             
             // Don't fetch from REST API - wait for WebSocket events (room:move, room:joined)
-            Debug.Log("[GameManager] Matchmaking matched with in_progress status. Waiting for WebSocket events to update board.");
+            Debug.Log("[GameManager] Matchmaking matched with in_progress status. Waiting for WebSocket events (room:move) to update board.");
         }
         else if (data.status == GameStrings.StatusWaiting)
         {
