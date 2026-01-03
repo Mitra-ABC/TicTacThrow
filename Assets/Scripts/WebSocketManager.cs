@@ -329,15 +329,62 @@ public class WebSocketManager : MonoBehaviour
                 string rawJson = response.ToString();
                 Log($"Room move raw response: {rawJson}");
                 
-                var data = response.GetValue<RoomMoveData>();
+                // Server sends an array: [{"roomId":39,"board":[...],...}]
+                // Parse manually since GetValue doesn't handle arrays well
+                RoomMoveData data = null;
+                
+                try
+                {
+                    // Try to get as array first (if SocketIO supports it)
+                    try
+                    {
+                        var dataArray = response.GetValue<RoomMoveData[]>();
+                        if (dataArray != null && dataArray.Length > 0)
+                        {
+                            data = dataArray[0];
+                            Log("Parsed room:move as array");
+                        }
+                        else
+                        {
+                            throw new Exception("Array is null or empty");
+                        }
+                    }
+                    catch
+                    {
+                        // If array parsing fails, try manual JSON parsing
+                        // Remove array brackets: [{"roomId":39,...}] -> {"roomId":39,...}
+                        string jsonStr = rawJson.Trim();
+                        if (jsonStr.StartsWith("[") && jsonStr.EndsWith("]"))
+                        {
+                            jsonStr = jsonStr.Substring(1, jsonStr.Length - 2).Trim();
+                        }
+                        data = JsonUtility.FromJson<RoomMoveData>(jsonStr);
+                        Log("Parsed room:move manually from JSON");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Failed to parse room:move response: {ex.Message}");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse room move response"));
+                    return;
+                }
+                
+                if (data == null)
+                {
+                    LogError("Failed to parse room:move: data is null");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse room move response"));
+                    return;
+                }
+                
+                var finalData = data; // Capture for closure
                 QueueOnMainThread(() =>
                 {
-                    Log($"Room move: Room {data.roomId}, Turn: {data.currentTurnPlayerId}, Board length: {data.board?.Length ?? 0}");
-                    if (data.board != null && data.board.Length > 0)
+                    Log($"Room move: Room {finalData.roomId}, Turn: {finalData.currentTurnPlayerId}, Board length: {finalData.board?.Length ?? 0}");
+                    if (finalData.board != null && finalData.board.Length > 0)
                     {
-                        Log($"Room move board: [{string.Join(",", data.board)}]");
+                        Log($"Room move board: [{string.Join(",", finalData.board)}]");
                     }
-                    OnRoomMove?.Invoke(data);
+                    OnRoomMove?.Invoke(finalData);
                 });
             }
             catch (Exception e)
@@ -351,11 +398,62 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var data = response.GetValue<RoomFinishedData>();
+                // Log raw response for debugging
+                string rawJson = response.ToString();
+                Log($"Room finished raw response: {rawJson}");
+                
+                // Server sends an array: [{"roomId":39,"result":"X",...}]
+                // Parse manually since GetValue doesn't handle arrays well
+                RoomFinishedData data = null;
+                
+                try
+                {
+                    // Try to get as array first (if SocketIO supports it)
+                    try
+                    {
+                        var dataArray = response.GetValue<RoomFinishedData[]>();
+                        if (dataArray != null && dataArray.Length > 0)
+                        {
+                            data = dataArray[0];
+                            Log("Parsed room:finished as array");
+                        }
+                        else
+                        {
+                            throw new Exception("Array is null or empty");
+                        }
+                    }
+                    catch
+                    {
+                        // If array parsing fails, try manual JSON parsing
+                        // Remove array brackets: [{"roomId":39,...}] -> {"roomId":39,...}
+                        string jsonStr = rawJson.Trim();
+                        if (jsonStr.StartsWith("[") && jsonStr.EndsWith("]"))
+                        {
+                            jsonStr = jsonStr.Substring(1, jsonStr.Length - 2).Trim();
+                        }
+                        data = JsonUtility.FromJson<RoomFinishedData>(jsonStr);
+                        Log("Parsed room:finished manually from JSON");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Failed to parse room:finished response: {ex.Message}");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse room finished response"));
+                    return;
+                }
+                
+                if (data == null)
+                {
+                    LogError("Failed to parse room:finished: data is null");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse room finished response"));
+                    return;
+                }
+                
+                var finalData = data; // Capture for closure
                 QueueOnMainThread(() =>
                 {
-                    Log($"Room finished: {data.roomId}, Result: {data.result}");
-                    OnRoomFinished?.Invoke(data);
+                    Log($"Room finished: Room {finalData.roomId}, Result: {finalData.result}");
+                    OnRoomFinished?.Invoke(finalData);
                 });
             }
             catch (Exception e)
