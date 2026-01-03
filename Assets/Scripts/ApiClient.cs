@@ -26,6 +26,7 @@ public class ApiClient : MonoBehaviour
     [SerializeField] private string baseUrlOverride;
     [SerializeField] private float requestTimeoutSeconds = 10f;
     [SerializeField] private bool verboseLogging;
+    [SerializeField] private bool allowHttpFallback = true; // For development: fallback to HTTP if HTTPS fails
 
     private string cachedToken;
     private Player cachedPlayer;
@@ -147,6 +148,8 @@ public class ApiClient : MonoBehaviour
         var url = $"{BaseUrl}/api/auth/register";
         Log($"[ApiClient] Sending POST {url} (form-data)");
 
+        // Try HTTPS first
+        bool useHttpFallback = false;
         using (var request = UnityWebRequest.Post(url, form))
         {
             request.downloadHandler = new DownloadHandlerBuffer();
@@ -161,26 +164,80 @@ public class ApiClient : MonoBehaviour
 
             yield return request.SendWebRequest();
 
-            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            // Check if SSL error and fallback to HTTP if allowed
+            if ((request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError) 
+                && allowHttpFallback 
+                && url.StartsWith("https://") 
+                && (request.error != null && (request.error.Contains("SSL") || request.error.Contains("certificate") || request.error.Contains("Unable to complete SSL"))))
+            {
+                LogWarning($"[ApiClient] HTTPS failed ({request.error}), trying HTTP fallback...");
+                useHttpFallback = true;
+            }
+            else if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
             {
                 var errorMessage = ExtractErrorMessage(request);
                 LogWarning($"[ApiClient] Register FAILED - {errorMessage}");
                 onError?.Invoke(errorMessage);
                 yield break;
             }
-
-            var responseText = request.downloadHandler.text;
-            Log($"[ApiClient] Register response: {responseText}");
-
-            try
+            else
             {
-                var data = ApiResponseParser.ParseRegisterResponse(responseText);
-                onSuccess?.Invoke(data);
+                // Success with HTTPS
+                var responseText = request.downloadHandler.text;
+                Log($"[ApiClient] Register response: {responseText}");
+
+                try
+                {
+                    var data = ApiResponseParser.ParseRegisterResponse(responseText);
+                    onSuccess?.Invoke(data);
+                }
+                catch (Exception ex)
+                {
+                    LogWarning($"[ApiClient] Register parse error: {ex.Message}");
+                    onError?.Invoke($"JSON parse error: {ex.Message}");
+                }
+                yield break;
             }
-            catch (Exception ex)
+        }
+
+        // Fallback to HTTP if HTTPS failed
+        if (useHttpFallback)
+        {
+            string httpUrl = url.Replace("https://", "http://");
+            Log($"[ApiClient] Retrying with HTTP: {httpUrl}");
+            
+            using (var request = UnityWebRequest.Post(httpUrl, form))
             {
-                LogWarning($"[ApiClient] Register parse error: {ex.Message}");
-                onError?.Invoke($"JSON parse error: {ex.Message}");
+                request.downloadHandler = new DownloadHandlerBuffer();
+                
+                if (requestTimeoutSeconds > 0f)
+                {
+                    request.timeout = Mathf.CeilToInt(requestTimeoutSeconds);
+                }
+
+                yield return request.SendWebRequest();
+
+                if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+                {
+                    var errorMessage = ExtractErrorMessage(request);
+                    LogWarning($"[ApiClient] Register FAILED (HTTP fallback) - {errorMessage}");
+                    onError?.Invoke(errorMessage);
+                    yield break;
+                }
+
+                var responseText = request.downloadHandler.text;
+                Log($"[ApiClient] Register response (HTTP): {responseText}");
+
+                try
+                {
+                    var data = ApiResponseParser.ParseRegisterResponse(responseText);
+                    onSuccess?.Invoke(data);
+                }
+                catch (Exception ex)
+                {
+                    LogWarning($"[ApiClient] Register parse error: {ex.Message}");
+                    onError?.Invoke($"JSON parse error: {ex.Message}");
+                }
             }
         }
     }
@@ -195,12 +252,13 @@ public class ApiClient : MonoBehaviour
         var url = $"{BaseUrl}/api/auth/login";
         Log($"[ApiClient] Sending POST {url} (form-data)");
 
+        // Try HTTPS first
+        bool useHttpFallback = false;
         using (var request = UnityWebRequest.Post(url, form))
         {
             request.downloadHandler = new DownloadHandlerBuffer();
             
             // Add certificate handler to bypass SSL certificate validation (for development)
-            // WARNING: This is not secure for production use
             request.certificateHandler = new BypassCertificateHandler();
             
             if (requestTimeoutSeconds > 0f)
@@ -210,13 +268,93 @@ public class ApiClient : MonoBehaviour
 
             yield return request.SendWebRequest();
 
-            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            // Check if SSL error and fallback to HTTP if allowed
+            if ((request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError) 
+                && allowHttpFallback 
+                && url.StartsWith("https://") 
+                && (request.error != null && (request.error.Contains("SSL") || request.error.Contains("certificate") || request.error.Contains("Unable to complete SSL"))))
+            {
+                LogWarning($"[ApiClient] HTTPS failed ({request.error}), trying HTTP fallback...");
+                useHttpFallback = true;
+            }
+            else if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
             {
                 var errorMessage = ExtractErrorMessage(request);
                 LogWarning($"[ApiClient] Login FAILED - {errorMessage}");
                 onError?.Invoke(errorMessage);
                 yield break;
             }
+            else
+            {
+                // Success with HTTPS
+                var responseText = request.downloadHandler.text;
+                Log($"[ApiClient] Login response: {responseText}");
+
+                try
+                {
+                    var data = ApiResponseParser.ParseLoginResponse(responseText);
+                    if (data != null && !string.IsNullOrEmpty(data.token))
+                    {
+                        SaveToken(data.token);
+                        SavePlayer(data.player);
+                    }
+                    onSuccess?.Invoke(data);
+                }
+                catch (Exception ex)
+                {
+                    LogWarning($"[ApiClient] Login parse error: {ex.Message}");
+                    onError?.Invoke($"JSON parse error: {ex.Message}");
+                }
+                yield break;
+            }
+        }
+
+        // Fallback to HTTP if HTTPS failed
+        if (useHttpFallback)
+        {
+            string httpUrl = url.Replace("https://", "http://");
+            Log($"[ApiClient] Retrying with HTTP: {httpUrl}");
+            
+            using (var request = UnityWebRequest.Post(httpUrl, form))
+            {
+                request.downloadHandler = new DownloadHandlerBuffer();
+                
+                if (requestTimeoutSeconds > 0f)
+                {
+                    request.timeout = Mathf.CeilToInt(requestTimeoutSeconds);
+                }
+
+                yield return request.SendWebRequest();
+
+                if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+                {
+                    var errorMessage = ExtractErrorMessage(request);
+                    LogWarning($"[ApiClient] Login FAILED (HTTP fallback) - {errorMessage}");
+                    onError?.Invoke(errorMessage);
+                    yield break;
+                }
+
+                var responseText = request.downloadHandler.text;
+                Log($"[ApiClient] Login response (HTTP): {responseText}");
+
+                try
+                {
+                    var data = ApiResponseParser.ParseLoginResponse(responseText);
+                    if (data != null && !string.IsNullOrEmpty(data.token))
+                    {
+                        SaveToken(data.token);
+                        SavePlayer(data.player);
+                    }
+                    onSuccess?.Invoke(data);
+                }
+                catch (Exception ex)
+                {
+                    LogWarning($"[ApiClient] Login parse error: {ex.Message}");
+                    onError?.Invoke($"JSON parse error: {ex.Message}");
+                }
+            }
+        }
+    }
 
             var responseText = request.downloadHandler.text;
             Log($"[ApiClient] Login response: {responseText}");
@@ -551,13 +689,14 @@ public class ApiClient : MonoBehaviour
         var url = $"{BaseUrl}{endpoint}";
         Log($"[ApiClient] Sending {method} {url} bodyLength={(jsonBody?.Length ?? 0)} auth={requiresAuth}");
 
+        // Try HTTPS first
+        bool useHttpFallback = false;
         using (var request = new UnityWebRequest(url, method))
         {
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Accept", "application/json");
             
             // Add certificate handler to bypass SSL certificate validation (for development)
-            // WARNING: This is not secure for production use
             request.certificateHandler = new BypassCertificateHandler();
 
             // Add Authorization header if required
@@ -587,7 +726,16 @@ public class ApiClient : MonoBehaviour
 
             yield return request.SendWebRequest();
 
-            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            // Check if SSL error and fallback to HTTP if allowed
+            if ((request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError) 
+                && allowHttpFallback 
+                && url.StartsWith("https://") 
+                && (request.error != null && (request.error.Contains("SSL") || request.error.Contains("certificate") || request.error.Contains("Unable to complete SSL"))))
+            {
+                LogWarning($"[ApiClient] HTTPS failed ({request.error}), trying HTTP fallback...");
+                useHttpFallback = true;
+            }
+            else if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
             {
                 var errorMessage = ExtractErrorMessage(request);
                 LogWarning($"[ApiClient] Request FAILED {method} {endpoint} - {errorMessage}");
@@ -603,33 +751,119 @@ public class ApiClient : MonoBehaviour
                 onError?.Invoke(errorMessage);
                 yield break;
             }
-
-            var responseText = request.downloadHandler.text;
-            Log($"[ApiClient] Response {method} {endpoint} code={request.responseCode} length={(responseText?.Length ?? 0)}");
-            
-            if (string.IsNullOrEmpty(responseText))
+            else
             {
-                LogWarning($"[ApiClient] Empty response from server for {endpoint}");
-                onError?.Invoke("Empty response from server.");
+                // Success with HTTPS
+                var responseText = request.downloadHandler.text;
+                Log($"[ApiClient] Response {method} {endpoint} code={request.responseCode} length={(responseText?.Length ?? 0)}");
+                
+                if (string.IsNullOrEmpty(responseText))
+                {
+                    LogWarning($"[ApiClient] Empty response from server for {endpoint}");
+                    onError?.Invoke("Empty response from server.");
+                    yield break;
+                }
+
+                Log($"[ApiClient] Raw response for {endpoint}: {responseText}");
+
+                try
+                {
+                    Log($"[ApiClient] Parsing response for {endpoint}");
+                    onSuccess?.Invoke(responseText);
+                    Log($"[ApiClient] Successfully parsed response for {endpoint}");
+                }
+                catch (Exception ex)
+                {
+                    LogResponseDiagnostics(endpoint, responseText);
+                    if (verboseLogging)
+                    {
+                        Debug.LogError($"[ApiClient] Response handling error at '{endpoint}': {ex}\nResponse: {responseText}");
+                    }
+                    onError?.Invoke($"JSON parse error: {ex.Message}");
+                }
                 yield break;
             }
+        }
 
-            Log($"[ApiClient] Raw response for {endpoint}: {responseText}");
+        // Fallback to HTTP if HTTPS failed
+        if (useHttpFallback)
+        {
+            string httpUrl = url.Replace("https://", "http://");
+            Log($"[ApiClient] Retrying with HTTP: {httpUrl}");
+            
+            using (var request = new UnityWebRequest(httpUrl, method))
+            {
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.SetRequestHeader("Accept", "application/json");
 
-            try
-            {
-                Log($"[ApiClient] Parsing response for {endpoint}");
-                onSuccess?.Invoke(responseText);
-                Log($"[ApiClient] Successfully parsed response for {endpoint}");
-            }
-            catch (Exception ex)
-            {
-                LogResponseDiagnostics(endpoint, responseText);
-                if (verboseLogging)
+                // Add Authorization header if required
+                if (requiresAuth)
                 {
-                    Debug.LogError($"[ApiClient] Response handling error at '{endpoint}': {ex}\nResponse: {responseText}");
+                    var token = GetToken();
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        request.SetRequestHeader("Authorization", $"Bearer {token}");
+                    }
                 }
-                onError?.Invoke($"JSON parse error: {ex.Message}");
+
+                if (!string.IsNullOrEmpty(jsonBody))
+                {
+                    var bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+                    request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                    request.SetRequestHeader("Content-Type", "application/json");
+                }
+
+                if (requestTimeoutSeconds > 0f)
+                {
+                    request.timeout = Mathf.CeilToInt(requestTimeoutSeconds);
+                }
+
+                yield return request.SendWebRequest();
+
+                if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+                {
+                    var errorMessage = ExtractErrorMessage(request);
+                    LogWarning($"[ApiClient] Request FAILED (HTTP fallback) {method} {endpoint} - {errorMessage}");
+                    
+                    // Handle 401 Unauthorized - token might be expired
+                    if (request.responseCode == 401)
+                    {
+                        ClearSession();
+                        onError?.Invoke("Session expired. Please login again.");
+                        yield break;
+                    }
+                    
+                    onError?.Invoke(errorMessage);
+                    yield break;
+                }
+
+                var responseText = request.downloadHandler.text;
+                Log($"[ApiClient] Response (HTTP) {method} {endpoint} code={request.responseCode} length={(responseText?.Length ?? 0)}");
+                
+                if (string.IsNullOrEmpty(responseText))
+                {
+                    LogWarning($"[ApiClient] Empty response from server for {endpoint}");
+                    onError?.Invoke("Empty response from server.");
+                    yield break;
+                }
+
+                Log($"[ApiClient] Raw response (HTTP) for {endpoint}: {responseText}");
+
+                try
+                {
+                    Log($"[ApiClient] Parsing response (HTTP) for {endpoint}");
+                    onSuccess?.Invoke(responseText);
+                    Log($"[ApiClient] Successfully parsed response (HTTP) for {endpoint}");
+                }
+                catch (Exception ex)
+                {
+                    LogResponseDiagnostics(endpoint, responseText);
+                    if (verboseLogging)
+                    {
+                        Debug.LogError($"[ApiClient] Response handling error at '{endpoint}': {ex}\nResponse: {responseText}");
+                    }
+                    onError?.Invoke($"JSON parse error: {ex.Message}");
+                }
             }
         }
     }

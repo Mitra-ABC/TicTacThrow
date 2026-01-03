@@ -543,13 +543,13 @@ public class GameManager : MonoBehaviour
     }
     
     private void OnWebSocketRoomCreated(int roomId)
-    {
+            {
         currentRoomId = roomId;
-        localPlayerSymbol = GameStrings.SymbolX; // Room creator is always X
+                localPlayerSymbol = GameStrings.SymbolX; // Room creator is always X
         Debug.Log($"[GameManager] Room created via WebSocket: {currentRoomId}");
-        waitingStatusLabel?.SetText(GameStrings.WaitingForOpponent);
-        shareRoomIdLabel?.SetText(string.Format(GameStrings.ShareRoomFormat, currentRoomId));
-        SetState(GameState.WaitingForOpponent);
+                waitingStatusLabel?.SetText(GameStrings.WaitingForOpponent);
+                shareRoomIdLabel?.SetText(string.Format(GameStrings.ShareRoomFormat, currentRoomId));
+                SetState(GameState.WaitingForOpponent);
         // No need to poll - WebSocket will send room:joined event
     }
 
@@ -573,7 +573,7 @@ public class GameManager : MonoBehaviour
         
         // Wait a bit for WebSocket response
         yield return new WaitForSeconds(0.5f);
-        
+
         ShowLoading(false);
         requestInFlight = false;
     }
@@ -692,8 +692,8 @@ public class GameManager : MonoBehaviour
         if (currentRoomState == null)
         {
             Debug.Log("[GameManager] Creating new room state from room:move");
-            currentRoomState = new RoomStateResponse
-            {
+                currentRoomState = new RoomStateResponse
+                {
                 roomId = data.roomId,
                 board = data.board,
                 currentTurnPlayerId = data.currentTurnPlayerId,
@@ -759,7 +759,7 @@ public class GameManager : MonoBehaviour
             currentRoomState.board = data.board;
             currentRoomState.result = data.result;
             currentRoomState.status = GameStrings.StatusFinished;
-        }
+                }
         
         if (boardView != null)
         {
@@ -847,8 +847,8 @@ public class GameManager : MonoBehaviour
             // Don't start polling for matchmaking - use WebSocket events only
             // Polling is only for friendly games that might not have WebSocket
             if (previousState != GameState.Matchmaking)
-            {
-                StartInGamePolling();
+        {
+            StartInGamePolling();
             }
             else
             {
@@ -1244,7 +1244,7 @@ public class GameManager : MonoBehaviour
             {
                 localPlayerSymbol = data.room.player1_symbol;
                 Debug.Log($"[GameManager] Assigned symbol from player1: {localPlayerSymbol}");
-            }
+                }
             else if (data.room.player2_id == playerId)
             {
                 localPlayerSymbol = data.room.player2_symbol;
@@ -1268,7 +1268,7 @@ public class GameManager : MonoBehaviour
             // Initialize room state from matchmaking data (don't use REST API)
             // Create a basic room state - board will be updated by room:move event
             if (currentRoomState == null && data.room != null)
-            {
+                    {
                 currentRoomState = new RoomStateResponse
                 {
                     roomId = data.roomId,
@@ -1342,7 +1342,7 @@ public class GameManager : MonoBehaviour
         // Wait a bit for WebSocket response
         yield return new WaitForSeconds(0.3f);
         
-        SetState(GameState.Lobby);
+                SetState(GameState.Lobby);
         requestInFlight = false;
     }
     
