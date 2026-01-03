@@ -396,13 +396,29 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
+                // Log raw response for debugging
+                string rawJson = response.ToString();
+                Log($"Matchmaking queue:success raw response: {rawJson}");
+                
                 var data = response.GetValue<MatchmakingQueueSuccessData>();
                 QueueOnMainThread(() =>
                 {
-                    Log($"Matchmaking queue: {data.mode}, Room: {data.roomId}");
+                    Log($"Matchmaking queue: mode='{data.mode}', Room: {data.roomId}, Status: '{data.status}'");
+                    
+                    if (data.roomId <= 0)
+                    {
+                        LogError($"Invalid room ID in matchmaking:queue:success: {data.roomId}");
+                    }
                     
                     if (data.mode == "matched")
                     {
+                        if (data.roomId <= 0)
+                        {
+                            LogError("Cannot process matched mode: roomId is invalid");
+                            OnError?.Invoke("Invalid room ID received from matchmaking");
+                            return;
+                        }
+                        
                         currentRoomId = data.roomId;
                         // Auto subscribe to room
                         SubscribeToRoom(data.roomId);
@@ -432,7 +448,7 @@ public class WebSocketManager : MonoBehaviour
             }
             catch (Exception e)
             {
-                QueueOnMainThread(() => LogError($"Error handling matchmaking:queue:success: {e.Message}"));
+                QueueOnMainThread(() => LogError($"Error handling matchmaking:queue:success: {e.Message}\nStackTrace: {e.StackTrace}"));
             }
         });
         
@@ -463,11 +479,22 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
+                // Log raw response for debugging
+                string rawJson = response.ToString();
+                Log($"Matchmaking matched raw response: {rawJson}");
+                
                 var data = response.GetValue<MatchmakingMatchedData>();
                 QueueOnMainThread(() =>
                 {
+                    if (data.roomId <= 0)
+                    {
+                        LogError($"Invalid room ID in matchmaking:matched: {data.roomId}");
+                        OnError?.Invoke("Invalid room ID received from matchmaking");
+                        return;
+                    }
+                    
                     currentRoomId = data.roomId;
-                    Log($"Matchmaking matched: Room {data.roomId}");
+                    Log($"Matchmaking matched: Room {data.roomId}, Status: '{data.status}'");
                     OnMatchmakingMatched?.Invoke(data);
                     
                     // Auto subscribe to room
@@ -476,7 +503,7 @@ public class WebSocketManager : MonoBehaviour
             }
             catch (Exception e)
             {
-                QueueOnMainThread(() => LogError($"Error handling matchmaking:matched: {e.Message}"));
+                QueueOnMainThread(() => LogError($"Error handling matchmaking:matched: {e.Message}\nStackTrace: {e.StackTrace}"));
             }
         });
         

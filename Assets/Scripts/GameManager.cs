@@ -492,10 +492,18 @@ public class GameManager : MonoBehaviour
         currentRoomState = null;
         boardView?.Clear();
         
-        // اگر از JoinRoom یا WaitingForOpponent برگشتیم، به FriendlyGame برگرد
+        // IMPORTANT: Separate paths for Friendly Game and Matchmaking
+        // If we're in JoinRoom or WaitingForOpponent, we came from Friendly Game
+        // If we're in Matchmaking, we came from Matchmaking (Competitive Game)
         if (currentState == GameState.JoinRoom || currentState == GameState.WaitingForOpponent)
         {
+            // These states are only for Friendly Game
             SetState(GameState.FriendlyGame);
+        }
+        else if (currentState == GameState.Matchmaking)
+        {
+            // Matchmaking should go back to Lobby (not FriendlyGame)
+            SetState(GameState.Lobby);
         }
         else
         {
@@ -587,13 +595,21 @@ public class GameManager : MonoBehaviour
         }
         
         // Update room state from WebSocket data
+        // IMPORTANT: If we're in Matchmaking state, don't go to WaitingForOpponent
+        // WaitingForOpponent is only for Friendly Game
         if (data.status == GameStrings.StatusInProgress)
         {
             SetState(GameState.InGame);
         }
         else if (data.status == GameStrings.StatusWaiting)
         {
-            SetState(GameState.WaitingForOpponent);
+            // Only go to WaitingForOpponent if we're NOT in Matchmaking
+            // If we're in Matchmaking, stay in Matchmaking state
+            if (currentState != GameState.Matchmaking)
+            {
+                SetState(GameState.WaitingForOpponent);
+            }
+            // If we're in Matchmaking, stay in Matchmaking state and wait for game to start
         }
     }
 
@@ -659,6 +675,12 @@ public class GameManager : MonoBehaviour
     {
         if (data.roomId != currentRoomId) return;
         
+        // If we're in Matchmaking state and receive a move, transition to InGame
+        if (currentState == GameState.Matchmaking)
+        {
+            SetState(GameState.InGame);
+        }
+        
         // Update board state
         if (currentRoomState == null)
         {
@@ -674,6 +696,7 @@ public class GameManager : MonoBehaviour
         {
             currentRoomState.board = data.board;
             currentRoomState.currentTurnPlayerId = data.currentTurnPlayerId;
+            currentRoomState.status = GameStrings.StatusInProgress;
         }
         
         boardView?.RenderBoard(data.board, IsLocalTurn(data.currentTurnPlayerId));
@@ -1150,8 +1173,15 @@ public class GameManager : MonoBehaviour
     
     private void OnWebSocketMatchmakingMatched(MatchmakingMatchedData data)
     {
+        if (data.roomId <= 0)
+        {
+            Debug.LogError($"[GameManager] Invalid room ID in matchmaking matched: {data.roomId}");
+            ShowError("Invalid room ID received from matchmaking");
+            return;
+        }
+        
         currentRoomId = data.roomId;
-        Debug.Log($"[GameManager] Matchmaking matched via WebSocket: Room {data.roomId}");
+        Debug.Log($"[GameManager] Matchmaking matched via WebSocket: Room {data.roomId}, Status: {data.status}");
         
         // Determine local symbol from room data
         var playerId = apiClient?.CurrentPlayerId ?? 0;
@@ -1160,20 +1190,46 @@ public class GameManager : MonoBehaviour
             if (data.room.player1_id == playerId)
             {
                 localPlayerSymbol = data.room.player1_symbol;
+                Debug.Log($"[GameManager] Assigned symbol from player1: {localPlayerSymbol}");
             }
             else if (data.room.player2_id == playerId)
             {
                 localPlayerSymbol = data.room.player2_symbol;
+                Debug.Log($"[GameManager] Assigned symbol from player2: {localPlayerSymbol}");
+            }
+            else
+            {
+                Debug.LogWarning($"[GameManager] Could not determine symbol! playerId={playerId}, player1_id={data.room.player1_id}, player2_id={data.room.player2_id}");
             }
         }
         
+        // IMPORTANT: For matchmaking, we should NOT go to WaitingForOpponent
+        // WaitingForOpponent is only for Friendly Game
+        // If status is "waiting", we should stay in Matchmaking state and wait for room:joined or room:move
         if (data.status == GameStrings.StatusInProgress)
         {
+            // Game is already in progress, go directly to InGame
             SetState(GameState.InGame);
+            // Fetch room state to get board and current turn
+            StartCoroutine(HandleFetchRoomState());
+        }
+        else if (data.status == GameStrings.StatusWaiting)
+        {
+            // Game is waiting for both players, stay in Matchmaking state
+            // The room:joined or room:move event will transition us to InGame
+            Debug.Log("[GameManager] Matchmaking matched but game is waiting, staying in Matchmaking state");
+            // Stay in Matchmaking state - don't change to WaitingForOpponent
+            // Update matchmaking status label if needed
+            if (matchmakingStatusLabel != null)
+            {
+                matchmakingStatusLabel.text = "Matched! Waiting for game to start...";
+            }
         }
         else
         {
-            SetState(GameState.WaitingForOpponent);
+            // Unknown status, fetch room state to determine next state
+            Debug.LogWarning($"[GameManager] Unknown status in matchmaking matched: {data.status}, fetching room state");
+            StartCoroutine(HandleFetchRoomState());
         }
     }
 
