@@ -688,17 +688,37 @@ public class GameManager : MonoBehaviour
             }
             currentRoomState.players.player1 = ConvertPlayerDataToPlayerInRoom(data.player1);
             currentRoomState.players.player2 = ConvertPlayerDataToPlayerInRoom(data.player2);
+            
+            // Initialize board if it's null
+            if (currentRoomState.board == null)
+            {
+                currentRoomState.board = new string[9];
+                for (int i = 0; i < 9; i++)
+                {
+                    currentRoomState.board[i] = null;
+                }
+            }
         }
         
         // Update player info display
         UpdatePlayerInfo(currentRoomState);
+        
+        Debug.Log($"[GameManager] OnWebSocketRoomJoined - Status: {data.status}, CurrentState: {currentState}, Player1: {data.player1?.id}, Player2: {data.player2?.id}");
         
         // Update room state from WebSocket data
         // IMPORTANT: If we're in Matchmaking state, don't go to WaitingForOpponent
         // WaitingForOpponent is only for Friendly Game
         if (data.status == GameStrings.StatusInProgress)
         {
+            Debug.Log("[GameManager] Status is in_progress, transitioning to InGame");
             SetState(GameState.InGame);
+            
+            // Render board if we have one
+            if (currentRoomState != null && currentRoomState.board != null && boardView != null)
+            {
+                bool isLocalTurn = IsLocalTurn(currentRoomState.currentTurnPlayerId);
+                boardView.RenderBoard(currentRoomState.board, isLocalTurn);
+            }
         }
         else if (data.status == GameStrings.StatusWaiting)
         {
@@ -706,6 +726,7 @@ public class GameManager : MonoBehaviour
             // If we're in Matchmaking, stay in Matchmaking state
             if (currentState != GameState.Matchmaking)
             {
+                Debug.Log("[GameManager] Status is waiting, staying in WaitingForOpponent");
                 SetState(GameState.WaitingForOpponent);
             }
             // If we're in Matchmaking, stay in Matchmaking state and wait for game to start

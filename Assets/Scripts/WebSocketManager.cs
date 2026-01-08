@@ -379,10 +379,18 @@ public class WebSocketManager : MonoBehaviour
                 var data = response.GetValue<RoomJoinData>();
                 QueueOnMainThread(() =>
                 {
-                    // Ignore invalid room IDs (0 or negative)
+                    // If roomId is 0 but we have a currentRoomId, use currentRoomId
+                    // This happens when server sends room:joined with roomId: 0 for broadcast
+                    if (data.roomId <= 0 && currentRoomId > 0)
+                    {
+                        Log($"room:joined event has roomId 0, using currentRoomId: {currentRoomId}");
+                        data.roomId = currentRoomId;
+                    }
+                    
+                    // Ignore if still invalid and we don't have a current room
                     if (data.roomId <= 0)
                     {
-                        LogWarning($"Ignoring room:joined event with invalid room ID: {data.roomId}");
+                        LogWarning($"Ignoring room:joined event with invalid room ID: {data.roomId} (no current room)");
                         return;
                     }
                     
