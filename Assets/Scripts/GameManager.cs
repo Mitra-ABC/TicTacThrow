@@ -738,14 +738,16 @@ public class GameManager : MonoBehaviour
     {
         if (playerData == null) return null;
         
-        // Try to get nickname from current player if it's us
-        string nickname = null;
-        if (apiClient != null && apiClient.CurrentPlayerId == playerData.id)
+        // Priority 1: Use nickname from PlayerData if available (from server)
+        string nickname = playerData.nickname;
+        
+        // Priority 2: Try to get nickname from current player if it's us
+        if (string.IsNullOrEmpty(nickname) && apiClient != null && apiClient.CurrentPlayerId == playerData.id)
         {
             nickname = apiClient.CurrentPlayer?.nickname ?? apiClient.CurrentPlayer?.username;
         }
         
-        // If we don't have nickname, use a placeholder
+        // Priority 3: Use placeholder if we still don't have nickname
         if (string.IsNullOrEmpty(nickname))
         {
             nickname = $"Player {playerData.id}";

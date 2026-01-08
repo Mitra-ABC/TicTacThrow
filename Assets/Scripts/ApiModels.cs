@@ -324,6 +324,7 @@ public class PlayerData
 {
     public int id;
     public string symbol;
+    public string nickname; // Optional - may not be present in all responses
 }
 
 [Serializable]
