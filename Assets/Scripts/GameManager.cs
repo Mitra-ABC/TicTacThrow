@@ -1005,6 +1005,9 @@ public class GameManager : MonoBehaviour
             var player = apiClient.CurrentPlayer;
             welcomeLabel?.SetText(string.Format(GameStrings.WelcomeFormat, player.nickname ?? player.username));
             playerInfoLabel?.SetText(string.Format(GameStrings.PlayerInfoFormat, player.nickname ?? player.username, player.id));
+            
+            // Refresh wallet info in lobby when state changes to Lobby
+            RefreshWallet();
         }
 
         if (roomIdLabel != null)
@@ -1748,6 +1751,7 @@ public class GameManager : MonoBehaviour
 
     private void DisplayWallet(WalletResponse response)
     {
+        // Update Wallet Panel labels
         if (walletCoinsLabel != null)
         {
             walletCoinsLabel.text = string.Format(GameStrings.CoinsFormat, response.coins);
@@ -1757,6 +1761,14 @@ public class GameManager : MonoBehaviour
         {
             walletHeartsLabel.text = string.Format(GameStrings.HeartsFormat, response.hearts, response.maxHearts);
         }
+        
+        // Also update Lobby Panel labels
+        UpdateWalletDisplay(new WalletInfo
+        {
+            coins = response.coins,
+            hearts = response.hearts,
+            maxHearts = response.maxHearts
+        });
 
         if (nextHeartLabel != null)
         {
