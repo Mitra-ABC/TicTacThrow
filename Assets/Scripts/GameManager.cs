@@ -834,10 +834,11 @@ public class GameManager : MonoBehaviour
         
         Debug.Log($"[GameManager] Received room:move for room {data.roomId}. Current turn: {data.currentTurnPlayerId}, Board length: {data.board?.Length ?? 0}");
         
-        // If we're in Matchmaking state and receive a move, transition to InGame
-        if (currentState == GameState.Matchmaking)
+        // If we're in Matchmaking or WaitingForOpponent state and receive a move, transition to InGame
+        // This means the game has started
+        if (currentState == GameState.Matchmaking || currentState == GameState.WaitingForOpponent)
         {
-            Debug.Log("[GameManager] Transitioning from Matchmaking to InGame due to room:move");
+            Debug.Log($"[GameManager] Transitioning from {currentState} to InGame due to room:move");
             SetState(GameState.InGame);
         }
         
