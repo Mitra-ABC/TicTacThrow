@@ -181,6 +181,23 @@ public class GameManager : MonoBehaviour
         SetupWebSocketListeners();
     }
     
+    private void OnDestroy()
+    {
+        // Unsubscribe from WebSocket events to prevent memory leaks
+        if (webSocketManager != null)
+        {
+            webSocketManager.OnRoomCreated -= OnWebSocketRoomCreated;
+            webSocketManager.OnRoomJoined -= OnWebSocketRoomJoined;
+            webSocketManager.OnRoomMove -= OnWebSocketRoomMove;
+            webSocketManager.OnRoomFinished -= OnWebSocketRoomFinished;
+            webSocketManager.OnMatchmakingMatched -= OnWebSocketMatchmakingMatched;
+            webSocketManager.OnMatchmakingCanceled -= OnWebSocketMatchmakingCanceled;
+            webSocketManager.OnError -= OnWebSocketError;
+            webSocketManager.OnConnected -= OnWebSocketConnected;
+            webSocketManager.OnDisconnected -= OnWebSocketDisconnected;
+        }
+    }
+    
     private void SetupWebSocketListeners()
     {
         if (webSocketManager == null) return;
@@ -530,6 +547,8 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogWarning("[GameManager] WebSocket not connected");
             ShowError("WebSocket not connected. Please wait...");
+            requestInFlight = false;
+            ShowLoading(false);
             yield break;
         }
         
@@ -603,6 +622,8 @@ public class GameManager : MonoBehaviour
         if (webSocketManager == null || !webSocketManager.IsConnected)
         {
             ShowError("WebSocket not connected. Please wait...");
+            requestInFlight = false;
+            ShowLoading(false);
             yield break;
         }
         
@@ -823,13 +844,20 @@ public class GameManager : MonoBehaviour
         bool isLocalTurn = IsLocalTurn(data.currentTurnPlayerId);
         Debug.Log($"[GameManager] Rendering board. IsLocalTurn: {isLocalTurn}, CurrentTurnPlayerId: {data.currentTurnPlayerId}, MyPlayerId: {apiClient?.CurrentPlayerId ?? 0}");
         
-        if (boardView != null)
+        if (boardView != null && data.board != null)
         {
             boardView.RenderBoard(data.board, isLocalTurn);
         }
         else
         {
-            Debug.LogError("[GameManager] boardView is null! Cannot render board.");
+            if (boardView == null)
+            {
+                Debug.LogError("[GameManager] boardView is null! Cannot render board.");
+            }
+            if (data.board == null)
+            {
+                Debug.LogWarning("[GameManager] data.board is null! Cannot render board.");
+            }
         }
         
         UpdateTurnLabel(data.currentTurnPlayerId);
@@ -872,9 +900,13 @@ public class GameManager : MonoBehaviour
             currentRoomState.status = GameStrings.StatusFinished;
                 }
         
-        if (boardView != null)
+        if (boardView != null && data.board != null)
         {
             boardView.RenderBoard(data.board, false);
+        }
+        else if (data.board == null)
+        {
+            Debug.LogWarning("[GameManager] data.board is null in room:finished! Cannot render board.");
         }
         else
         {
@@ -1247,6 +1279,8 @@ public class GameManager : MonoBehaviour
         if (webSocketManager == null || !webSocketManager.IsConnected)
         {
             ShowError("WebSocket not connected. Please wait...");
+            requestInFlight = false;
+            ShowLoading(false);
             yield break;
         }
         
@@ -1378,6 +1412,8 @@ public class GameManager : MonoBehaviour
         if (webSocketManager == null || !webSocketManager.IsConnected)
         {
             ShowError("WebSocket not connected!");
+            requestInFlight = false;
+            ShowLoading(false);
             yield break;
         }
         
