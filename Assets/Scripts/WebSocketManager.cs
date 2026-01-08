@@ -228,27 +228,81 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var data = response.GetValue<RoomCreateSuccessData>();
+                // Log raw response for debugging
+                string rawJson = response.ToString();
+                Log($"Room create:success raw response: {rawJson}");
+                
+                // Server might send an array: [{"roomId":123,"status":"waiting"}]
+                // Parse manually since GetValue doesn't handle arrays well
+                RoomCreateSuccessData data = null;
+                
+                try
+                {
+                    // Try to get as array first (if SocketIO supports it)
+                    try
+                    {
+                        var dataArray = response.GetValue<RoomCreateSuccessData[]>();
+                        if (dataArray != null && dataArray.Length > 0)
+                        {
+                            data = dataArray[0];
+                            Log("Parsed room:create:success as array");
+                        }
+                        else
+                        {
+                            throw new Exception("Array is null or empty");
+                        }
+                    }
+                    catch
+                    {
+                        // If array parsing fails, try manual JSON parsing
+                        // Remove array brackets: [{"roomId":123,...}] -> {"roomId":123,...}
+                        string jsonStr = rawJson.Trim();
+                        if (jsonStr.StartsWith("[") && jsonStr.EndsWith("]"))
+                        {
+                            jsonStr = jsonStr.Substring(1, jsonStr.Length - 2).Trim();
+                            Log("Removed array brackets from room:create:success response");
+                        }
+                        data = JsonUtility.FromJson<RoomCreateSuccessData>(jsonStr);
+                        Log("Parsed room:create:success manually from JSON");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Failed to parse room:create:success response: {ex.Message}");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse room create response"));
+                    return;
+                }
+                
+                if (data == null)
+                {
+                    LogError("Failed to parse room:create:success: data is null");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse room create response"));
+                    return;
+                }
+                
+                var finalData = data; // Capture for closure
                 QueueOnMainThread(() =>
                 {
-                    if (data.roomId <= 0)
+                    Log($"Room create:success parsed - roomId: {finalData.roomId}, status: {finalData.status}");
+                    
+                    if (finalData.roomId <= 0)
                     {
-                        LogError($"Invalid room ID in room:create:success: {data.roomId}");
+                        LogError($"Invalid room ID in room:create:success: {finalData.roomId}");
                         OnError?.Invoke("Invalid room ID received from server");
                         return;
                     }
                     
-                    currentRoomId = data.roomId;
-                    Log($"Room created: {data.roomId}");
-                    OnRoomCreated?.Invoke(data.roomId);
+                    currentRoomId = finalData.roomId;
+                    Log($"Room created: {finalData.roomId}");
+                    OnRoomCreated?.Invoke(finalData.roomId);
                     
                     // Auto subscribe to room
-                    SubscribeToRoom(data.roomId);
+                    SubscribeToRoom(finalData.roomId);
                 });
             }
             catch (Exception e)
             {
-                QueueOnMainThread(() => LogError($"Error handling room:create:success: {e.Message}"));
+                QueueOnMainThread(() => LogError($"Error handling room:create:success: {e.Message}\nStackTrace: {e.StackTrace}"));
             }
         });
         
