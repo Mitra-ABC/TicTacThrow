@@ -329,27 +329,81 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var data = response.GetValue<RoomJoinData>();
+                // Log raw response for debugging
+                string rawJson = response.ToString();
+                Log($"Room join:success raw response: {rawJson}");
+                
+                // Server might send an array: [{"roomId":123,"status":"waiting",...}]
+                // Parse manually since GetValue doesn't handle arrays well
+                RoomJoinData data = null;
+                
+                try
+                {
+                    // Try to get as array first (if SocketIO supports it)
+                    try
+                    {
+                        var dataArray = response.GetValue<RoomJoinData[]>();
+                        if (dataArray != null && dataArray.Length > 0)
+                        {
+                            data = dataArray[0];
+                            Log("Parsed room:join:success as array");
+                        }
+                        else
+                        {
+                            throw new Exception("Array is null or empty");
+                        }
+                    }
+                    catch
+                    {
+                        // If array parsing fails, try manual JSON parsing
+                        // Remove array brackets: [{"roomId":123,...}] -> {"roomId":123,...}
+                        string jsonStr = rawJson.Trim();
+                        if (jsonStr.StartsWith("[") && jsonStr.EndsWith("]"))
+                        {
+                            jsonStr = jsonStr.Substring(1, jsonStr.Length - 2).Trim();
+                            Log("Removed array brackets from room:join:success response");
+                        }
+                        data = JsonUtility.FromJson<RoomJoinData>(jsonStr);
+                        Log("Parsed room:join:success manually from JSON");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Failed to parse room:join:success response: {ex.Message}");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse room join response"));
+                    return;
+                }
+                
+                if (data == null)
+                {
+                    LogError("Failed to parse room:join:success: data is null");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse room join response"));
+                    return;
+                }
+                
+                var finalData = data; // Capture for closure
                 QueueOnMainThread(() =>
                 {
-                    if (data.roomId <= 0)
+                    Log($"Room join:success parsed - roomId: {finalData.roomId}, status: {finalData.status}");
+                    
+                    if (finalData.roomId <= 0)
                     {
-                        LogError($"Invalid room ID in room:join:success: {data.roomId}");
+                        LogError($"Invalid room ID in room:join:success: {finalData.roomId}");
                         OnError?.Invoke("Invalid room ID received from server");
                         return;
                     }
                     
-                    currentRoomId = data.roomId;
-                    Log($"Room joined: {data.roomId}");
-                    OnRoomJoined?.Invoke(data);
+                    currentRoomId = finalData.roomId;
+                    Log($"Room joined: {finalData.roomId}");
+                    OnRoomJoined?.Invoke(finalData);
                     
                     // Auto subscribe to room
-                    SubscribeToRoom(data.roomId);
+                    SubscribeToRoom(finalData.roomId);
                 });
             }
             catch (Exception e)
             {
-                QueueOnMainThread(() => LogError($"Error handling room:join:success: {e.Message}"));
+                QueueOnMainThread(() => LogError($"Error handling room:join:success: {e.Message}\nStackTrace: {e.StackTrace}"));
             }
         });
         
@@ -376,46 +430,100 @@ public class WebSocketManager : MonoBehaviour
         {
             try
             {
-                var data = response.GetValue<RoomJoinData>();
+                // Log raw response for debugging
+                string rawJson = response.ToString();
+                Log($"Room joined (broadcast) raw response: {rawJson}");
+                
+                // Server might send an array: [{"roomId":123,"status":"waiting",...}]
+                // Parse manually since GetValue doesn't handle arrays well
+                RoomJoinData data = null;
+                
+                try
+                {
+                    // Try to get as array first (if SocketIO supports it)
+                    try
+                    {
+                        var dataArray = response.GetValue<RoomJoinData[]>();
+                        if (dataArray != null && dataArray.Length > 0)
+                        {
+                            data = dataArray[0];
+                            Log("Parsed room:joined as array");
+                        }
+                        else
+                        {
+                            throw new Exception("Array is null or empty");
+                        }
+                    }
+                    catch
+                    {
+                        // If array parsing fails, try manual JSON parsing
+                        // Remove array brackets: [{"roomId":123,...}] -> {"roomId":123,...}
+                        string jsonStr = rawJson.Trim();
+                        if (jsonStr.StartsWith("[") && jsonStr.EndsWith("]"))
+                        {
+                            jsonStr = jsonStr.Substring(1, jsonStr.Length - 2).Trim();
+                            Log("Removed array brackets from room:joined response");
+                        }
+                        data = JsonUtility.FromJson<RoomJoinData>(jsonStr);
+                        Log("Parsed room:joined manually from JSON");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Failed to parse room:joined response: {ex.Message}");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse room joined response"));
+                    return;
+                }
+                
+                if (data == null)
+                {
+                    LogError("Failed to parse room:joined: data is null");
+                    QueueOnMainThread(() => OnError?.Invoke("Failed to parse room joined response"));
+                    return;
+                }
+                
+                var finalData = data; // Capture for closure
                 QueueOnMainThread(() =>
                 {
+                    Log($"Room joined (broadcast) parsed - roomId: {finalData.roomId}, status: {finalData.status}, player1: {finalData.player1?.id}, player2: {finalData.player2?.id}");
+                    
                     // If roomId is 0 but we have a currentRoomId, use currentRoomId
                     // This happens when server sends room:joined with roomId: 0 for broadcast
-                    if (data.roomId <= 0 && currentRoomId > 0)
+                    if (finalData.roomId <= 0 && currentRoomId > 0)
                     {
                         Log($"room:joined event has roomId 0, using currentRoomId: {currentRoomId}");
-                        data.roomId = currentRoomId;
+                        finalData.roomId = currentRoomId;
                     }
                     
                     // Ignore if still invalid and we don't have a current room
-                    if (data.roomId <= 0)
+                    if (finalData.roomId <= 0)
                     {
-                        LogWarning($"Ignoring room:joined event with invalid room ID: {data.roomId} (no current room)");
+                        LogWarning($"Ignoring room:joined event with invalid room ID: {finalData.roomId} (no current room)");
                         return;
                     }
                     
                     // Only process if this is for our current room or if we don't have a current room yet
                     // If we have a current room, only process events for that room
-                    if (currentRoomId > 0 && data.roomId != currentRoomId)
+                    if (currentRoomId > 0 && finalData.roomId != currentRoomId)
                     {
-                        Log($"Ignoring room:joined event for room {data.roomId} (current room: {currentRoomId})");
+                        Log($"Ignoring room:joined event for room {finalData.roomId} (current room: {currentRoomId})");
                         return;
                     }
                     
                     // Update currentRoomId if we don't have one yet
                     if (currentRoomId <= 0)
                     {
-                        currentRoomId = data.roomId;
-                        Log($"Setting currentRoomId to {data.roomId} from room:joined event");
+                        currentRoomId = finalData.roomId;
+                        Log($"Setting currentRoomId to {finalData.roomId} from room:joined event");
                     }
                     
-                    Log($"Room joined event: {data.roomId}");
-                    OnRoomJoined?.Invoke(data);
+                    Log($"Room joined event: {finalData.roomId}");
+                    OnRoomJoined?.Invoke(finalData);
                 });
             }
             catch (Exception e)
             {
-                QueueOnMainThread(() => LogError($"Error handling room:joined: {e.Message}"));
+                QueueOnMainThread(() => LogError($"Error handling room:joined: {e.Message}\nStackTrace: {e.StackTrace}"));
             }
         });
         
