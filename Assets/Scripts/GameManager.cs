@@ -179,9 +179,6 @@ public class GameManager : MonoBehaviour
 
         SetupButtonListeners();
         SetupWebSocketListeners();
-        
-        // Fix missing fonts in runtime
-        FontHelper.FixAllFontsInScene();
     }
     
     private void OnDestroy()
