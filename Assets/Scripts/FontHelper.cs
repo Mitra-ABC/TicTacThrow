@@ -14,10 +14,10 @@ public class FontHelper : MonoBehaviour
         // If default font is not assigned, try to load from TMP Settings
         if (defaultFont == null)
         {
-            var tmpSettings = Resources.Load<TMP_Settings>("TMP Settings");
-            if (tmpSettings != null && tmpSettings.defaultFontAsset != null)
+            // Use static property instead of instance
+            if (TMP_Settings.defaultFontAsset != null)
             {
-                defaultFont = tmpSettings.defaultFontAsset;
+                defaultFont = TMP_Settings.defaultFontAsset;
             }
             else
             {
@@ -67,8 +67,8 @@ public class FontHelper : MonoBehaviour
     {
         TMP_FontAsset defaultFont = null;
         
-        // Try to load from TMP Settings
-        var tmpSettings = Resources.Load<TMP_Settings>("TMP Settings");
+        // Try to get from TMP Settings instance
+        var tmpSettings = TMP_Settings.instance;
         if (tmpSettings != null && tmpSettings.defaultFontAsset != null)
         {
             defaultFont = tmpSettings.defaultFontAsset;
@@ -89,7 +89,7 @@ public class FontHelper : MonoBehaviour
             return;
         }
         
-        TMP_Text[] allTexts = FindObjectsOfType<TMP_Text>(true);
+        TMP_Text[] allTexts = FindObjectsByType<TMP_Text>(FindObjectsSortMode.None);
         int fixedCount = 0;
         
         foreach (TMP_Text text in allTexts)

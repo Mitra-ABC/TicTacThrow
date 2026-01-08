@@ -28,7 +28,8 @@ public class FontFixer : EditorWindow
         // Load default font from TMP Settings
         if (defaultFont == null)
         {
-            var tmpSettings = Resources.Load<TMP_Settings>("TMP Settings");
+            // Try to get from TMP Settings instance
+            var tmpSettings = TMP_Settings.instance;
             if (tmpSettings != null && tmpSettings.defaultFontAsset != null)
             {
                 defaultFont = tmpSettings.defaultFontAsset;
@@ -80,7 +81,7 @@ public class FontFixer : EditorWindow
         fixedCount = 0;
         totalCount = 0;
 
-        TMP_Text[] allTexts = FindObjectsOfType<TMP_Text>(true);
+        TMP_Text[] allTexts = FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         totalCount = allTexts.Length;
 
         foreach (TMP_Text text in allTexts)
@@ -114,7 +115,7 @@ public class FontFixer : EditorWindow
             string scenePath = AssetDatabase.GUIDToAssetPath(guid);
             EditorSceneManager.OpenScene(scenePath);
 
-            TMP_Text[] allTexts = FindObjectsOfType<TMP_Text>(true);
+            TMP_Text[] allTexts = FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             totalCount += allTexts.Length;
 
             foreach (TMP_Text text in allTexts)
