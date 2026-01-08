@@ -1369,6 +1369,28 @@ public class GameManager : MonoBehaviour
             // Create a basic room state - board will be updated by room:move event
             if (currentRoomState == null && data.room != null)
             {
+                // Use player1/player2 from data if available (with nickname), otherwise use room data
+                PlayerInRoom p1 = null;
+                PlayerInRoom p2 = null;
+                
+                if (data.player1 != null)
+                {
+                    p1 = ConvertPlayerDataToPlayerInRoom(data.player1);
+                }
+                else if (data.room.player1_id > 0)
+                {
+                    p1 = CreatePlayerInRoomFromRoomData(data.room.player1_id, data.room.player1_symbol);
+                }
+                
+                if (data.player2 != null)
+                {
+                    p2 = ConvertPlayerDataToPlayerInRoom(data.player2);
+                }
+                else if (data.room.player2_id > 0)
+                {
+                    p2 = CreatePlayerInRoomFromRoomData(data.room.player2_id, data.room.player2_symbol);
+                }
+                
                 currentRoomState = new RoomStateResponse
                 {
                     roomId = data.roomId,
@@ -1377,8 +1399,8 @@ public class GameManager : MonoBehaviour
                     board = new string[9], // Initialize empty board - will be updated by room:move
                     players = new RoomPlayers
                     {
-                        player1 = CreatePlayerInRoomFromRoomData(data.room.player1_id, data.room.player1_symbol),
-                        player2 = CreatePlayerInRoomFromRoomData(data.room.player2_id, data.room.player2_symbol)
+                        player1 = p1,
+                        player2 = p2
                     }
                 };
                 

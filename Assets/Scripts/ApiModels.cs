@@ -375,6 +375,8 @@ public class MatchmakingMatchedData
     public string mode;
     public int roomId;
     public string status;
+    public PlayerData player1; // Optional - may be present in matchmaking:matched
+    public PlayerData player2; // Optional - may be present in matchmaking:matched
     public RoomData room;
     public bool isBot;
 }

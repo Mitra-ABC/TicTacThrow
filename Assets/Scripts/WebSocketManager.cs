@@ -792,6 +792,8 @@ public class WebSocketManager : MonoBehaviour
                             mode = finalData.mode,
                             roomId = finalData.roomId,
                             status = finalData.status,
+                            player1 = finalData.player1, // Include player1 with nickname
+                            player2 = finalData.player2, // Include player2 with nickname
                             room = new RoomData
                             {
                                 room_id = finalData.roomId,
