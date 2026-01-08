@@ -231,6 +231,13 @@ public class WebSocketManager : MonoBehaviour
                 var data = response.GetValue<RoomCreateSuccessData>();
                 QueueOnMainThread(() =>
                 {
+                    if (data.roomId <= 0)
+                    {
+                        LogError($"Invalid room ID in room:create:success: {data.roomId}");
+                        OnError?.Invoke("Invalid room ID received from server");
+                        return;
+                    }
+                    
                     currentRoomId = data.roomId;
                     Log($"Room created: {data.roomId}");
                     OnRoomCreated?.Invoke(data.roomId);
@@ -271,6 +278,13 @@ public class WebSocketManager : MonoBehaviour
                 var data = response.GetValue<RoomJoinData>();
                 QueueOnMainThread(() =>
                 {
+                    if (data.roomId <= 0)
+                    {
+                        LogError($"Invalid room ID in room:join:success: {data.roomId}");
+                        OnError?.Invoke("Invalid room ID received from server");
+                        return;
+                    }
+                    
                     currentRoomId = data.roomId;
                     Log($"Room joined: {data.roomId}");
                     OnRoomJoined?.Invoke(data);
@@ -574,8 +588,11 @@ public class WebSocketManager : MonoBehaviour
                         }
                         
                         currentRoomId = finalData.roomId;
-                        // Auto subscribe to room
-                        SubscribeToRoom(finalData.roomId);
+                        // Auto subscribe to room (only if roomId is valid)
+                        if (finalData.roomId > 0)
+                        {
+                            SubscribeToRoom(finalData.roomId);
+                        }
                         
                         // Convert to MatchmakingMatchedData
                         var matchedData = new MatchmakingMatchedData
