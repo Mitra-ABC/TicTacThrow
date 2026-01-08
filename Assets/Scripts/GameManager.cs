@@ -180,10 +180,8 @@ public class GameManager : MonoBehaviour
         SetupButtonListeners();
         SetupWebSocketListeners();
         
-        // Fix missing fonts in runtime (optional - better to use Editor script)
-        #if !UNITY_EDITOR
+        // Fix missing fonts in runtime
         FontHelper.FixAllFontsInScene();
-        #endif
     }
     
     private void OnDestroy()
