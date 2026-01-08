@@ -28,11 +28,10 @@ public class FontFixer : EditorWindow
         // Load default font from TMP Settings
         if (defaultFont == null)
         {
-            // Try to get from TMP Settings instance
-            var tmpSettings = TMP_Settings.instance;
-            if (tmpSettings != null && tmpSettings.defaultFontAsset != null)
+            // Use static property (not instance)
+            if (TMP_Settings.defaultFontAsset != null)
             {
-                defaultFont = tmpSettings.defaultFontAsset;
+                defaultFont = TMP_Settings.defaultFontAsset;
             }
             else
             {

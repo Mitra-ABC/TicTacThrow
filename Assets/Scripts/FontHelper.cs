@@ -67,11 +67,10 @@ public class FontHelper : MonoBehaviour
     {
         TMP_FontAsset defaultFont = null;
         
-        // Try to get from TMP Settings instance
-        var tmpSettings = TMP_Settings.instance;
-        if (tmpSettings != null && tmpSettings.defaultFontAsset != null)
+        // Try to get from TMP Settings (static property)
+        if (TMP_Settings.defaultFontAsset != null)
         {
-            defaultFont = tmpSettings.defaultFontAsset;
+            defaultFont = TMP_Settings.defaultFontAsset;
         }
         else
         {
