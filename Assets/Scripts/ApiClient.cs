@@ -648,17 +648,53 @@ public class ApiClient : MonoBehaviour
 
     public IEnumerator GrantCoinPack(string coinPackCode, Action<GrantCoinPackResponse> onSuccess, Action<string> onError)
     {
-        var payload = new GrantCoinPackRequest { coinPackCode = coinPackCode };
-        var json = JsonUtility.ToJson(payload);
+        if (string.IsNullOrWhiteSpace(coinPackCode))
+        {
+            LogWarning("[ApiClient] GrantCoinPack: coinPackCode is empty");
+            onError?.Invoke("Coin pack code is required.");
+            yield break;
+        }
 
-        // For testing/development only
-        yield return SendRequest("/api/store/grant-coin-pack", UnityWebRequest.kHttpVerbPOST, json, true,
-            response =>
+        WWWForm form = new WWWForm();
+        form.AddField("coinPackCode", coinPackCode);
+
+        var url = $"{BaseUrl}/api/store/grant-coin-pack";
+        Log($"[ApiClient] Sending POST {url} (form-data) coinPackCode={coinPackCode}");
+
+        using (var request = UnityWebRequest.Post(url, form))
+        {
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.certificateHandler = new BypassCertificateHandler();
+
+            var token = GetToken();
+            if (!string.IsNullOrEmpty(token))
+                request.SetRequestHeader("Authorization", $"Bearer {token}");
+            if (requestTimeoutSeconds > 0f)
+                request.timeout = Mathf.CeilToInt(requestTimeoutSeconds);
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
             {
-                var data = ApiResponseParser.ParseGrantCoinPackResponse(response);
+                var errorMessage = ExtractErrorMessage(request);
+                LogWarning($"[ApiClient] GrantCoinPack FAILED - {errorMessage}");
+                onError?.Invoke(errorMessage);
+                yield break;
+            }
+
+            var responseText = request.downloadHandler.text;
+            Log($"[ApiClient] GrantCoinPack response: {responseText}");
+            try
+            {
+                var data = ApiResponseParser.ParseGrantCoinPackResponse(responseText);
                 onSuccess?.Invoke(data);
-            },
-            onError);
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"[ApiClient] GrantCoinPack parse error: {ex.Message}");
+                onError?.Invoke($"JSON parse error: {ex.Message}");
+            }
+        }
     }
 
     // ============ Core Request Method ============

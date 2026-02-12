@@ -1958,6 +1958,11 @@ public class GameManager : MonoBehaviour
     {
         if (!EnsureLoggedIn()) return;
         if (requestInFlight) return;
+        if (string.IsNullOrWhiteSpace(coinPackCode))
+        {
+            ShowError("Coin pack code is missing. The store may not have loaded correctly.");
+            return;
+        }
         StartCoroutine(HandleGrantCoinPack(coinPackCode));
     }
 

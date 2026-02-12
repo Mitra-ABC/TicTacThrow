@@ -57,7 +57,9 @@ public class CoinPackItem : MonoBehaviour
         if (buyButton != null)
         {
             buyButton.onClick.RemoveAllListeners();
-            buyButton.onClick.AddListener(() => onBuyClicked?.Invoke(pack.code));
+            // Backend may return "code" or use id; fallback to id so we always send a valid identifier
+            string code = !string.IsNullOrEmpty(pack.code) ? pack.code : (pack.id > 0 ? pack.id.ToString() : null);
+            buyButton.onClick.AddListener(() => onBuyClicked?.Invoke(code));
         }
     }
 }
