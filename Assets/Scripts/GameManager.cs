@@ -650,7 +650,7 @@ public class GameManager : MonoBehaviour
         requestInFlight = false;
         ShowLoading(false);
         
-        // Determine local symbol
+        // Server sends full player1/player2 (id, symbol, nickname) in room:joined
         var playerId = apiClient?.CurrentPlayerId ?? 0;
         if (data.player1 != null && data.player1.id == playerId)
         {
@@ -1339,19 +1339,29 @@ public class GameManager : MonoBehaviour
         currentRoomId = data.roomId;
         Debug.Log($"[GameManager] Matchmaking matched via WebSocket: Room {data.roomId}, Status: {data.status}");
         
-        // Determine local symbol from room data
+        // Determine local symbol: server now sends full player1/player2 (id, symbol, nickname) in matchmaking:matched
         var playerId = apiClient?.CurrentPlayerId ?? 0;
-        if (data.room != null)
+        if (data.player1 != null && data.player1.id == playerId)
+        {
+            localPlayerSymbol = data.player1.symbol;
+            Debug.Log($"[GameManager] Assigned symbol from player1: {localPlayerSymbol}");
+        }
+        else if (data.player2 != null && data.player2.id == playerId)
+        {
+            localPlayerSymbol = data.player2.symbol;
+            Debug.Log($"[GameManager] Assigned symbol from player2: {localPlayerSymbol}");
+        }
+        else if (data.room != null)
         {
             if (data.room.player1_id == playerId)
             {
                 localPlayerSymbol = data.room.player1_symbol;
-                Debug.Log($"[GameManager] Assigned symbol from player1: {localPlayerSymbol}");
-                }
+                Debug.Log($"[GameManager] Assigned symbol from room.player1: {localPlayerSymbol}");
+            }
             else if (data.room.player2_id == playerId)
             {
                 localPlayerSymbol = data.room.player2_symbol;
-                Debug.Log($"[GameManager] Assigned symbol from player2: {localPlayerSymbol}");
+                Debug.Log($"[GameManager] Assigned symbol from room.player2: {localPlayerSymbol}");
             }
             else
             {
@@ -1372,7 +1382,7 @@ public class GameManager : MonoBehaviour
             // Create a basic room state - board will be updated by room:move event
             if (currentRoomState == null && data.room != null)
             {
-                // Use player1/player2 from data if available (with nickname), otherwise use room data
+                // Server sends full player1/player2 (id, symbol, nickname) in matchmaking:matched; use them, fallback to room for legacy
                 PlayerInRoom p1 = null;
                 PlayerInRoom p2 = null;
                 
@@ -1380,7 +1390,7 @@ public class GameManager : MonoBehaviour
                 {
                     p1 = ConvertPlayerDataToPlayerInRoom(data.player1);
                 }
-                else if (data.room.player1_id > 0)
+                else if (data.room != null && data.room.player1_id > 0)
                 {
                     p1 = CreatePlayerInRoomFromRoomData(data.room.player1_id, data.room.player1_symbol);
                 }
@@ -1389,7 +1399,7 @@ public class GameManager : MonoBehaviour
                 {
                     p2 = ConvertPlayerDataToPlayerInRoom(data.player2);
                 }
-                else if (data.room.player2_id > 0)
+                else if (data.room != null && data.room.player2_id > 0)
                 {
                     p2 = CreatePlayerInRoomFromRoomData(data.room.player2_id, data.room.player2_symbol);
                 }

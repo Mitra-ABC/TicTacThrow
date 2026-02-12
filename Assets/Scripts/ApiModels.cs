@@ -314,8 +314,8 @@ public class RoomJoinData
 {
     public int roomId;
     public string status;
-    public PlayerData player1;
-    public PlayerData player2;
+    public PlayerData player1; // Server sends with id, symbol, nickname in room:joined
+    public PlayerData player2; // Server sends with id, symbol, nickname in room:joined
     public int currentTurnPlayerId;
 }
 
@@ -324,7 +324,7 @@ public class PlayerData
 {
     public int id;
     public string symbol;
-    public string nickname; // Optional - may not be present in all responses
+    public string nickname; // Present in matchmaking:matched and room:joined for both players
 }
 
 [Serializable]
@@ -375,8 +375,8 @@ public class MatchmakingMatchedData
     public string mode;
     public int roomId;
     public string status;
-    public PlayerData player1; // Optional - may be present in matchmaking:matched
-    public PlayerData player2; // Optional - may be present in matchmaking:matched
+    public PlayerData player1; // In real online match always sent with id, symbol, nickname
+    public PlayerData player2; // In real online match always sent with id, symbol, nickname
     public RoomData room;
     public bool isBot;
 }
