@@ -193,6 +193,10 @@ public class EconomyConfigResponse
     public EconomySettings settings;
     public BoosterType[] boosterTypes;
     public CoinPack[] coinPacks;
+    // Simple API format: flat root-level when settings not present
+    public int matchmakingHeartCost;
+    public int heartPrice;
+    public int boosterPrice;
 }
 
 [Serializable]
@@ -238,6 +242,9 @@ public class BuyHeartResponse
 {
     public bool success;
     public WalletInfo wallet;
+    // Simple API format: root-level coins/hearts when wallet is not present
+    public int coins;
+    public int hearts;
 }
 
 [Serializable]
@@ -261,6 +268,9 @@ public class BuyBoosterResponse
     public WalletInfo wallet;
     public BoosterInfo booster;
     public BoosterInfo[] activeBoosters;
+    // Simple API format: root-level when wallet/booster objects not present
+    public int coins;
+    public string boosterCode;
 }
 
 [Serializable]

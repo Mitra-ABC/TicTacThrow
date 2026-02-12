@@ -1252,6 +1252,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void ShowMessage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message)) return;
+        if (errorLabel != null)
+            errorLabel.text = message;
+    }
+
     private void SetAuthStatus(string message)
     {
         if (authStatusLabel != null)
@@ -1722,18 +1729,21 @@ public class GameManager : MonoBehaviour
         yield return apiClient.BuyHeart(
             response =>
             {
+                requestInFlight = false;
                 ShowLoading(false);
-                Debug.Log($"[GameManager] Heart purchased! Coins: {response.wallet.coins}, Hearts: {response.wallet.hearts}");
-                UpdateWalletDisplay(response.wallet);
-                ShowError("Heart purchased successfully!");
+                if (response?.wallet != null)
+                    UpdateWalletDisplay(response.wallet);
+                else if (response != null && (response.coins > 0 || response.hearts >= 0))
+                    UpdateWalletDisplay(new WalletInfo { coins = response.coins, hearts = response.hearts, maxHearts = 5 });
+                Debug.Log($"[GameManager] Heart purchased! Coins: {response?.wallet?.coins ?? response?.coins}, Hearts: {response?.wallet?.hearts ?? response?.hearts}");
+                ShowMessage(GameStrings.BuySuccess);
             },
             error =>
             {
+                requestInFlight = false;
                 ShowLoading(false);
                 ShowError(error);
             });
-
-        requestInFlight = false;
     }
 
     private void LoadWallet()
@@ -1819,10 +1829,11 @@ public class GameManager : MonoBehaviour
 
     private void DisplayEconomyConfig(EconomyConfigResponse config)
     {
-        // نمایش قیمت Heart
+        // نمایش قیمت Heart (پشتیبانی از فرمت settings یا root-level heartPrice)
         if (heartPriceLabel != null)
         {
-            heartPriceLabel.text = string.Format(GameStrings.HeartPriceFormat, config.settings.heartPriceCoins);
+            int price = config.settings?.heartPriceCoins ?? config.heartPrice;
+            heartPriceLabel.text = string.Format(GameStrings.HeartPriceFormat, price);
         }
 
         // نمایش Coin Packs
@@ -1880,7 +1891,8 @@ public class GameManager : MonoBehaviour
 
     private void OnCoinPackClicked(string coinPackCode)
     {
-        // برای تست/توسعه - اعطای coin pack
+        if (!EnsureLoggedIn()) return;
+        if (requestInFlight) return;
         StartCoroutine(HandleGrantCoinPack(coinPackCode));
     }
 
@@ -1893,18 +1905,19 @@ public class GameManager : MonoBehaviour
         yield return apiClient.GrantCoinPack(coinPackCode,
             response =>
             {
+                requestInFlight = false;
                 ShowLoading(false);
-                Debug.Log($"[GameManager] Coins granted: {response.coinsGranted}, New balance: {response.wallet.coins}");
-                UpdateWalletDisplay(response.wallet);
-                ShowError($"Coins granted: {response.coinsGranted}!");
+                if (response?.wallet != null)
+                    UpdateWalletDisplay(response.wallet);
+                Debug.Log($"[GameManager] Coins granted: {response?.coinsGranted ?? 0}, New balance: {response?.wallet?.coins ?? 0}");
+                ShowMessage(response != null ? $"{GameStrings.BuySuccess} +{response.coinsGranted} coins." : GameStrings.BuySuccess);
             },
             error =>
             {
+                requestInFlight = false;
                 ShowLoading(false);
                 ShowError(error);
             });
-
-        requestInFlight = false;
     }
 
     private void OnBoosterClicked(string boosterCode)
@@ -1923,32 +1936,32 @@ public class GameManager : MonoBehaviour
         yield return apiClient.BuyBooster(boosterCode,
             response =>
             {
+                requestInFlight = false;
                 ShowLoading(false);
-                Debug.Log($"[GameManager] Booster purchased! Code: {response.booster.code}");
-                UpdateWalletDisplay(response.wallet);
-                ShowError($"Booster purchased: {response.booster.displayName}!");
+                if (response?.wallet != null)
+                    UpdateWalletDisplay(response.wallet);
+                else if (response != null && response.coins >= 0 && coinsLabel != null)
+                    coinsLabel.text = string.Format(GameStrings.CoinsFormat, response.coins);
+                string name = response?.booster?.displayName ?? response?.booster?.code ?? response?.boosterCode ?? "Booster";
+                Debug.Log($"[GameManager] Booster purchased! Code: {response?.booster?.code ?? response?.boosterCode}");
+                ShowMessage(response != null ? $"{GameStrings.BuySuccess} {name}" : GameStrings.BuySuccess);
             },
             error =>
             {
+                requestInFlight = false;
                 ShowLoading(false);
                 ShowError(error);
             });
-
-        requestInFlight = false;
     }
 
     // به‌روزرسانی نمایش wallet در Lobby
     private void UpdateWalletDisplay(WalletInfo wallet)
     {
+        if (wallet == null) return;
         if (coinsLabel != null)
-        {
             coinsLabel.text = string.Format(GameStrings.CoinsFormat, wallet.coins);
-        }
-
         if (heartsLabel != null)
-        {
             heartsLabel.text = string.Format(GameStrings.HeartsFormat, wallet.hearts, wallet.maxHearts);
-        }
     }
 
     // متد برای به‌روزرسانی wallet بعد از هر عملیات
