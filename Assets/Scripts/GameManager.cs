@@ -1933,19 +1933,18 @@ public class GameManager : MonoBehaviour
         ClearError();
         EconomyConfigResponse economyConfig = null;
         WalletResponse walletResponse = null;
-        var economyDone = false;
-        var walletDone = false;
-        apiClient.GetEconomyConfig(
-            r => { economyConfig = r; economyDone = true; },
-            _ => { economyDone = true; });
-        apiClient.GetWallet(
-            r => { walletResponse = r; walletDone = true; },
-            _ => { walletDone = true; });
-        while (!economyDone || !walletDone) yield return null;
+
+        yield return apiClient.GetEconomyConfig(
+            r => { economyConfig = r; },
+            e => { ShowError(e); });
+        yield return apiClient.GetWallet(
+            r => { walletResponse = r; },
+            _ => { });
+
         ShowLoading(false);
         if (economyConfig?.boosterTypes == null || boostersContent == null || boosterItemPrefab == null)
         {
-            if (economyConfig == null) ShowError("Failed to load boosters.");
+            if (economyConfig?.boosterTypes == null) ShowError("Failed to load boosters.");
             yield break;
         }
         foreach (Transform child in boostersContent) Destroy(child.gameObject);
