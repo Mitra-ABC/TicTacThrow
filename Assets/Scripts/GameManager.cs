@@ -1774,13 +1774,20 @@ public class GameManager : MonoBehaviour
     {
         int price = 0;
         yield return apiClient.GetEconomyConfig(
-            r => { price = r.settings?.heartPriceCoins ?? r.heartPrice; },
+            r =>
+            {
+                if (r != null)
+                    price = (r.settings != null && r.settings.heartPriceCoins > 0) ? r.settings.heartPriceCoins : r.heartPrice;
+            },
             _ => { });
         if (noHeartsPopup != null) noHeartsPopup.SetActive(true);
         if (noHeartsMessageText != null)
-            noHeartsMessageText.text = price > 0
-                ? string.Format(GameStrings.NoHeartsMessageWithPrice, price)
-                : GameStrings.NoHeartsMessage;
+        {
+            if (price > 0)
+                noHeartsMessageText.text = "You need a heart to play. Buy one for " + price + " coins?";
+            else
+                noHeartsMessageText.text = GameStrings.NoHeartsMessage;
+        }
     }
 
     private IEnumerator HandleBuyHeart()
