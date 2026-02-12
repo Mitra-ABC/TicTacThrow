@@ -116,6 +116,7 @@ public static class GameStrings
     // ============ No Hearts Popup ============
     public const string NoHeartsTitle = "No hearts left";
     public const string NoHeartsMessage = "You need a heart to play. Buy one with coins?";
+    public const string NoHeartsMessageWithPrice = "You need a heart to play. Buy one for {0} coins?";
     public const string NoHeartsBuyButton = "Buy Heart";
     public const string NoHeartsCancelButton = "Cancel";
 

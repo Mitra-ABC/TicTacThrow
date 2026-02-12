@@ -1767,8 +1767,20 @@ public class GameManager : MonoBehaviour
 
     private void ShowNoHeartsPopup()
     {
+        StartCoroutine(ShowNoHeartsPopupWithPrice());
+    }
+
+    private IEnumerator ShowNoHeartsPopupWithPrice()
+    {
+        int price = 0;
+        yield return apiClient.GetEconomyConfig(
+            r => { price = r.settings?.heartPriceCoins ?? r.heartPrice; },
+            _ => { });
         if (noHeartsPopup != null) noHeartsPopup.SetActive(true);
-        if (noHeartsMessageText != null) noHeartsMessageText.text = GameStrings.NoHeartsMessage;
+        if (noHeartsMessageText != null)
+            noHeartsMessageText.text = price > 0
+                ? string.Format(GameStrings.NoHeartsMessageWithPrice, price)
+                : GameStrings.NoHeartsMessage;
     }
 
     private IEnumerator HandleBuyHeart()
