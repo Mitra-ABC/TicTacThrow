@@ -1318,12 +1318,10 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator HandleCompetitiveGameOrNoHeartsPopup()
     {
-        var done = false;
         var hearts = -1;
-        apiClient.GetWallet(
-            r => { hearts = r.hearts; done = true; },
-            _ => { done = true; });
-        while (!done) yield return null;
+        yield return apiClient.GetWallet(
+            r => { hearts = r.hearts; },
+            _ => { hearts = 0; });
         if (hearts <= 0)
         {
             ShowNoHeartsPopup();
