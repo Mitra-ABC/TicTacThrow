@@ -106,10 +106,18 @@ public static class GameStrings
     public const string StoreError = "Failed to load store";
 
     // ============ Boosters ============
+    public const string BoostersTitle = "Boosters";
     public const string ActiveBoosters = "Active Boosters";
     public const string NoActiveBoosters = "No active boosters";
     public const string BoosterExpiresFormat = "Expires: {0}";
     public const string BoosterExpired = "Expired";
+    public const string BoosterTimeRemainingFormat = "Time left: {0}";
+
+    // ============ No Hearts Popup ============
+    public const string NoHeartsTitle = "No hearts left";
+    public const string NoHeartsMessage = "You need a heart to play. Buy one with coins?";
+    public const string NoHeartsBuyButton = "Buy Heart";
+    public const string NoHeartsCancelButton = "Cancel";
 
     // ============ Buttons ============
     public const string LoginButton = "Login";
@@ -124,5 +132,5 @@ public static class GameStrings
     public const string MyStatsButton = "My Stats";
     public const string RefreshButton = "Refresh";
     public const string StoreButton = "Store";
-    public const string WalletButton = "Wallet";
+    public const string BoostersButton = "Boosters";
 }

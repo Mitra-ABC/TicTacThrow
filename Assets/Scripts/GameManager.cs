@@ -86,29 +86,31 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMP_Text myStatsGamesLabel;
     [SerializeField] private Button closeMyStatsButton;
 
-    [Header("Lobby Panel - Wallet")]
+    [Header("Lobby Panel")]
     [SerializeField] private TMP_Text coinsLabel;
     [SerializeField] private TMP_Text heartsLabel;
+    [SerializeField] private TMP_Text lobbyNextHeartLabel; // زمان رجن قلب بعدی در لابی
     [SerializeField] private Button storeButton;
-    [SerializeField] private Button walletButton;
+    [SerializeField] private Button boostersButton;
 
-    [Header("Store Panel")]
+    [Header("Store Panel - فقط بسته‌های کوین")]
     [SerializeField] private GameObject storePanel;
     [SerializeField] private TMP_Text storeTitle;
-    [SerializeField] private Button buyHeartButton;
-    [SerializeField] private TMP_Text heartPriceLabel;
-    [SerializeField] private Transform coinPacksContent; // برای لیست Coin Packs
-    [SerializeField] private GameObject coinPackItemPrefab; // Prefab برای هر Coin Pack
-    [SerializeField] private Transform boostersContent; // برای لیست Boosters
-    [SerializeField] private GameObject boosterItemPrefab; // Prefab برای هر Booster
+    [SerializeField] private Transform coinPacksContent;
+    [SerializeField] private GameObject coinPackItemPrefab;
     [SerializeField] private Button closeStoreButton;
 
-    [Header("Wallet Panel")]
-    [SerializeField] private GameObject walletPanel;
-    [SerializeField] private TMP_Text walletCoinsLabel;
-    [SerializeField] private TMP_Text walletHeartsLabel;
-    [SerializeField] private TMP_Text nextHeartLabel;
-    [SerializeField] private Button closeWalletButton;
+    [Header("Boosters Panel")]
+    [SerializeField] private GameObject boostersPanel;
+    [SerializeField] private Transform boostersContent;
+    [SerializeField] private GameObject boosterItemPrefab;
+    [SerializeField] private Button closeBoostersButton;
+
+    [Header("No Hearts Popup")]
+    [SerializeField] private GameObject noHeartsPopup;
+    [SerializeField] private TMP_Text noHeartsMessageText;
+    [SerializeField] private Button noHeartsBuyButton;
+    [SerializeField] private Button noHeartsCancelButton;
 
     [Header("In Game Panel")]
     [SerializeField] private TMP_Text roomIdLabel;
@@ -147,7 +149,7 @@ public class GameManager : MonoBehaviour
         Leaderboard,
         MyStats,
         Store,
-        Wallet
+        Boosters
     }
 
     // ============ Lifecycle ============
@@ -306,12 +308,13 @@ public class GameManager : MonoBehaviour
         // My Stats buttons
         closeMyStatsButton?.onClick.AddListener(OnCloseMyStats);
 
-        // Wallet & Store buttons
+        // Store, Boosters, No-Hearts popup
         storeButton?.onClick.AddListener(OnStoreClicked);
-        walletButton?.onClick.AddListener(OnWalletClicked);
-        buyHeartButton?.onClick.AddListener(OnBuyHeartClicked);
+        boostersButton?.onClick.AddListener(OnBoostersClicked);
         closeStoreButton?.onClick.AddListener(OnCloseStore);
-        closeWalletButton?.onClick.AddListener(OnCloseWallet);
+        closeBoostersButton?.onClick.AddListener(OnCloseBoosters);
+        noHeartsBuyButton?.onClick.AddListener(OnNoHeartsBuyClicked);
+        noHeartsCancelButton?.onClick.AddListener(OnNoHeartsPopupClose);
 
         // Finished buttons
         playAgainButton?.onClick.AddListener(OnPlayAgain);
@@ -951,7 +954,7 @@ public class GameManager : MonoBehaviour
         var previousState = currentState;
         currentState = newState;
         Debug.Log($"[GameManager] State: {previousState} -> {newState}");
-        if (newState != GameState.Wallet && nextHeartCountdownCoroutine != null)
+        if (newState != GameState.Lobby && nextHeartCountdownCoroutine != null)
         {
             StopCoroutine(nextHeartCountdownCoroutine);
             nextHeartCountdownCoroutine = null;
@@ -985,7 +988,7 @@ public class GameManager : MonoBehaviour
         leaderboardPanel?.SetActive(currentState == GameState.Leaderboard);
         myStatsPanel?.SetActive(currentState == GameState.MyStats);
         storePanel?.SetActive(currentState == GameState.Store);
-        walletPanel?.SetActive(currentState == GameState.Wallet);
+        boostersPanel?.SetActive(currentState == GameState.Boosters);
 
         // Auth form state - show/hide nickname field based on mode
         if (currentState == GameState.AuthForm)
@@ -1136,7 +1139,24 @@ public class GameManager : MonoBehaviour
         {
             ShowGameResult(result);
             SetState(GameState.GameFinished);
+            StartCoroutine(CheckNoHeartsPopupAfterGame(result));
         }
+    }
+
+    private IEnumerator CheckNoHeartsPopupAfterGame(string result)
+    {
+        if (string.IsNullOrEmpty(result) || string.Equals(result, GameStrings.ResultDraw, StringComparison.OrdinalIgnoreCase))
+            yield break;
+        bool weWon = string.Equals(result, localPlayerSymbol, StringComparison.OrdinalIgnoreCase);
+        if (weWon) yield break;
+        var done = false;
+        var hearts = -1;
+        apiClient.GetWallet(
+            r => { hearts = r.hearts; done = true; },
+            _ => { done = true; });
+        while (!done) yield return null;
+        if (hearts <= 0)
+            ShowNoHeartsPopup();
     }
 
     private void ShowGameResult(string result)
@@ -1293,8 +1313,23 @@ public class GameManager : MonoBehaviour
     {
         if (!EnsureLoggedIn()) return;
         if (requestInFlight) return;
+        StartCoroutine(HandleCompetitiveGameOrNoHeartsPopup());
+    }
 
-        StartCoroutine(HandleQueueMatchmaking());
+    private IEnumerator HandleCompetitiveGameOrNoHeartsPopup()
+    {
+        var done = false;
+        var hearts = -1;
+        apiClient.GetWallet(
+            r => { hearts = r.hearts; done = true; },
+            _ => { done = true; });
+        while (!done) yield return null;
+        if (hearts <= 0)
+        {
+            ShowNoHeartsPopup();
+            yield break;
+        }
+        yield return HandleQueueMatchmaking();
     }
 
     public void OnFriendlyGameClicked()
@@ -1694,20 +1729,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ============ Wallet & Store ============
+    // ============ Store (فقط کوین) و Boosters و پاپ‌آپ قلب ============
 
     public void OnStoreClicked()
     {
         if (!EnsureLoggedIn()) return;
         SetState(GameState.Store);
-        LoadEconomyConfig();
-    }
-
-    public void OnWalletClicked()
-    {
-        if (!EnsureLoggedIn()) return;
-        SetState(GameState.Wallet);
-        LoadWallet();
+        LoadEconomyConfigForStore();
     }
 
     public void OnCloseStore()
@@ -1715,16 +1743,34 @@ public class GameManager : MonoBehaviour
         SetState(GameState.Lobby);
     }
 
-    public void OnCloseWallet()
+    public void OnBoostersClicked()
+    {
+        if (!EnsureLoggedIn()) return;
+        SetState(GameState.Boosters);
+        LoadBoostersPage();
+    }
+
+    public void OnCloseBoosters()
     {
         SetState(GameState.Lobby);
     }
 
-    public void OnBuyHeartClicked()
+    public void OnNoHeartsPopupClose()
     {
-        if (!EnsureLoggedIn()) return;
-        if (requestInFlight) return;
+        if (noHeartsPopup != null) noHeartsPopup.SetActive(false);
+    }
+
+    public void OnNoHeartsBuyClicked()
+    {
+        if (!EnsureLoggedIn() || requestInFlight) return;
+        OnNoHeartsPopupClose();
         StartCoroutine(HandleBuyHeart());
+    }
+
+    private void ShowNoHeartsPopup()
+    {
+        if (noHeartsPopup != null) noHeartsPopup.SetActive(true);
+        if (noHeartsMessageText != null) noHeartsMessageText.text = GameStrings.NoHeartsMessage;
     }
 
     private IEnumerator HandleBuyHeart()
@@ -1742,8 +1788,8 @@ public class GameManager : MonoBehaviour
                     UpdateWalletDisplay(response.wallet);
                 else if (response != null && (response.coins > 0 || response.hearts >= 0))
                     UpdateWalletDisplay(new WalletInfo { coins = response.coins, hearts = response.hearts, maxHearts = 5 });
-                Debug.Log($"[GameManager] Heart purchased! Coins: {response?.wallet?.coins ?? response?.coins}, Hearts: {response?.wallet?.hearts ?? response?.hearts}");
                 ShowMessage(GameStrings.BuySuccess);
+                RefreshWallet();
             },
             error =>
             {
@@ -1753,76 +1799,45 @@ public class GameManager : MonoBehaviour
             });
     }
 
-    private void LoadWallet()
+    private void LoadWalletForLobby()
     {
-        StartCoroutine(HandleLoadWallet());
+        StartCoroutine(HandleLoadWalletForLobby());
     }
 
-    private IEnumerator HandleLoadWallet()
+    private IEnumerator HandleLoadWalletForLobby()
     {
-        ShowLoading(true);
-        ClearError();
-
         yield return apiClient.GetWallet(
             response =>
             {
-                ShowLoading(false);
-                DisplayWallet(response);
+                UpdateLobbyFromWallet(response);
             },
             error =>
             {
-                ShowLoading(false);
-                ShowError(error);
+                Debug.LogWarning($"[GameManager] Failed to load wallet: {error}");
             });
     }
 
-    private void DisplayWallet(WalletResponse response)
+    private void UpdateLobbyFromWallet(WalletResponse response)
     {
-        // Update Wallet Panel labels
-        if (walletCoinsLabel != null)
+        if (response == null) return;
+        UpdateWalletDisplay(new WalletInfo { coins = response.coins, hearts = response.hearts, maxHearts = response.maxHearts });
+        if (lobbyNextHeartLabel == null) return;
+        if (!string.IsNullOrEmpty(response.nextHeartAt) && response.hearts < response.maxHearts)
         {
-            walletCoinsLabel.text = string.Format(GameStrings.CoinsFormat, response.coins);
-        }
-
-        if (walletHeartsLabel != null)
-        {
-            walletHeartsLabel.text = string.Format(GameStrings.HeartsFormat, response.hearts, response.maxHearts);
-        }
-        
-        // Also update Lobby Panel labels
-        UpdateWalletDisplay(new WalletInfo
-        {
-            coins = response.coins,
-            hearts = response.hearts,
-            maxHearts = response.maxHearts
-        });
-
-        if (nextHeartLabel != null)
-        {
-            if (!string.IsNullOrEmpty(response.nextHeartAt) && response.hearts < response.maxHearts)
+            if (TryParseNextHeartAt(response.nextHeartAt, out DateTime targetUtc))
             {
-                if (TryParseNextHeartAt(response.nextHeartAt, out DateTime targetUtc))
-                {
-                    string timeStr = FormatTimeRemaining(targetUtc);
-                    nextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, timeStr);
-                    if (nextHeartCountdownCoroutine != null)
-                        StopCoroutine(nextHeartCountdownCoroutine);
-                    nextHeartCountdownCoroutine = StartCoroutine(NextHeartCountdownCoroutine(targetUtc));
-                }
-                else
-                {
-                    nextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, "...");
-                }
+                string timeStr = FormatTimeRemaining(targetUtc);
+                lobbyNextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, timeStr);
+                if (nextHeartCountdownCoroutine != null) StopCoroutine(nextHeartCountdownCoroutine);
+                nextHeartCountdownCoroutine = StartCoroutine(NextHeartCountdownCoroutineLobby(targetUtc));
             }
             else
-            {
-                nextHeartLabel.text = GameStrings.HeartsFull;
-                if (nextHeartCountdownCoroutine != null)
-                {
-                    StopCoroutine(nextHeartCountdownCoroutine);
-                    nextHeartCountdownCoroutine = null;
-                }
-            }
+                lobbyNextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, "...");
+        }
+        else
+        {
+            lobbyNextHeartLabel.text = GameStrings.HeartsFull;
+            if (nextHeartCountdownCoroutine != null) { StopCoroutine(nextHeartCountdownCoroutine); nextHeartCountdownCoroutine = null; }
         }
     }
 
@@ -1845,45 +1860,44 @@ public class GameManager : MonoBehaviour
         return $"{remaining.Seconds}s";
     }
 
-    private IEnumerator NextHeartCountdownCoroutine(DateTime targetUtc)
+    private IEnumerator NextHeartCountdownCoroutineLobby(DateTime targetUtc)
     {
         var wait = new WaitForSeconds(1f);
-        while (currentState == GameState.Wallet)
+        while (currentState == GameState.Lobby)
         {
             yield return wait;
             var remaining = targetUtc - DateTime.UtcNow;
             if (remaining <= TimeSpan.Zero)
             {
-                if (nextHeartLabel != null)
-                    nextHeartLabel.text = GameStrings.HeartsFull;
-                LoadWallet();
+                if (lobbyNextHeartLabel != null)
+                    lobbyNextHeartLabel.text = GameStrings.HeartsFull;
+                LoadWalletForLobby();
                 nextHeartCountdownCoroutine = null;
                 yield break;
             }
-            if (nextHeartLabel != null)
+            if (lobbyNextHeartLabel != null)
             {
                 string timeStr = FormatTimeRemaining(targetUtc);
-                nextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, timeStr);
+                lobbyNextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, timeStr);
             }
         }
         nextHeartCountdownCoroutine = null;
     }
 
-    private void LoadEconomyConfig()
+    private void LoadEconomyConfigForStore()
     {
-        StartCoroutine(HandleLoadEconomyConfig());
+        StartCoroutine(HandleLoadEconomyConfigForStore());
     }
 
-    private IEnumerator HandleLoadEconomyConfig()
+    private IEnumerator HandleLoadEconomyConfigForStore()
     {
         ShowLoading(true);
         ClearError();
-
         yield return apiClient.GetEconomyConfig(
             response =>
             {
                 ShowLoading(false);
-                DisplayEconomyConfig(response);
+                DisplayStoreCoinPacksOnly(response);
             },
             error =>
             {
@@ -1892,65 +1906,59 @@ public class GameManager : MonoBehaviour
             });
     }
 
-    private void DisplayEconomyConfig(EconomyConfigResponse config)
+    private void DisplayStoreCoinPacksOnly(EconomyConfigResponse config)
     {
-        // نمایش قیمت Heart (پشتیبانی از فرمت settings یا root-level heartPrice)
-        if (heartPriceLabel != null)
+        if (storeTitle != null) storeTitle.text = GameStrings.StoreTitle;
+        if (coinPacksContent == null) return;
+        foreach (Transform child in coinPacksContent) Destroy(child.gameObject);
+        if (config.coinPacks == null || coinPackItemPrefab == null) return;
+        foreach (var pack in config.coinPacks)
         {
-            int price = config.settings?.heartPriceCoins ?? config.heartPrice;
-            heartPriceLabel.text = string.Format(GameStrings.HeartPriceFormat, price);
+            if (!pack.isActive) continue;
+            var item = Instantiate(coinPackItemPrefab, coinPacksContent);
+            var itemScript = item.GetComponent<CoinPackItem>();
+            if (itemScript != null)
+                itemScript.SetCoinPack(pack, OnCoinPackClicked);
         }
+    }
 
-        // نمایش Coin Packs
-        if (coinPacksContent != null)
+    private void LoadBoostersPage()
+    {
+        StartCoroutine(HandleLoadBoostersPage());
+    }
+
+    private IEnumerator HandleLoadBoostersPage()
+    {
+        ShowLoading(true);
+        ClearError();
+        EconomyConfigResponse economyConfig = null;
+        WalletResponse walletResponse = null;
+        var economyDone = false;
+        var walletDone = false;
+        apiClient.GetEconomyConfig(
+            r => { economyConfig = r; economyDone = true; },
+            _ => { economyDone = true; });
+        apiClient.GetWallet(
+            r => { walletResponse = r; walletDone = true; },
+            _ => { walletDone = true; });
+        while (!economyDone || !walletDone) yield return null;
+        ShowLoading(false);
+        if (economyConfig?.boosterTypes == null || boostersContent == null || boosterItemPrefab == null)
         {
-            // پاک کردن لیست قبلی
-            foreach (Transform child in coinPacksContent)
-            {
-                Destroy(child.gameObject);
-            }
-
-            // اضافه کردن Coin Packs
-            if (config.coinPacks != null && coinPackItemPrefab != null)
-            {
-                foreach (var pack in config.coinPacks)
-                {
-                    if (!pack.isActive) continue; // فقط بسته‌های فعال
-
-                    var item = Instantiate(coinPackItemPrefab, coinPacksContent);
-                    var itemScript = item.GetComponent<CoinPackItem>();
-                    if (itemScript != null)
-                    {
-                        itemScript.SetCoinPack(pack, OnCoinPackClicked);
-                    }
-                }
-            }
+            if (economyConfig == null) ShowError("Failed to load boosters.");
+            yield break;
         }
-
-        // نمایش Boosters
-        if (boostersContent != null)
+        foreach (Transform child in boostersContent) Destroy(child.gameObject);
+        var activeBoosters = walletResponse?.activeBoosters ?? new BoosterInfo[0];
+        foreach (var booster in economyConfig.boosterTypes)
         {
-            // پاک کردن لیست قبلی
-            foreach (Transform child in boostersContent)
-            {
-                Destroy(child.gameObject);
-            }
-
-            // اضافه کردن Boosters
-            if (config.boosterTypes != null && boosterItemPrefab != null)
-            {
-                foreach (var booster in config.boosterTypes)
-                {
-                    if (!booster.isActive) continue; // فقط بوسترهای فعال
-
-                    var item = Instantiate(boosterItemPrefab, boostersContent);
-                    var itemScript = item.GetComponent<BoosterItem>();
-                    if (itemScript != null)
-                    {
-                        itemScript.SetBooster(booster, OnBoosterClicked);
-                    }
-                }
-            }
+            if (!booster.isActive) continue;
+            BoosterInfo active = null;
+            foreach (var a in activeBoosters) { if (a != null && a.code == booster.code) { active = a; break; } }
+            var item = Instantiate(boosterItemPrefab, boostersContent);
+            var itemScript = item.GetComponent<BoosterItem>();
+            if (itemScript != null)
+                itemScript.SetBooster(booster, active, OnBoosterClicked);
         }
     }
 
@@ -2037,9 +2045,9 @@ public class GameManager : MonoBehaviour
     // متد برای به‌روزرسانی wallet بعد از هر عملیات
     public void RefreshWallet()
     {
-        if (currentState == GameState.Lobby || currentState == GameState.Wallet)
+        if (currentState == GameState.Lobby)
         {
-            LoadWallet();
+            LoadWalletForLobby();
         }
         else
         {
