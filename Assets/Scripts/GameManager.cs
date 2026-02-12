@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -130,6 +131,7 @@ public class GameManager : MonoBehaviour
     private int currentRoomId;
     private string localPlayerSymbol;
     private RoomStateResponse currentRoomState;
+    private Coroutine nextHeartCountdownCoroutine;
 
     private enum GameState
     {
@@ -949,6 +951,11 @@ public class GameManager : MonoBehaviour
         var previousState = currentState;
         currentState = newState;
         Debug.Log($"[GameManager] State: {previousState} -> {newState}");
+        if (newState != GameState.Wallet && nextHeartCountdownCoroutine != null)
+        {
+            StopCoroutine(nextHeartCountdownCoroutine);
+            nextHeartCountdownCoroutine = null;
+        }
         UpdateUI();
 
         if (newState == GameState.InGame)
@@ -1794,14 +1801,72 @@ public class GameManager : MonoBehaviour
         {
             if (!string.IsNullOrEmpty(response.nextHeartAt) && response.hearts < response.maxHearts)
             {
-                // می‌توانید زمان را parse کنید و نمایش دهید
-                nextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, "Calculating...");
+                if (TryParseNextHeartAt(response.nextHeartAt, out DateTime targetUtc))
+                {
+                    string timeStr = FormatTimeRemaining(targetUtc);
+                    nextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, timeStr);
+                    if (nextHeartCountdownCoroutine != null)
+                        StopCoroutine(nextHeartCountdownCoroutine);
+                    nextHeartCountdownCoroutine = StartCoroutine(NextHeartCountdownCoroutine(targetUtc));
+                }
+                else
+                {
+                    nextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, "...");
+                }
             }
             else
             {
                 nextHeartLabel.text = GameStrings.HeartsFull;
+                if (nextHeartCountdownCoroutine != null)
+                {
+                    StopCoroutine(nextHeartCountdownCoroutine);
+                    nextHeartCountdownCoroutine = null;
+                }
             }
         }
+    }
+
+    private bool TryParseNextHeartAt(string nextHeartAtIso, out DateTime targetUtc)
+    {
+        targetUtc = default;
+        if (string.IsNullOrWhiteSpace(nextHeartAtIso)) return false;
+        return DateTime.TryParse(nextHeartAtIso, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out targetUtc);
+    }
+
+    private string FormatTimeRemaining(DateTime targetUtc)
+    {
+        var remaining = targetUtc - DateTime.UtcNow;
+        if (remaining <= TimeSpan.Zero)
+            return "0:00";
+        if (remaining.TotalHours >= 1)
+            return $"{(int)remaining.TotalHours}h {remaining.Minutes}m";
+        if (remaining.TotalMinutes >= 1)
+            return $"{remaining.Minutes}m {remaining.Seconds}s";
+        return $"{remaining.Seconds}s";
+    }
+
+    private IEnumerator NextHeartCountdownCoroutine(DateTime targetUtc)
+    {
+        var wait = new WaitForSeconds(1f);
+        while (currentState == GameState.Wallet)
+        {
+            yield return wait;
+            var remaining = targetUtc - DateTime.UtcNow;
+            if (remaining <= TimeSpan.Zero)
+            {
+                if (nextHeartLabel != null)
+                    nextHeartLabel.text = GameStrings.HeartsFull;
+                LoadWallet();
+                nextHeartCountdownCoroutine = null;
+                yield break;
+            }
+            if (nextHeartLabel != null)
+            {
+                string timeStr = FormatTimeRemaining(targetUtc);
+                nextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, timeStr);
+            }
+        }
+        nextHeartCountdownCoroutine = null;
     }
 
     private void LoadEconomyConfig()
