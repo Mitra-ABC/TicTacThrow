@@ -717,6 +717,7 @@ public class ApiClient : MonoBehaviour
 
         string json = $"{{\"sku\":\"{EscapeJson(sku)}\",\"token\":\"{EscapeJson(token)}\",\"store\":\"{EscapeJson(store)}\"}}";
         var url = $"{BaseUrl}/api/iap/verify";
+        Debug.Log($"[IAP] ApiClient.VerifyIAP: ارسال درخواست — url={url}, sku={sku}, store={store}");
         Log($"[ApiClient] Sending POST {url} (IAP verify) sku={sku} store={store}");
 
         using (var request = new UnityWebRequest(url, "POST"))
@@ -734,20 +735,24 @@ public class ApiClient : MonoBehaviour
             if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
             {
                 var errorMessage = ExtractErrorMessage(request);
+                Debug.Log($"[IAP] ApiClient.VerifyIAP: خطا — {errorMessage}");
                 LogWarning($"[ApiClient] VerifyIAP FAILED - {errorMessage}");
                 onError?.Invoke(errorMessage);
                 yield break;
             }
 
             var responseText = request.downloadHandler.text;
+            Debug.Log($"[IAP] ApiClient.VerifyIAP: پاسخ سرور — {responseText}");
             Log($"[ApiClient] VerifyIAP response: {responseText}");
             try
             {
                 var data = ApiResponseParser.ParseVerifyIAPResponse(responseText);
+                Debug.Log($"[IAP] ApiClient.VerifyIAP: پارس موفق — status={data?.status}, message={data?.message}");
                 onSuccess?.Invoke(data);
             }
             catch (Exception ex)
             {
+                Debug.Log($"[IAP] ApiClient.VerifyIAP: خطای پارس — {ex.Message}");
                 LogWarning($"[ApiClient] VerifyIAP parse error: {ex.Message}");
                 onError?.Invoke($"JSON parse error: {ex.Message}");
             }

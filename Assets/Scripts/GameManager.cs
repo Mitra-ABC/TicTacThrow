@@ -1910,6 +1910,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator HandleLoadEconomyConfigForStore()
     {
+        Debug.Log("[IAP] HandleLoadEconomyConfigForStore: باز شدن استور — درخواست GetEconomyConfig");
         ShowLoading(true);
         ClearError();
         EconomyConfigResponse response = null;
@@ -1920,10 +1921,12 @@ public class GameManager : MonoBehaviour
         ShowLoading(false);
         if (errorMsg != null)
         {
+            Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: خطای اقتصاد — {errorMsg}");
             ShowError(errorMsg);
             yield break;
         }
         if (response == null) yield break;
+        Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: اقتصاد لود شد — coinPacks={response.coinPacks?.Length ?? 0}");
 
         var iap = iapManager != null ? iapManager : IAPManager.Instance;
         if (iap != null && iap.IsIAPEnabled && response.coinPacks != null && response.coinPacks.Length > 0)
@@ -1936,6 +1939,7 @@ public class GameManager : MonoBehaviour
             }
             if (skus.Count > 0)
             {
+                Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: درخواست قیمت از SDK — skus={string.Join(",", skus)}");
                 bool pricesReceived = false;
                 Action<Dictionary<string, string>> onPrices = null;
                 onPrices = priceMap =>
@@ -1943,6 +1947,7 @@ public class GameManager : MonoBehaviour
                     if (pricesReceived) return;
                     pricesReceived = true;
                     if (iap != null) iap.SkuPricesReady -= onPrices;
+                    Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: SkuPricesReady — تعداد قیمت={priceMap?.Count ?? 0}");
                     DisplayStoreCoinPacksOnly(response, priceMap);
                 };
                 iap.SkuPricesReady += onPrices;
@@ -1950,6 +1955,7 @@ public class GameManager : MonoBehaviour
                 yield break;
             }
         }
+        Debug.Log("[IAP] HandleLoadEconomyConfigForStore: نمایش لیست بدون قیمت SDK");
         DisplayStoreCoinPacksOnly(response, null);
     }
 
@@ -2013,16 +2019,19 @@ public class GameManager : MonoBehaviour
 
     private void OnCoinPackClicked(CoinPack pack)
     {
-        if (!EnsureLoggedIn()) return;
-        if (requestInFlight) return;
+        Debug.Log($"[IAP] OnCoinPackClicked: pack={pack?.displayName}, code={pack?.code}, platformProductId={pack?.platformProductId}");
+        if (!EnsureLoggedIn()) { Debug.Log("[IAP] OnCoinPackClicked: not logged in, return"); return; }
+        if (requestInFlight) { Debug.Log("[IAP] OnCoinPackClicked: requestInFlight=true, return"); return; }
         if (pack == null)
         {
             ShowError("Coin pack is missing. The store may not have loaded correctly.");
             return;
         }
         var iap = iapManager != null ? iapManager : IAPManager.Instance;
+        Debug.Log($"[IAP] OnCoinPackClicked: iap={(iap != null ? "ok" : "null")}, IsIAPEnabled={iap?.IsIAPEnabled ?? false}");
         if (iap != null && iap.IsIAPEnabled)
         {
+            Debug.Log($"[IAP] OnCoinPackClicked: مسیر IAP — Purchase(sku={pack.platformProductId ?? pack.code})");
             iap.OnPurchaseVerifySuccess -= OnIAPVerifySuccess;
             iap.OnPurchaseVerifyFailed -= OnIAPVerifyFailed;
             iap.OnPurchaseVerifySuccess += OnIAPVerifySuccess;
@@ -2033,24 +2042,14 @@ public class GameManager : MonoBehaviour
             iap.Purchase(pack.platformProductId ?? pack.code);
             return;
         }
-        // روی اندروید فقط از طریق IAP (استور) خرید انجام می‌شود؛ بدون سمبل/پلاگین فرایند خرید باز نمی‌شود
-        if (Application.platform == RuntimePlatform.Android)
-        {
-            ShowError("خرید از استور در این نسخه فعال نیست. از نسخهٔ کافه‌بازار یا مایکت استفاده کنید.");
-            return;
-        }
-        // در ادیتور یا پلتفرم غیراندروید: حالت تست (grant بدون پرداخت)
-        string code = !string.IsNullOrEmpty(pack.code) ? pack.code : (pack.id > 0 ? pack.id.ToString() : null);
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            ShowError("Coin pack code is missing.");
-            return;
-        }
-        StartCoroutine(HandleGrantCoinPack(code));
+        // خرید بسته کوین فقط از طریق کافه‌بازار یا مایکت (IAP). مسیر grant رایگان حذف شده.
+        Debug.Log("[IAP] OnCoinPackClicked: IAP غیرفعال — نمایش پیام");
+        ShowError("خرید فقط از طریق اپ کافه‌بازار یا مایکت امکان‌پذیر است. از نسخهٔ استور استفاده کنید.");
     }
 
     private void OnIAPVerifySuccess()
     {
+        Debug.Log("[IAP] OnIAPVerifySuccess: سرور تأیید کرد — به‌روزرسانی wallet و نمایش موفقیت");
         requestInFlight = false;
         ShowLoading(false);
         var iap = iapManager != null ? iapManager : IAPManager.Instance;
@@ -2065,6 +2064,7 @@ public class GameManager : MonoBehaviour
 
     private void OnIAPVerifyFailed(string message)
     {
+        Debug.Log($"[IAP] OnIAPVerifyFailed: {message}");
         requestInFlight = false;
         ShowLoading(false);
         var iap = iapManager != null ? iapManager : IAPManager.Instance;
@@ -2078,38 +2078,18 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator RefreshWalletAfterIAP()
     {
+        Debug.Log("[IAP] RefreshWalletAfterIAP: درخواست GetWallet برای به‌روزرسانی نمایش");
         if (apiClient == null) yield break;
         yield return apiClient.GetWallet(
             r =>
             {
                 if (r != null)
+                {
                     UpdateWalletDisplay(new WalletInfo { coins = r.coins, hearts = r.hearts, maxHearts = r.maxHearts });
+                    Debug.Log($"[IAP] RefreshWalletAfterIAP: wallet به‌روز شد — coins={r.coins}, hearts={r.hearts}");
+                }
             },
             _ => { });
-    }
-
-    private IEnumerator HandleGrantCoinPack(string coinPackCode)
-    {
-        requestInFlight = true;
-        ClearError();
-        ShowLoading(true);
-
-        yield return apiClient.GrantCoinPack(coinPackCode,
-            response =>
-            {
-                requestInFlight = false;
-                ShowLoading(false);
-                if (response?.wallet != null)
-                    UpdateWalletDisplay(response.wallet);
-                Debug.Log($"[GameManager] Coins granted: {response?.coinsGranted ?? 0}, New balance: {response?.wallet?.coins ?? 0}");
-                ShowMessage(response != null ? $"{GameStrings.BuySuccess} +{response.coinsGranted} coins." : GameStrings.BuySuccess);
-            },
-            error =>
-            {
-                requestInFlight = false;
-                ShowLoading(false);
-                ShowError(error);
-            });
     }
 
     private void OnBoosterClicked(string boosterCode)
