@@ -1,0 +1,30 @@
+pluginManagement {
+    repositories {
+        ARTIFACTORYREPOSITORY
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+
+        // ✅ JitPack (for Myket Billing Unity)
+        maven { url "https://jitpack.io" }
+    }
+}
+
+include ':launcher', ':unityLibrary'
+INCLUDES
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        ARTIFACTORYREPOSITORY
+        google()
+        mavenCentral()
+
+        // ✅ JitPack (for com.github.myketstore:myket-billing-unity)
+        maven { url "https://jitpack.io" }
+
+        flatDir {
+            dirs "${project(':unityLibrary').projectDir}/libs"
+        }
+    }
+}
