@@ -36,13 +36,13 @@ public static class BuildScript
 
     private static void SetDefineSymbols(string activeSymbol)
     {
-        var group = BuildTargetGroup.Android;
-        var current = PlayerSettings.GetScriptingDefineSymbolsForGroup(group);
+        var buildTarget = NamedBuildTarget.Android;
+        var current = PlayerSettings.GetScriptingDefineSymbols(buildTarget);
         var defines = current.Split(';').Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
         defines.Remove(BAZAAR_SYMBOL);
         defines.Remove(MYKET_SYMBOL);
         defines.Add(activeSymbol);
-        PlayerSettings.SetScriptingDefineSymbolsForGroup(group, string.Join(";", defines));
+        PlayerSettings.SetScriptingDefineSymbols(buildTarget, string.Join(";", defines));
     }
 
     private static void BuildAndroid(string apkPath)

@@ -15,10 +15,12 @@ public class IAPManager : MonoBehaviour
     public static IAPManager Instance { get; private set; }
 
     [SerializeField] private ApiClient apiClient;
+#pragma warning disable CS0414
     [Tooltip("Public key from Bazaar developer panel")]
     [SerializeField] private string bazaarPublicKey = "";
     [Tooltip("Public key from Myket developer panel")]
     [SerializeField] private string myketPublicKey = "";
+#pragma warning restore CS0414
 
     private bool billingReady;
     private Dictionary<string, string> skuToPrice = new Dictionary<string, string>();
