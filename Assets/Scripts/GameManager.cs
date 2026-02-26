@@ -2033,6 +2033,13 @@ public class GameManager : MonoBehaviour
             iap.Purchase(pack.platformProductId ?? pack.code);
             return;
         }
+        // روی اندروید فقط از طریق IAP (استور) خرید انجام می‌شود؛ بدون سمبل/پلاگین فرایند خرید باز نمی‌شود
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            ShowError("خرید از استور در این نسخه فعال نیست. از نسخهٔ کافه‌بازار یا مایکت استفاده کنید.");
+            return;
+        }
+        // در ادیتور یا پلتفرم غیراندروید: حالت تست (grant بدون پرداخت)
         string code = !string.IsNullOrEmpty(pack.code) ? pack.code : (pack.id > 0 ? pack.id.ToString() : null);
         if (string.IsNullOrWhiteSpace(code))
         {
