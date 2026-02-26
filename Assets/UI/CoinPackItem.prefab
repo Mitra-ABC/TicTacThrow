@@ -763,7 +763,7 @@ MonoBehaviour:
   descriptionText: {fileID: 1129675642589489332}
   coinsAmountText: {fileID: 4719263769472369889}
   bonusText: {fileID: 1968656909157317740}
-  priceText: {fileID: 0}
+  priceText: {fileID: 1347150203811503170}
   buyButton: {fileID: 6153660689596166076}
 --- !u!1 &8240305563304356887
 GameObject:
