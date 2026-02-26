@@ -1,0 +1,74 @@
+# Build Bazaar and Myket APKs. Requires Unity installed on the runner or use game-ci/unity-builder.
+# Each build sets its scripting define (BAZAAR_IAP or MYKET_IAP) and outputs Builds/<Store>/Game_<Store>.apk.
+
+name: Build Android (Bazaar + Myket)
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-bazaar:
+    name: Build Bazaar APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Unity
+        uses: actions/cache@v4
+        with:
+          path: /opt/unity
+          key: unity-${{ hashFiles('ProjectSettings/ProjectVersion.txt') }}
+
+      - name: Run Unity Build (Bazaar)
+        run: |
+          if [ -d /opt/unity/Editor ]; then
+            /opt/unity/Editor/Unity \
+              -batchmode -quit -nographics \
+              -projectPath "$GITHUB_WORKSPACE" \
+              -executeMethod BuildScript.PerformBazaarBuild \
+              -buildTarget Android \
+              -logFile -
+          else
+            echo "Unity not found at /opt/unity. Install Unity or use game-ci/unity-builder. See README."
+            exit 1
+          fi
+
+      - name: Upload Bazaar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Game_Bazaar
+          path: Builds/Bazaar/Game_Bazaar.apk
+
+  build-myket:
+    name: Build Myket APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Unity
+        uses: actions/cache@v4
+        with:
+          path: /opt/unity
+          key: unity-${{ hashFiles('ProjectSettings/ProjectVersion.txt') }}
+
+      - name: Run Unity Build (Myket)
+        run: |
+          if [ -d /opt/unity/Editor ]; then
+            /opt/unity/Editor/Unity \
+              -batchmode -quit -nographics \
+              -projectPath "$GITHUB_WORKSPACE" \
+              -executeMethod BuildScript.PerformMyketBuild \
+              -buildTarget Android \
+              -logFile -
+          else
+            echo "Unity not found at /opt/unity. Install Unity or use game-ci/unity-builder. See README."
+            exit 1
+          fi
+
+      - name: Upload Myket APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Game_Myket
+          path: Builds/Myket/Game_Myket.apk

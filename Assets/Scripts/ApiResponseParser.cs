@@ -102,6 +102,11 @@ public static class ApiResponseParser
         return Deserialize<GrantCoinPackResponse>(json, nameof(GrantCoinPackResponse));
     }
 
+    public static VerifyIAPResponse ParseVerifyIAPResponse(string json)
+    {
+        return Deserialize<VerifyIAPResponse>(json, nameof(VerifyIAPResponse));
+    }
+
     // ============ Error Response ============
 
     public static ErrorResponse ParseErrorResponse(string json)

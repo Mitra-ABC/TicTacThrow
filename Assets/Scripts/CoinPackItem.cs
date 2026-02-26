@@ -6,6 +6,7 @@ using System;
 /// <summary>
 /// Component for displaying a single coin pack item in the store.
 /// Attach this to the CoinPackItem prefab.
+/// When IAP is enabled, priceString should come from store SDK (IAPManager.RequestSkuPrices).
 /// </summary>
 public class CoinPackItem : MonoBehaviour
 {
@@ -13,33 +14,28 @@ public class CoinPackItem : MonoBehaviour
     [SerializeField] private TMP_Text descriptionText;
     [SerializeField] private TMP_Text coinsAmountText;
     [SerializeField] private TMP_Text bonusText;
+    [SerializeField] private TMP_Text priceText;
     [SerializeField] private Button buyButton;
 
     private CoinPack currentPack;
-    private Action<string> onBuyClicked;
+    private Action<CoinPack> onBuyClicked;
 
     /// <summary>
-    /// Sets the coin pack data and buy callback.
+    /// Sets the coin pack data, price string (from SDK when IAP enabled, or "—" / empty), and buy callback.
     /// </summary>
-    public void SetCoinPack(CoinPack pack, Action<string> onBuy)
+    public void SetCoinPack(CoinPack pack, string priceString, Action<CoinPack> onBuy)
     {
         currentPack = pack;
         onBuyClicked = onBuy;
 
         if (packNameText != null)
-        {
             packNameText.text = pack.displayName ?? "Coin Pack";
-        }
 
         if (descriptionText != null)
-        {
             descriptionText.text = pack.description ?? "";
-        }
 
         if (coinsAmountText != null)
-        {
             coinsAmountText.text = pack.coinsAmount.ToString();
-        }
 
         if (bonusText != null)
         {
@@ -54,12 +50,21 @@ public class CoinPackItem : MonoBehaviour
             }
         }
 
+        if (priceText != null)
+            priceText.text = string.IsNullOrEmpty(priceString) ? "—" : priceString;
+
         if (buyButton != null)
         {
             buyButton.onClick.RemoveAllListeners();
-            // Backend may return "code" or use id; fallback to id so we always send a valid identifier
-            string code = !string.IsNullOrEmpty(pack.code) ? pack.code : (pack.id > 0 ? pack.id.ToString() : null);
-            buyButton.onClick.AddListener(() => onBuyClicked?.Invoke(code));
+            buyButton.onClick.AddListener(() => onBuyClicked?.Invoke(currentPack));
         }
+    }
+
+    /// <summary>
+    /// Backward compatibility: set pack and callback only (no price). Use when IAP is disabled.
+    /// </summary>
+    public void SetCoinPack(CoinPack pack, Action<string> onBuyWithCode)
+    {
+        SetCoinPack(pack, "—", onBuyWithCode == null ? (Action<CoinPack>)null : p => onBuyWithCode.Invoke(!string.IsNullOrEmpty(p.code) ? p.code : (p.id > 0 ? p.id.ToString() : "")));
     }
 }

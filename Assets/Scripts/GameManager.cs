@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using TMPro;
 using UnityEngine;
@@ -99,6 +100,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Transform coinPacksContent;
     [SerializeField] private GameObject coinPackItemPrefab;
     [SerializeField] private Button closeStoreButton;
+    [SerializeField] private IAPManager iapManager;
 
     [Header("Boosters Panel")]
     [SerializeField] private GameObject boostersPanel;
@@ -1910,20 +1912,48 @@ public class GameManager : MonoBehaviour
     {
         ShowLoading(true);
         ClearError();
+        EconomyConfigResponse response = null;
+        string errorMsg = null;
         yield return apiClient.GetEconomyConfig(
-            response =>
+            r => { response = r; },
+            e => { errorMsg = e; });
+        ShowLoading(false);
+        if (errorMsg != null)
+        {
+            ShowError(errorMsg);
+            yield break;
+        }
+        if (response == null) yield break;
+
+        var iap = iapManager != null ? iapManager : IAPManager.Instance;
+        if (iap != null && iap.IsIAPEnabled && response.coinPacks != null && response.coinPacks.Length > 0)
+        {
+            var skus = new List<string>();
+            foreach (var p in response.coinPacks)
             {
-                ShowLoading(false);
-                DisplayStoreCoinPacksOnly(response);
-            },
-            error =>
+                if (p.isActive && !string.IsNullOrEmpty(p.platformProductId))
+                    skus.Add(p.platformProductId);
+            }
+            if (skus.Count > 0)
             {
-                ShowLoading(false);
-                ShowError(error);
-            });
+                bool pricesReceived = false;
+                Action<Dictionary<string, string>> onPrices = null;
+                onPrices = priceMap =>
+                {
+                    if (pricesReceived) return;
+                    pricesReceived = true;
+                    if (iap != null) iap.SkuPricesReady -= onPrices;
+                    DisplayStoreCoinPacksOnly(response, priceMap);
+                };
+                iap.SkuPricesReady += onPrices;
+                iap.RequestSkuPrices(skus.ToArray());
+                yield break;
+            }
+        }
+        DisplayStoreCoinPacksOnly(response, null);
     }
 
-    private void DisplayStoreCoinPacksOnly(EconomyConfigResponse config)
+    private void DisplayStoreCoinPacksOnly(EconomyConfigResponse config, Dictionary<string, string> priceBySku)
     {
         if (storeTitle != null) storeTitle.text = GameStrings.StoreTitle;
         if (coinPacksContent == null) return;
@@ -1935,7 +1965,10 @@ public class GameManager : MonoBehaviour
             var item = Instantiate(coinPackItemPrefab, coinPacksContent);
             var itemScript = item.GetComponent<CoinPackItem>();
             if (itemScript != null)
-                itemScript.SetCoinPack(pack, OnCoinPackClicked);
+            {
+                string price = (priceBySku != null && pack.platformProductId != null && priceBySku.TryGetValue(pack.platformProductId, out var p)) ? p : "—";
+                itemScript.SetCoinPack(pack, price, OnCoinPackClicked);
+            }
         }
     }
 
@@ -1978,16 +2011,74 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void OnCoinPackClicked(string coinPackCode)
+    private void OnCoinPackClicked(CoinPack pack)
     {
         if (!EnsureLoggedIn()) return;
         if (requestInFlight) return;
-        if (string.IsNullOrWhiteSpace(coinPackCode))
+        if (pack == null)
         {
-            ShowError("Coin pack code is missing. The store may not have loaded correctly.");
+            ShowError("Coin pack is missing. The store may not have loaded correctly.");
             return;
         }
-        StartCoroutine(HandleGrantCoinPack(coinPackCode));
+        var iap = iapManager != null ? iapManager : IAPManager.Instance;
+        if (iap != null && iap.IsIAPEnabled)
+        {
+            iap.OnPurchaseVerifySuccess -= OnIAPVerifySuccess;
+            iap.OnPurchaseVerifyFailed -= OnIAPVerifyFailed;
+            iap.OnPurchaseVerifySuccess += OnIAPVerifySuccess;
+            iap.OnPurchaseVerifyFailed += OnIAPVerifyFailed;
+            requestInFlight = true;
+            ClearError();
+            ShowLoading(true);
+            iap.Purchase(pack.platformProductId ?? pack.code);
+            return;
+        }
+        string code = !string.IsNullOrEmpty(pack.code) ? pack.code : (pack.id > 0 ? pack.id.ToString() : null);
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            ShowError("Coin pack code is missing.");
+            return;
+        }
+        StartCoroutine(HandleGrantCoinPack(code));
+    }
+
+    private void OnIAPVerifySuccess()
+    {
+        requestInFlight = false;
+        ShowLoading(false);
+        var iap = iapManager != null ? iapManager : IAPManager.Instance;
+        if (iap != null)
+        {
+            iap.OnPurchaseVerifySuccess -= OnIAPVerifySuccess;
+            iap.OnPurchaseVerifyFailed -= OnIAPVerifyFailed;
+        }
+        StartCoroutine(RefreshWalletAfterIAP());
+        ShowMessage(GameStrings.BuySuccess);
+    }
+
+    private void OnIAPVerifyFailed(string message)
+    {
+        requestInFlight = false;
+        ShowLoading(false);
+        var iap = iapManager != null ? iapManager : IAPManager.Instance;
+        if (iap != null)
+        {
+            iap.OnPurchaseVerifySuccess -= OnIAPVerifySuccess;
+            iap.OnPurchaseVerifyFailed -= OnIAPVerifyFailed;
+        }
+        ShowError(message ?? "Purchase failed.");
+    }
+
+    private IEnumerator RefreshWalletAfterIAP()
+    {
+        if (apiClient == null) yield break;
+        yield return apiClient.GetWallet(
+            r =>
+            {
+                if (r != null)
+                    UpdateWalletDisplay(new WalletInfo { coins = r.coins, hearts = r.hearts, maxHearts = r.maxHearts });
+            },
+            _ => { });
     }
 
     private IEnumerator HandleGrantCoinPack(string coinPackCode)

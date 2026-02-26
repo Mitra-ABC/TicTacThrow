@@ -697,6 +697,69 @@ public class ApiClient : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Server-side IAP verification (Bazaar/Myket). Call after native purchase success with sku (platform_product_id), token, and store ("BAZAAR" or "MYKET").
+    /// </summary>
+    public IEnumerator VerifyIAP(string sku, string token, string store, Action<VerifyIAPResponse> onSuccess, Action<string> onError)
+    {
+        if (string.IsNullOrWhiteSpace(sku) || string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(store))
+        {
+            onError?.Invoke("sku, token, and store are required.");
+            yield break;
+        }
+
+        var tokenAuth = GetToken();
+        if (string.IsNullOrEmpty(tokenAuth))
+        {
+            onError?.Invoke("Not authenticated. Please login first.");
+            yield break;
+        }
+
+        string json = $"{{\"sku\":\"{EscapeJson(sku)}\",\"token\":\"{EscapeJson(token)}\",\"store\":\"{EscapeJson(store)}\"}}";
+        var url = $"{BaseUrl}/api/iap/verify";
+        Log($"[ApiClient] Sending POST {url} (IAP verify) sku={sku} store={store}");
+
+        using (var request = new UnityWebRequest(url, "POST"))
+        {
+            request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+            request.SetRequestHeader("Authorization", $"Bearer {tokenAuth}");
+            request.certificateHandler = new BypassCertificateHandler();
+            if (requestTimeoutSeconds > 0f)
+                request.timeout = Mathf.CeilToInt(requestTimeoutSeconds);
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                var errorMessage = ExtractErrorMessage(request);
+                LogWarning($"[ApiClient] VerifyIAP FAILED - {errorMessage}");
+                onError?.Invoke(errorMessage);
+                yield break;
+            }
+
+            var responseText = request.downloadHandler.text;
+            Log($"[ApiClient] VerifyIAP response: {responseText}");
+            try
+            {
+                var data = ApiResponseParser.ParseVerifyIAPResponse(responseText);
+                onSuccess?.Invoke(data);
+            }
+            catch (Exception ex)
+            {
+                LogWarning($"[ApiClient] VerifyIAP parse error: {ex.Message}");
+                onError?.Invoke($"JSON parse error: {ex.Message}");
+            }
+        }
+    }
+
+    private static string EscapeJson(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        return value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
+    }
+
     // ============ Core Request Method ============
 
     private IEnumerator SendRequest(string endpoint, string method, string jsonBody, bool requiresAuth, Action<string> onSuccess, Action<string> onError)

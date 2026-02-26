@@ -293,6 +293,13 @@ public class GrantCoinPackResponse
     public WalletInfo wallet;
 }
 
+[Serializable]
+public class VerifyIAPResponse
+{
+    public string status;
+    public string message;
+}
+
 // ============ Error Response ============
 
 [Serializable]
