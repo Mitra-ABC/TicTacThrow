@@ -23,8 +23,8 @@
 
 ### ۱. اضافه کردن پلاگین‌های رسمی یونیتی
 
-- **کافه‌بازار:** از [CafebazaarUnity](https://github.com/cafebazaar/CafebazaarUnity) پلاگین را بگیرید؛ `BazaarIAB.jar` را از پوشه JavaPlugin بسازید (`gradlew createJar`) و اسکریپت‌های C# و تنظیمات AndroidManifest را طبق README اضافه کنید.
-- **مایکت:** از [myket.ir](https://myket.ir/kb/pages/unity-with-gradle-fa/) پلاگین پرداخت درون‌برنامه‌ای مایکت را برای نسخه یونیتی خود (۶ یا ۲۰۲۱/۲۰۲۲) دانلود و وارد پروژه کنید. در صورت استفاده از Unity 2022.2 یا قدیمی‌تر، دو خط `namespace` و `ndkPath` را از `launcherTemplate.gradle` حذف کنید.
+- **کافه‌بازار:** از **[Poolakey Unity SDK](https://github.com/cafebazaar/PoolakeyUnitySdk/releases)** (IAP جدید کافه‌بازار) پکیج یونیتی را دانلود و وارد پروژه کنید. مستندات: [راهنمای یونیتی کافه‌بازار](https://developers.cafebazaar.ir/fa/guidelines/in-app-billing/implementation/unity-2). دو نوع پکیج برای Unity 6 و نسخه‌های قبل از Unity 6 وجود دارد؛ مطابق نسخه یونیتی خود انتخاب کنید. ویکی و نمونه در [مخزن PoolakeyUnitySdk](https://github.com/cafebazaar/PoolakeyUnitySdk) موجود است.
+- **مایکت:** از **[پایگاه دانش مایکت - یونیتی با Gradle](https://myket.ir/kb/pages/unity-with-gradle-fa/)** پلاگین پرداخت درون‌برنامه‌ای مایکت را برای Unity 6 یا ۲۰۲۱/۲۰۲۲ دانلود و وارد پروژه کنید. نمونه پروژه: [myket-billing-unity-sample (شاخه unity/2022)](https://github.com/myketstore/myket-billing-unity-sample/tree/unity/2022). در صورت استفاده از Unity 2022.2 یا قدیمی‌تر، دو خط `namespace "**NAMESPACE**"` و `ndkPath "**NDKPATH**"` را از `launcherTemplate.gradle` حذف کنید.
 
 ### ۲. قرار دادن IAPManager در صحنه
 

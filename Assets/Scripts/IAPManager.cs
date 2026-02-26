@@ -7,7 +7,8 @@ using UnityEngine;
 
 /// <summary>
 /// Multi-store IAP (Bazaar/Myket). Uses official Unity SDKs via reflection so the project compiles without plugins.
-/// Add CafebazaarUnity and Myket IAP plugins for Bazaar/Myket builds. Set BAZAAR_IAP or MYKET_IAP in build.
+/// Bazaar: Poolakey Unity SDK (https://github.com/cafebazaar/PoolakeyUnitySdk/releases).
+/// Myket: Myket billing Unity plugin (https://myket.ir/kb/pages/unity-with-gradle-fa/). Set BAZAAR_IAP or MYKET_IAP in build.
 /// </summary>
 public class IAPManager : MonoBehaviour
 {
@@ -78,42 +79,186 @@ public class IAPManager : MonoBehaviour
 
     private void OnDestroy()
     {
+#if BAZAAR_IAP
+        if (poolakeyPayment != null)
+        {
+            try
+            {
+                poolakeyPayment.GetType().GetMethod("Disconnect", Type.EmptyTypes)?.Invoke(poolakeyPayment, null);
+            }
+            catch { /* ignore */ }
+            poolakeyPayment = null;
+        }
+#endif
         if (Instance == this)
             Instance = null;
     }
 
 #if BAZAAR_IAP
+    private object poolakeyPayment;
+
     private void InitBazaar()
     {
-        var bazaarIAB = FindType("BazaarIAB");
-        var eventManager = FindType("IABEventManager");
-        if (bazaarIAB == null || eventManager == null)
+        var paymentType = FindType("Payment");
+        var configType = FindType("PaymentConfiguration");
+        var securityCheckType = FindType("SecurityCheck");
+        if (paymentType == null || configType == null || securityCheckType == null)
         {
-            Debug.LogWarning("[IAPManager] Bazaar IAB types not found. Add CafebazaarUnity plugin.");
+            Debug.LogWarning("[IAPManager] Poolakey types not found. Add Poolakey Unity SDK from https://github.com/cafebazaar/PoolakeyUnitySdk/releases");
             return;
         }
         string key = string.IsNullOrEmpty(bazaarPublicKey) ? "" : bazaarPublicKey.Trim();
         if (string.IsNullOrEmpty(key))
         {
-            Debug.LogWarning("[IAPManager] Bazaar public key is not set.");
+            Debug.LogWarning("[IAPManager] Bazaar (Poolakey) public key is not set.");
         }
-        CallStatic(bazaarIAB, "init", key);
-        SubscribeStaticEvent(eventManager, "billingSupportedEvent", (Action)OnBazaarBillingSupported);
-        SubscribeStaticEvent(eventManager, "billingNotSupportedEvent", (Action)OnBillingNotSupported);
-        SubscribeStaticEvent(eventManager, "queryInventoryFailedEvent", (Action<string>)OnQueryFailed);
-        SubscribeSkuDetailsSucceeded(eventManager, "querySkuDetailsSucceededEvent", OnBazaarSkuDetailsSucceeded);
-        SubscribeStaticEvent(eventManager, "querySkuDetailsFailedEvent", (Action<string>)OnQueryFailed);
-        SubscribePurchaseSucceeded(eventManager, "purchaseSucceededEvent", OnBazaarPurchaseSucceeded);
-        SubscribeStaticEvent(eventManager, "purchaseFailedEvent", (Action<string>)OnPurchaseFailed);
+        object securityCheck = CallStaticReturn(securityCheckType, "Enable", key);
+        if (securityCheck == null) return;
+        object config = Activator.CreateInstance(configType, securityCheck);
+        if (config == null) return;
+        poolakeyPayment = Activator.CreateInstance(paymentType, config);
+        if (poolakeyPayment == null) return;
+        CallPoolakeyConnect();
     }
 
-    private void OnBazaarBillingSupported() { billingReady = true; RequestPendingInventoryOrPrices(); }
-    private void OnBazaarSkuDetailsSucceeded(IList skuDetails) { ExtractPricesFromSkuDetails(skuDetails); }
-    private void OnBazaarPurchaseSucceeded(object purchase)
+    private void CallPoolakeyConnect()
     {
-        if (purchase == null) return;
-        string sku = GetProperty(purchase, "ProductId") ?? GetProperty(purchase, "Sku");
-        string token = GetProperty(purchase, "PurchaseToken") ?? GetProperty(purchase, "Token");
+        if (poolakeyPayment == null) return;
+        var paymentType = poolakeyPayment.GetType();
+        var resultType = FindType("Result");
+        if (resultType == null) return;
+        var callbackType = typeof(Action<>).MakeGenericType(resultType);
+        var method = paymentType.GetMethod("Connect", new[] { callbackType });
+        if (method == null) return;
+        var onConnect = Delegate.CreateDelegate(callbackType, this, GetType().GetMethod("OnPoolakeyConnect", BindingFlags.NonPublic | BindingFlags.Instance));
+        method.Invoke(poolakeyPayment, new object[] { onConnect });
+    }
+
+    private void OnPoolakeyConnect(object result)
+    {
+        if (result == null) return;
+        var statusType = FindType("Status");
+        var successEnum = statusType?.GetField("Success")?.GetValue(null);
+        var resultType = result.GetType();
+        var resultStatus = resultType.GetProperty("Status")?.GetValue(result) ?? resultType.GetProperty("status")?.GetValue(result);
+        if (successEnum != null && resultStatus != null && resultStatus.Equals(successEnum))
+        {
+            billingReady = true;
+            RequestPendingInventoryOrPrices();
+        }
+        else
+        {
+            var rt = result.GetType();
+            var msg = (rt.GetProperty("Message") ?? rt.GetProperty("message"))?.GetValue(result) as string;
+            Debug.LogWarning($"[IAPManager] Poolakey Connect failed: {msg}");
+        }
+    }
+
+    private void CallPoolakeyGetSkuDetails(string[] skus)
+    {
+        if (poolakeyPayment == null || skus == null || skus.Length == 0) return;
+        var paymentType = poolakeyPayment.GetType();
+        var skuResultType = FindType("SKUDetailsResult");
+        if (skuResultType == null) return;
+        var callbackType = typeof(Action<>).MakeGenericType(skuResultType);
+        var listType = typeof(System.Collections.Generic.List<>).MakeGenericType(typeof(string));
+        var method = paymentType.GetMethod("GetSkuDetails", new[] { listType, callbackType });
+        if (method != null)
+        {
+            var list = Activator.CreateInstance(listType);
+            var addMethod = listType.GetMethod("Add");
+            foreach (var s in skus) addMethod?.Invoke(list, new object[] { s });
+            var onResult = Delegate.CreateDelegate(callbackType, this, GetType().GetMethod("OnPoolakeySkuDetails", BindingFlags.NonPublic | BindingFlags.Instance));
+            method.Invoke(poolakeyPayment, new object[] { list, onResult });
+            return;
+        }
+        var method2 = paymentType.GetMethod("GetSkuDetails", new[] { typeof(string), callbackType });
+        if (method2 != null)
+        {
+            var onResult = Delegate.CreateDelegate(callbackType, this, GetType().GetMethod("OnPoolakeySkuDetails", BindingFlags.NonPublic | BindingFlags.Instance));
+            method2.Invoke(poolakeyPayment, new object[] { string.Join(",", skus), onResult });
+        }
+    }
+
+    private void OnPoolakeySkuDetails(object skuDetailsResult)
+    {
+        if (skuDetailsResult == null) return;
+        var statusType = FindType("Status");
+        var successEnum = statusType?.GetField("Success")?.GetValue(null);
+        var sdrType = skuDetailsResult.GetType();
+        var resultStatus = sdrType.GetProperty("Status")?.GetValue(skuDetailsResult) ?? sdrType.GetProperty("status")?.GetValue(skuDetailsResult);
+        if (successEnum == null || resultStatus == null || !resultStatus.Equals(successEnum))
+        {
+            SkuPricesReady?.Invoke(new Dictionary<string, string>(skuToPrice));
+            return;
+        }
+        var dataProp = sdrType.GetProperty("Data") ?? sdrType.GetProperty("data");
+        var data = dataProp?.GetValue(skuDetailsResult);
+        if (data is IList list)
+            ExtractPricesFromSkuDetails(list);
+        else
+            SkuPricesReady?.Invoke(new Dictionary<string, string>(skuToPrice));
+    }
+
+    private void CallPoolakeyPurchase(string productId)
+    {
+        if (poolakeyPayment == null) return;
+        var paymentType = poolakeyPayment.GetType();
+        var purchaseResultType = FindType("PurchaseResult");
+        if (purchaseResultType == null) purchaseResultType = FindType("Result");
+        var callbackType = typeof(Action<>).MakeGenericType(purchaseResultType ?? typeof(object));
+        var method = paymentType.GetMethod("Purchase", new[] { typeof(string), callbackType });
+        if (method != null)
+        {
+            var onResult = Delegate.CreateDelegate(callbackType, this, GetType().GetMethod("OnPoolakeyPurchaseResult", BindingFlags.NonPublic | BindingFlags.Instance));
+            method.Invoke(poolakeyPayment, new object[] { productId, onResult });
+            return;
+        }
+        var asyncMethod = paymentType.GetMethod("Purchase", new[] { typeof(string) });
+        if (asyncMethod != null)
+            StartCoroutine(RunPoolakeyPurchaseAsync(productId, asyncMethod));
+        else
+            OnPurchaseVerifyFailed?.Invoke("Poolakey Purchase not available.");
+    }
+
+    private System.Collections.IEnumerator RunPoolakeyPurchaseAsync(string productId, MethodInfo purchaseMethod)
+    {
+        var task = purchaseMethod.Invoke(poolakeyPayment, new object[] { productId });
+        if (task == null) { OnPurchaseVerifyFailed?.Invoke("Purchase failed."); yield break; }
+        var getAwaiter = task.GetType().GetMethod("GetAwaiter");
+        if (getAwaiter == null) { OnPurchaseVerifyFailed?.Invoke("Purchase failed."); yield break; }
+        var awaiter = getAwaiter.Invoke(task, null);
+        if (awaiter == null) { OnPurchaseVerifyFailed?.Invoke("Purchase failed."); yield break; }
+        var getResult = awaiter.GetType().GetMethod("GetResult");
+        while (true)
+        {
+            var isCompleted = awaiter.GetType().GetProperty("IsCompleted")?.GetValue(awaiter);
+            if (isCompleted is bool b && b) break;
+            yield return null;
+        }
+        var result = getResult?.Invoke(awaiter, null);
+        if (result == null) { OnPurchaseVerifyFailed?.Invoke("Purchase failed."); yield break; }
+        OnPoolakeyPurchaseResult(result);
+    }
+
+    private void OnPoolakeyPurchaseResult(object result)
+    {
+        if (result == null) { OnPurchaseVerifyFailed?.Invoke("Purchase failed."); return; }
+        var statusType = FindType("Status");
+        var successEnum = statusType?.GetField("Success")?.GetValue(null);
+        var resultType = result.GetType();
+        var resultStatus = resultType.GetProperty("Status")?.GetValue(result) ?? resultType.GetProperty("status")?.GetValue(result);
+        if (successEnum == null || resultStatus == null || !resultStatus.Equals(successEnum))
+        {
+            var msg = (resultType.GetProperty("Message") ?? resultType.GetProperty("message"))?.GetValue(result) as string;
+            OnPurchaseVerifyFailed?.Invoke(msg ?? "Purchase failed.");
+            return;
+        }
+        var dataProp = resultType.GetProperty("Data") ?? resultType.GetProperty("data");
+        var data = dataProp?.GetValue(result);
+        if (data == null) { OnPurchaseVerifyFailed?.Invoke("Could not read purchase data."); return; }
+        string sku = GetProperty(data, "productId") ?? GetProperty(data, "productID") ?? GetProperty(data, "ProductId");
+        string token = GetProperty(data, "purchaseToken") ?? GetProperty(data, "PurchaseToken");
         if (!string.IsNullOrEmpty(sku) && !string.IsNullOrEmpty(token))
             StartCoroutine(VerifyPurchaseAndNotify(sku, token));
         else
@@ -233,10 +378,9 @@ public class IAPManager : MonoBehaviour
             return;
         }
 #if BAZAAR_IAP
-        var bazaarIAB = FindType("BazaarIAB");
-        if (bazaarIAB == null) { pendingSkus = skus; return; }
+        if (poolakeyPayment == null) { pendingSkus = skus; return; }
         if (!billingReady) { pendingSkus = skus; return; }
-        CallStatic(bazaarIAB, "querySkuDetails", skus);
+        CallPoolakeyGetSkuDetails(skus);
 #elif MYKET_IAP
         var myketIAB = FindType("MyketIAB");
         if (myketIAB == null) { pendingSkus = skus; return; }
@@ -256,9 +400,8 @@ public class IAPManager : MonoBehaviour
             return;
         }
 #if BAZAAR_IAP
-        var bazaarIAB = FindType("BazaarIAB");
-        if (bazaarIAB == null) { OnPurchaseVerifyFailed?.Invoke("Bazaar IAB not available."); return; }
-        CallStatic(bazaarIAB, "purchaseProduct", platformProductId);
+        if (poolakeyPayment == null) { OnPurchaseVerifyFailed?.Invoke("Poolakey Payment not available."); return; }
+        CallPoolakeyPurchase(platformProductId);
 #elif MYKET_IAP
         var myketIAB = FindType("MyketIAB");
         if (myketIAB == null) { OnPurchaseVerifyFailed?.Invoke("Myket IAB not available."); return; }
@@ -273,9 +416,8 @@ public class IAPManager : MonoBehaviour
     {
         if (skus == null || skus.Length == 0) return;
 #if BAZAAR_IAP
-        var bazaarIAB = FindType("BazaarIAB");
-        if (bazaarIAB == null || !billingReady) return;
-        CallStatic(bazaarIAB, "queryInventory", skus);
+        if (poolakeyPayment == null || !billingReady) return;
+        CallPoolakeyGetSkuDetails(skus);
         pendingSkus = skus;
 #elif MYKET_IAP
         var myketIAB = FindType("MyketIAB");
@@ -325,7 +467,9 @@ public class IAPManager : MonoBehaviour
             {
                 var t = asm.GetType(typeName);
                 if (t != null) return t;
-                t = asm.GetType("Cafebazaar." + typeName);
+                t = asm.GetType("Poolakey." + typeName);
+                if (t != null) return t;
+                t = asm.GetType("Com.Poolakey." + typeName);
                 if (t != null) return t;
                 t = asm.GetType("Myket." + typeName);
                 if (t != null) return t;
@@ -333,6 +477,25 @@ public class IAPManager : MonoBehaviour
             catch { /* ignore */ }
         }
         return null;
+    }
+
+    private static object CallStaticReturn(Type type, string methodName, object arg)
+    {
+        if (type == null) return null;
+        try
+        {
+            var argType = arg?.GetType() ?? typeof(string);
+            var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static, null, new[] { argType }, null);
+            if (method == null)
+                method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+            if (method == null) return null;
+            return method.Invoke(null, new[] { arg });
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[IAPManager] CallStaticReturn {type?.Name}.{methodName}: {ex.Message}");
+            return null;
+        }
     }
 
     private static void CallStatic(Type type, string methodName, object arg)
