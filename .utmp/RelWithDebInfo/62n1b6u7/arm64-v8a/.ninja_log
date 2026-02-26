@@ -1,12 +1,23 @@
 # ninja log v5
-93	1096	7853524529021421	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	3c8c8d494b2bce1a
-1098	3393	7853524547840935	C:/Users/AsusIran/Desktop/Hikary/Work/Game/Tic Tac Throw/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/62n1b6u7/obj/arm64-v8a/libswappywrapper.so	13978fc829a3b459
-41	4569	7853524563333998	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	4cc3510054a83665
-56	4717	7853524563293822	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	dfaa056c68819942
-1	4807	7853524565629243	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	330e6dba8c344fc6
-80	4848	7853524564643749	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	259d52d2c89b497c
-10	4978	7853524567264000	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	e12c5bab0f95b655
-69	5166	7853524569667562	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	33ac1398aaac684d
-30	5237	7853524571177169	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	67f7e35f85102922
 20	5966	7853524578504635	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	7593ae16bb816e98
+93	1096	7853524529021421	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	3c8c8d494b2bce1a
+41	4569	7853524563333998	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	4cc3510054a83665
+1098	3393	7853524547840935	C:/Users/AsusIran/Desktop/Hikary/Work/Game/Tic Tac Throw/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/62n1b6u7/obj/arm64-v8a/libswappywrapper.so	13978fc829a3b459
+56	4717	7853524563293822	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	dfaa056c68819942
+80	4848	7853524564643749	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	259d52d2c89b497c
+1	4807	7853524565629243	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	330e6dba8c344fc6
+69	5166	7853524569667562	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	33ac1398aaac684d
+10	4978	7853524567264000	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	e12c5bab0f95b655
+30	5237	7853524571177169	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	67f7e35f85102922
 5966	6145	7853524580468195	C:/Users/AsusIran/Desktop/Hikary/Work/Game/Tic Tac Throw/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/62n1b6u7/obj/arm64-v8a/libgame.so	513645ad9414f4b7
+99	1571	7925917896250381	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	3c8c8d494b2bce1a
+1571	2355	7925917903927904	C:/Users/AsusIran/Desktop/Hikary/Work/Game/Tic Tac Throw/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/62n1b6u7/obj/arm64-v8a/libswappywrapper.so	13978fc829a3b459
+18	4410	7925917924377586	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	4cc3510054a83665
+55	4499	7925917925185391	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	dfaa056c68819942
+29	4543	7925917925641494	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	e12c5bab0f95b655
+65	4562	7925917925834743	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	259d52d2c89b497c
+41	4703	7925917927528808	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	330e6dba8c344fc6
+77	5093	7925917931443333	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	67f7e35f85102922
+10	5511	7925917933886536	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	7593ae16bb816e98
+89	5858	7925917938686750	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	33ac1398aaac684d
+5858	6096	7925917941399798	C:/Users/AsusIran/Desktop/Hikary/Work/Game/Tic Tac Throw/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/62n1b6u7/obj/arm64-v8a/libgame.so	513645ad9414f4b7
