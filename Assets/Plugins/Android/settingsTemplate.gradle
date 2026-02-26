@@ -5,6 +5,9 @@ pluginManagement {
         google()
         mavenCentral()
 
+        // ✅ Myket Maven
+        maven { url "https://maven.myket.ir" }
+
         // ✅ JitPack (for Myket Billing Unity)
         maven { url "https://jitpack.io" }
     }
@@ -19,6 +22,9 @@ dependencyResolutionManagement {
         ARTIFACTORYREPOSITORY
         google()
         mavenCentral()
+
+        // ✅ Myket Maven
+        maven { url "https://maven.myket.ir" }
 
         // ✅ JitPack (for com.github.myketstore:myket-billing-unity)
         maven { url "https://jitpack.io" }
