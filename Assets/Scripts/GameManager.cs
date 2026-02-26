@@ -1910,7 +1910,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator HandleLoadEconomyConfigForStore()
     {
-        Debug.Log("[IAP] HandleLoadEconomyConfigForStore: باز شدن استور — درخواست GetEconomyConfig");
+        Debug.Log("[IAP] HandleLoadEconomyConfigForStore: store opened, requesting GetEconomyConfig");
         ShowLoading(true);
         ClearError();
         EconomyConfigResponse response = null;
@@ -1921,12 +1921,12 @@ public class GameManager : MonoBehaviour
         ShowLoading(false);
         if (errorMsg != null)
         {
-            Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: خطای اقتصاد — {errorMsg}");
+            Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: economy error — {errorMsg}");
             ShowError(errorMsg);
             yield break;
         }
         if (response == null) yield break;
-        Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: اقتصاد لود شد — coinPacks={response.coinPacks?.Length ?? 0}");
+        Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: economy loaded, coinPacks={response.coinPacks?.Length ?? 0}");
 
         var iap = iapManager != null ? iapManager : IAPManager.Instance;
         if (iap != null && iap.IsIAPEnabled && response.coinPacks != null && response.coinPacks.Length > 0)
@@ -1939,7 +1939,7 @@ public class GameManager : MonoBehaviour
             }
             if (skus.Count > 0)
             {
-                Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: درخواست قیمت از SDK — skus={string.Join(",", skus)}");
+                Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: requesting prices from SDK, skus={string.Join(",", skus)}");
                 bool pricesReceived = false;
                 Action<Dictionary<string, string>> onPrices = null;
                 onPrices = priceMap =>
@@ -1947,7 +1947,7 @@ public class GameManager : MonoBehaviour
                     if (pricesReceived) return;
                     pricesReceived = true;
                     if (iap != null) iap.SkuPricesReady -= onPrices;
-                    Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: SkuPricesReady — تعداد قیمت={priceMap?.Count ?? 0}");
+                    Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: SkuPricesReady, price count={priceMap?.Count ?? 0}");
                     DisplayStoreCoinPacksOnly(response, priceMap);
                 };
                 iap.SkuPricesReady += onPrices;
@@ -1955,7 +1955,7 @@ public class GameManager : MonoBehaviour
                 yield break;
             }
         }
-        Debug.Log("[IAP] HandleLoadEconomyConfigForStore: نمایش لیست بدون قیمت SDK");
+        Debug.Log("[IAP] HandleLoadEconomyConfigForStore: showing list without SDK prices");
         DisplayStoreCoinPacksOnly(response, null);
     }
 
@@ -2031,7 +2031,7 @@ public class GameManager : MonoBehaviour
         Debug.Log($"[IAP] OnCoinPackClicked: iap={(iap != null ? "ok" : "null")}, IsIAPEnabled={iap?.IsIAPEnabled ?? false}");
         if (iap != null && iap.IsIAPEnabled)
         {
-            Debug.Log($"[IAP] OnCoinPackClicked: مسیر IAP — Purchase(sku={pack.platformProductId ?? pack.code})");
+            Debug.Log($"[IAP] OnCoinPackClicked: IAP path — Purchase(sku={pack.platformProductId ?? pack.code})");
             iap.OnPurchaseVerifySuccess -= OnIAPVerifySuccess;
             iap.OnPurchaseVerifyFailed -= OnIAPVerifyFailed;
             iap.OnPurchaseVerifySuccess += OnIAPVerifySuccess;
@@ -2042,14 +2042,14 @@ public class GameManager : MonoBehaviour
             iap.Purchase(pack.platformProductId ?? pack.code);
             return;
         }
-        // خرید بسته کوین فقط از طریق کافه‌بازار یا مایکت (IAP). مسیر grant رایگان حذف شده.
-        Debug.Log("[IAP] OnCoinPackClicked: IAP غیرفعال — نمایش پیام");
+        // Coin pack purchase only via Bazaar/Myket IAP; free grant path removed.
+        Debug.Log("[IAP] OnCoinPackClicked: IAP disabled, showing message");
         ShowError("خرید فقط از طریق اپ کافه‌بازار یا مایکت امکان‌پذیر است. از نسخهٔ استور استفاده کنید.");
     }
 
     private void OnIAPVerifySuccess()
     {
-        Debug.Log("[IAP] OnIAPVerifySuccess: سرور تأیید کرد — به‌روزرسانی wallet و نمایش موفقیت");
+        Debug.Log("[IAP] OnIAPVerifySuccess: server verified, refreshing wallet and showing success");
         requestInFlight = false;
         ShowLoading(false);
         var iap = iapManager != null ? iapManager : IAPManager.Instance;
@@ -2078,7 +2078,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator RefreshWalletAfterIAP()
     {
-        Debug.Log("[IAP] RefreshWalletAfterIAP: درخواست GetWallet برای به‌روزرسانی نمایش");
+        Debug.Log("[IAP] RefreshWalletAfterIAP: requesting GetWallet to refresh display");
         if (apiClient == null) yield break;
         yield return apiClient.GetWallet(
             r =>
@@ -2086,7 +2086,7 @@ public class GameManager : MonoBehaviour
                 if (r != null)
                 {
                     UpdateWalletDisplay(new WalletInfo { coins = r.coins, hearts = r.hearts, maxHearts = r.maxHearts });
-                    Debug.Log($"[IAP] RefreshWalletAfterIAP: wallet به‌روز شد — coins={r.coins}, hearts={r.hearts}");
+                    Debug.Log($"[IAP] RefreshWalletAfterIAP: wallet refreshed, coins={r.coins}, hearts={r.hearts}");
                 }
             },
             _ => { });

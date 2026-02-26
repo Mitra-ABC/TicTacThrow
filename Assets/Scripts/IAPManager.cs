@@ -71,13 +71,13 @@ public class IAPManager : MonoBehaviour
             apiClient = FindFirstObjectByType<ApiClient>();
 
 #if BAZAAR_IAP
-        Debug.Log("[IAP] IAPManager.Awake: استور=BAZAAR (Poolakey) — InitBazaar");
+        Debug.Log("[IAP] IAPManager.Awake: store=BAZAAR (Poolakey), InitBazaar");
         InitBazaar();
 #elif MYKET_IAP
-        Debug.Log("[IAP] IAPManager.Awake: استور=MYKET — InitMyket");
+        Debug.Log("[IAP] IAPManager.Awake: store=MYKET, InitMyket");
         InitMyket();
 #else
-        Debug.Log("[IAP] IAPManager.Awake: هیچ سمبل IAP تعریف نشده — IsIAPEnabled=false");
+        Debug.Log("[IAP] IAPManager.Awake: no IAP define symbol, IsIAPEnabled=false");
         billingReady = false;
 #endif
     }
@@ -104,7 +104,7 @@ public class IAPManager : MonoBehaviour
 
     private void InitBazaar()
     {
-        Debug.Log("[IAP] InitBazaar: جستجوی نوع‌های Poolakey (Payment, PaymentConfiguration, SecurityCheck)");
+        Debug.Log("[IAP] InitBazaar: resolving Poolakey types (Payment, PaymentConfiguration, SecurityCheck)");
         var paymentType = FindType("Payment");
         var configType = FindType("PaymentConfiguration");
         var securityCheckType = FindType("SecurityCheck");
@@ -113,7 +113,7 @@ public class IAPManager : MonoBehaviour
             Debug.LogWarning("[IAP] InitBazaar: Poolakey types not found. Add Poolakey Unity SDK from https://github.com/cafebazaar/PoolakeyUnitySdk/releases");
             return;
         }
-        Debug.Log("[IAP] InitBazaar: نوع‌ها پیدا شدند — ساخت Payment و Connect");
+        Debug.Log("[IAP] InitBazaar: types found, creating Payment and Connect");
         string key = string.IsNullOrEmpty(bazaarPublicKey) ? "" : bazaarPublicKey.Trim();
         if (string.IsNullOrEmpty(key))
         {
@@ -150,7 +150,7 @@ public class IAPManager : MonoBehaviour
         var resultStatus = resultType.GetProperty("Status")?.GetValue(result) ?? resultType.GetProperty("status")?.GetValue(result);
         if (successEnum != null && resultStatus != null && resultStatus.Equals(successEnum))
         {
-            Debug.Log("[IAP] OnPoolakeyConnect: موفق — billingReady=true, RequestPendingInventoryOrPrices");
+            Debug.Log("[IAP] OnPoolakeyConnect: success, billingReady=true, RequestPendingInventoryOrPrices");
             billingReady = true;
             RequestPendingInventoryOrPrices();
         }
@@ -158,7 +158,7 @@ public class IAPManager : MonoBehaviour
         {
             var rt = result.GetType();
             var msg = (rt.GetProperty("Message") ?? rt.GetProperty("message"))?.GetValue(result) as string;
-            Debug.LogWarning($"[IAP] OnPoolakeyConnect: ناموفق — {msg}");
+            Debug.LogWarning($"[IAP] OnPoolakeyConnect: failed — {msg}");
         }
     }
 
@@ -198,7 +198,7 @@ public class IAPManager : MonoBehaviour
         var resultStatus = sdrType.GetProperty("Status")?.GetValue(skuDetailsResult) ?? sdrType.GetProperty("status")?.GetValue(skuDetailsResult);
         if (successEnum == null || resultStatus == null || !resultStatus.Equals(successEnum))
         {
-            Debug.Log("[IAP] OnPoolakeySkuDetails: وضعیت ناموفق");
+            Debug.Log("[IAP] OnPoolakeySkuDetails: status not success");
             SkuPricesReady?.Invoke(new Dictionary<string, string>(skuToPrice));
             return;
         }
@@ -206,12 +206,12 @@ public class IAPManager : MonoBehaviour
         var data = dataProp?.GetValue(skuDetailsResult);
         if (data is IList list)
         {
-            Debug.Log($"[IAP] OnPoolakeySkuDetails: موفق — تعداد SKU={list.Count}");
+            Debug.Log($"[IAP] OnPoolakeySkuDetails: success, SKU count={list.Count}");
             ExtractPricesFromSkuDetails(list);
         }
         else
         {
-            Debug.Log("[IAP] OnPoolakeySkuDetails: data لیست نیست");
+            Debug.Log("[IAP] OnPoolakeySkuDetails: data is not a list");
             SkuPricesReady?.Invoke(new Dictionary<string, string>(skuToPrice));
         }
     }
@@ -227,7 +227,7 @@ public class IAPManager : MonoBehaviour
         var method = paymentType.GetMethod("Purchase", new[] { typeof(string), callbackType });
         if (method != null)
         {
-            Debug.Log("[IAP] CallPoolakeyPurchase: فراخوانی Purchase با callback");
+            Debug.Log("[IAP] CallPoolakeyPurchase: calling Purchase with callback");
             var onResult = Delegate.CreateDelegate(callbackType, this, GetType().GetMethod("OnPoolakeyPurchaseResult", BindingFlags.NonPublic | BindingFlags.Instance));
             method.Invoke(poolakeyPayment, new object[] { productId, onResult });
             return;
@@ -235,7 +235,7 @@ public class IAPManager : MonoBehaviour
         var asyncMethod = paymentType.GetMethod("Purchase", new[] { typeof(string) });
         if (asyncMethod != null)
         {
-            Debug.Log("[IAP] CallPoolakeyPurchase: فراخوانی Purchase به‌صورت async");
+            Debug.Log("[IAP] CallPoolakeyPurchase: calling Purchase async");
             StartCoroutine(RunPoolakeyPurchaseAsync(productId, asyncMethod));
         }
         else
@@ -244,7 +244,7 @@ public class IAPManager : MonoBehaviour
 
     private System.Collections.IEnumerator RunPoolakeyPurchaseAsync(string productId, MethodInfo purchaseMethod)
     {
-        Debug.Log($"[IAP] RunPoolakeyPurchaseAsync: شروع — productId={productId}");
+        Debug.Log($"[IAP] RunPoolakeyPurchaseAsync: start, productId={productId}");
         var task = purchaseMethod.Invoke(poolakeyPayment, new object[] { productId });
         if (task == null) { OnPurchaseVerifyFailed?.Invoke("Purchase failed."); yield break; }
         var getAwaiter = task.GetType().GetMethod("GetAwaiter");
@@ -260,14 +260,14 @@ public class IAPManager : MonoBehaviour
         }
         var result = getResult?.Invoke(awaiter, null);
         if (result == null) { OnPurchaseVerifyFailed?.Invoke("Purchase failed."); yield break; }
-        Debug.Log("[IAP] RunPoolakeyPurchaseAsync: نتیجه از SDK دریافت شد");
+        Debug.Log("[IAP] RunPoolakeyPurchaseAsync: result received from SDK");
         OnPoolakeyPurchaseResult(result);
     }
 
     private void OnPoolakeyPurchaseResult(object result)
     {
         if (result == null) { Debug.Log("[IAP] OnPoolakeyPurchaseResult: result=null"); OnPurchaseVerifyFailed?.Invoke("Purchase failed."); return; }
-        Debug.Log("[IAP] OnPoolakeyPurchaseResult: بررسی وضعیت و استخراج sku/token");
+        Debug.Log("[IAP] OnPoolakeyPurchaseResult: checking status and extracting sku/token");
         var statusType = FindType("Status");
         var successEnum = statusType?.GetField("Success")?.GetValue(null);
         var resultType = result.GetType();
@@ -275,7 +275,7 @@ public class IAPManager : MonoBehaviour
         if (successEnum == null || resultStatus == null || !resultStatus.Equals(successEnum))
         {
             var msg = (resultType.GetProperty("Message") ?? resultType.GetProperty("message"))?.GetValue(result) as string;
-            Debug.Log($"[IAP] OnPoolakeyPurchaseResult: خرید ناموفق — {msg}");
+            Debug.Log($"[IAP] OnPoolakeyPurchaseResult: purchase failed — {msg}");
             OnPurchaseVerifyFailed?.Invoke(msg ?? "Purchase failed.");
             return;
         }
@@ -284,7 +284,7 @@ public class IAPManager : MonoBehaviour
         if (data == null) { Debug.Log("[IAP] OnPoolakeyPurchaseResult: data=null"); OnPurchaseVerifyFailed?.Invoke("Could not read purchase data."); return; }
         string sku = GetProperty(data, "productId") ?? GetProperty(data, "productID") ?? GetProperty(data, "ProductId");
         string token = GetProperty(data, "purchaseToken") ?? GetProperty(data, "PurchaseToken");
-        Debug.Log($"[IAP] OnPoolakeyPurchaseResult: خرید موفق — sku={sku}, tokenLength={token?.Length ?? 0}");
+        Debug.Log($"[IAP] OnPoolakeyPurchaseResult: purchase success, sku={sku}, tokenLength={token?.Length ?? 0}");
         if (!string.IsNullOrEmpty(sku) && !string.IsNullOrEmpty(token))
             StartCoroutine(VerifyPurchaseAndNotify(sku, token));
         else
@@ -295,7 +295,7 @@ public class IAPManager : MonoBehaviour
 #if MYKET_IAP
     private void InitMyket()
     {
-        Debug.Log("[IAP] InitMyket: جستجوی MyketIAB و MyketIABEventManager");
+        Debug.Log("[IAP] InitMyket: resolving MyketIAB and MyketIABEventManager");
         var myketIAB = FindType("MyketIAB");
         var eventManager = FindType("MyketIABEventManager");
         if (myketIAB == null || eventManager == null)
@@ -303,7 +303,7 @@ public class IAPManager : MonoBehaviour
             Debug.LogWarning("[IAP] InitMyket: Myket IAB types not found. Add Myket Unity plugin.");
             return;
         }
-        Debug.Log("[IAP] InitMyket: نوع‌ها پیدا شدند — init با کلید عمومی");
+        Debug.Log("[IAP] InitMyket: types found, init with public key");
         string key = string.IsNullOrEmpty(myketPublicKey) ? "" : myketPublicKey.Trim();
         if (string.IsNullOrEmpty(key))
         {
@@ -320,7 +320,7 @@ public class IAPManager : MonoBehaviour
     }
 
     private void OnMyketBillingSupported() { Debug.Log("[IAP] OnMyketBillingSupported: billingReady=true"); billingReady = true; RequestPendingInventoryOrPrices(); }
-    private void OnMyketSkuDetailsSucceeded(IList skuInfos) { Debug.Log($"[IAP] OnMyketSkuDetailsSucceeded: تعداد={skuInfos?.Count ?? 0}"); ExtractPricesFromMyketSkuInfos(skuInfos); }
+    private void OnMyketSkuDetailsSucceeded(IList skuInfos) { Debug.Log($"[IAP] OnMyketSkuDetailsSucceeded: count={skuInfos?.Count ?? 0}"); ExtractPricesFromMyketSkuInfos(skuInfos); }
     private void OnMyketPurchaseSucceeded(object purchase)
     {
         if (purchase == null) { Debug.Log("[IAP] OnMyketPurchaseSucceeded: purchase=null"); return; }
@@ -363,7 +363,7 @@ public class IAPManager : MonoBehaviour
     {
         if (skuDetails == null) return;
         skuToPrice.Clear();
-        Debug.Log($"[IAP] ExtractPricesFromSkuDetails: تعداد آیتم={skuDetails.Count}");
+        Debug.Log($"[IAP] ExtractPricesFromSkuDetails: item count={skuDetails.Count}");
         foreach (var item in skuDetails)
         {
             if (item == null) continue;
@@ -372,7 +372,7 @@ public class IAPManager : MonoBehaviour
             if (!string.IsNullOrEmpty(sku))
                 skuToPrice[sku] = price ?? "—";
         }
-        Debug.Log($"[IAP] ExtractPricesFromSkuDetails: تعداد قیمت استخراج‌شده={skuToPrice.Count}");
+        Debug.Log($"[IAP] ExtractPricesFromSkuDetails: extracted price count={skuToPrice.Count}");
         SkuPricesReady?.Invoke(new Dictionary<string, string>(skuToPrice));
     }
 
@@ -380,7 +380,7 @@ public class IAPManager : MonoBehaviour
     {
         if (skuInfos == null) return;
         skuToPrice.Clear();
-        Debug.Log($"[IAP] ExtractPricesFromMyketSkuInfos: تعداد آیتم={skuInfos.Count}");
+        Debug.Log($"[IAP] ExtractPricesFromMyketSkuInfos: item count={skuInfos.Count}");
         foreach (var item in skuInfos)
         {
             if (item == null) continue;
@@ -389,7 +389,7 @@ public class IAPManager : MonoBehaviour
             if (!string.IsNullOrEmpty(sku))
                 skuToPrice[sku] = price ?? "—";
         }
-        Debug.Log($"[IAP] ExtractPricesFromMyketSkuInfos: تعداد قیمت={skuToPrice.Count}");
+        Debug.Log($"[IAP] ExtractPricesFromMyketSkuInfos: price count={skuToPrice.Count}");
         SkuPricesReady?.Invoke(new Dictionary<string, string>(skuToPrice));
     }
 
@@ -413,14 +413,14 @@ public class IAPManager : MonoBehaviour
             return;
         }
 #if BAZAAR_IAP
-        if (poolakeyPayment == null) { Debug.Log("[IAP] RequestSkuPrices: poolakeyPayment=null، ذخیره در pending"); pendingSkus = skus; return; }
-        if (!billingReady) { Debug.Log("[IAP] RequestSkuPrices: billingReady=false، ذخیره در pending"); pendingSkus = skus; return; }
+        if (poolakeyPayment == null) { Debug.Log("[IAP] RequestSkuPrices: poolakeyPayment=null, saving to pending"); pendingSkus = skus; return; }
+        if (!billingReady) { Debug.Log("[IAP] RequestSkuPrices: billingReady=false, saving to pending"); pendingSkus = skus; return; }
         CallPoolakeyGetSkuDetails(skus);
 #elif MYKET_IAP
         var myketIAB = FindType("MyketIAB");
         if (myketIAB == null) { pendingSkus = skus; return; }
         if (!billingReady) { pendingSkus = skus; return; }
-        Debug.Log("[IAP] RequestSkuPrices: فراخوانی Myket querySkuDetails");
+        Debug.Log("[IAP] RequestSkuPrices: calling Myket querySkuDetails");
         CallStatic(myketIAB, "querySkuDetails", skus);
 #else
         SkuPricesReady?.Invoke(new Dictionary<string, string>());
@@ -442,7 +442,7 @@ public class IAPManager : MonoBehaviour
 #elif MYKET_IAP
         var myketIAB = FindType("MyketIAB");
         if (myketIAB == null) { OnPurchaseVerifyFailed?.Invoke("Myket IAB not available."); return; }
-        Debug.Log("[IAP] Purchase: فراخوانی Myket purchaseProduct");
+        Debug.Log("[IAP] Purchase: calling Myket purchaseProduct");
         CallStatic(myketIAB, "purchaseProduct", platformProductId);
 #else
         OnPurchaseVerifyFailed?.Invoke("IAP is not enabled.");
@@ -467,7 +467,7 @@ public class IAPManager : MonoBehaviour
 
     private IEnumerator VerifyPurchaseAndNotify(string sku, string token)
     {
-        Debug.Log($"[IAP] VerifyPurchaseAndNotify: شروع — sku={sku}, store={GetStoreName()}, tokenLength={token?.Length ?? 0}");
+        Debug.Log($"[IAP] VerifyPurchaseAndNotify: start, sku={sku}, store={GetStoreName()}, tokenLength={token?.Length ?? 0}");
         if (apiClient == null)
             apiClient = FindFirstObjectByType<ApiClient>();
         if (apiClient == null)
@@ -486,18 +486,18 @@ public class IAPManager : MonoBehaviour
         while (!done) yield return null;
         if (err != null)
         {
-            Debug.Log($"[IAP] VerifyPurchaseAndNotify: خطای سرور — {err}");
+            Debug.Log($"[IAP] VerifyPurchaseAndNotify: server error — {err}");
             OnPurchaseVerifyFailed?.Invoke(err);
             yield break;
         }
         if (resp != null && resp.status == "ok")
         {
-            Debug.Log("[IAP] VerifyPurchaseAndNotify: سرور تأیید کرد — status=ok");
+            Debug.Log("[IAP] VerifyPurchaseAndNotify: server verified, status=ok");
             OnPurchaseVerifySuccess?.Invoke();
         }
         else
         {
-            Debug.Log($"[IAP] VerifyPurchaseAndNotify: تأیید ناموفق — status={resp?.status}, message={resp?.message}");
+            Debug.Log($"[IAP] VerifyPurchaseAndNotify: verification failed, status={resp?.status}, message={resp?.message}");
             OnPurchaseVerifyFailed?.Invoke(resp?.message ?? "Verification failed.");
         }
     }
