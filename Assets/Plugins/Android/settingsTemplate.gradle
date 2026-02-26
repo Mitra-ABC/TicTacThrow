@@ -1,6 +1,5 @@
 pluginManagement {
     repositories {
-        ARTIFACTORYREPOSITORY
         gradlePluginPortal()
         google()
         mavenCentral()
@@ -19,7 +18,6 @@ INCLUDES
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
-        ARTIFACTORYREPOSITORY
         google()
         mavenCentral()
 
