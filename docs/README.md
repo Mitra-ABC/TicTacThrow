@@ -19,6 +19,7 @@ Assets/
 ├── Fonts/                     # IRANSans
 ├── Configs/                   # ApiConfig ScriptableObject
 ├── Editor/                    # BuildScript (Bazaar/Myket APK)
-├── Plugins/Android/           # Gradle templates
-└── Bazaar/                    # Poolakey IAP SDK
+├── Plugins/Android/           # Gradle templates + myket-billing-unity (JitPack)
+├── Bazaar/Poolakey/         # Poolakey IAP SDK (Cafe Bazaar)
+└── Myket/MyketIAB/          # Myket IAP C# plugin
 ```
