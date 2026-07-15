@@ -254,7 +254,7 @@ PlayerSettings:
   shaderPrecisionModel: 0
   clonedFromGUID: c19f32bac17ee4170b3bf8a6a0333fb9
   templatePackageId: com.unity.template.universal-2d@6.1.1
-  templateDefaultScene: Assets/Scenes/SampleScene.unity
+  templateDefaultScene: Assets/Scenes/main_dooooz.unity
   useCustomMainManifest: 0
   useCustomLauncherManifest: 0
   useCustomMainGradleTemplate: 1
@@ -266,7 +266,7 @@ PlayerSettings:
   AndroidTargetArchitectures: 2
   AndroidSplashScreenScale: 0
   androidSplashScreen: {fileID: 0}
-  AndroidKeystoreName: C:/Users/AsusIran/Desktop/user.keystore
+  AndroidKeystoreName: 
   AndroidKeyaliasName: hikary_duodooz
   AndroidEnableArmv9SecurityFeatures: 0
   AndroidEnableArm64MTE: 0
