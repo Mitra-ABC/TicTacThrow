@@ -31,6 +31,14 @@ android {
         versionCode **VERSIONCODE**
         versionName '**VERSIONNAME**'
         consumerProguardFiles 'proguard-unity.txt'**USER_PROGUARD**
+        def marketApplicationId = project.findProperty("marketApplicationId") ?: "ir.mservices.market"
+        def marketBindAddress = project.findProperty("marketBindAddress") ?: "ir.mservices.market.InAppBillingService.BIND"
+        def marketPermission = project.findProperty("marketPermission") ?: "ir.mservices.market.BILLING"
+        manifestPlaceholders += [
+            marketApplicationId: marketApplicationId,
+            marketBindAddress: marketBindAddress,
+            marketPermission: marketPermission
+        ]
 **DEFAULT_CONFIG_SETUP**
     }
 

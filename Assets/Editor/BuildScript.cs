@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -14,6 +15,7 @@ public static class BuildScript
     public static void PerformBazaarBuild()
     {
         SetDefineSymbols(BAZAAR_SYMBOL);
+        WriteMarketPlaceholders(false);
         string outputPath = Path.Combine("Builds", "Bazaar");
         if (!Directory.Exists(outputPath))
             Directory.CreateDirectory(outputPath);
@@ -26,6 +28,7 @@ public static class BuildScript
     public static void PerformMyketBuild()
     {
         SetDefineSymbols(MYKET_SYMBOL);
+        WriteMarketPlaceholders(true);
         string outputPath = Path.Combine("Builds", "Myket");
         if (!Directory.Exists(outputPath))
             Directory.CreateDirectory(outputPath);
@@ -43,6 +46,41 @@ public static class BuildScript
         defines.Remove(MYKET_SYMBOL);
         defines.Add(activeSymbol);
         PlayerSettings.SetScriptingDefineSymbols(buildTarget, string.Join(";", defines));
+    }
+
+    private static void WriteMarketPlaceholders(bool myket)
+    {
+        const string path = "Assets/Plugins/Android/gradleTemplate.properties";
+        if (!File.Exists(path))
+            return;
+
+        string appId = myket ? "ir.mservices.market" : "com.farsitel.bazaar";
+        string bind = myket
+            ? "ir.mservices.market.InAppBillingService.BIND"
+            : "ir.cafebazaar.pardakht.InAppBillingService.BIND";
+        string permission = myket
+            ? "ir.mservices.market.BILLING"
+            : "com.farsitel.bazaar.permission.PAY_THROUGH_BAZAAR";
+
+        var lines = File.ReadAllLines(path).ToList();
+        UpsertProperty(lines, "marketApplicationId", appId);
+        UpsertProperty(lines, "marketBindAddress", bind);
+        UpsertProperty(lines, "marketPermission", permission);
+        File.WriteAllLines(path, lines);
+    }
+
+    private static void UpsertProperty(List<string> lines, string key, string value)
+    {
+        string prefix = key + "=";
+        for (int i = 0; i < lines.Count; i++)
+        {
+            if (lines[i].StartsWith(prefix))
+            {
+                lines[i] = prefix + value;
+                return;
+            }
+        }
+        lines.Add(prefix + value);
     }
 
     private static bool BuildAndroid(string apkPath)
