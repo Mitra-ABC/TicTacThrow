@@ -104,6 +104,7 @@ public class IAPManager : MonoBehaviour
     private Payment poolakeyPayment;
     private Coroutine bazaarConnectRoutine;
     private System.Threading.Tasks.Task bazaarConnectTask;
+    private readonly HashSet<string> inFlightPurchaseTokens = new HashSet<string>();
 
     private IEnumerator InitBazaarWhenReady()
     {
@@ -173,10 +174,12 @@ public class IAPManager : MonoBehaviour
             Debug.Log("[IAP] OnPoolakeyConnect: result=null");
             return;
         }
+        Debug.Log($"[IAP] OnPoolakeyConnect: {result.status}, {result.message}, {result.stackTrace}");
         if (result.status == Status.Success)
         {
             Debug.Log("[IAP] OnPoolakeyConnect: success, billingReady=true");
             billingReady = true;
+            RestoreBazaarPurchases();
             RequestPendingInventoryOrPrices();
         }
         else
@@ -206,22 +209,80 @@ public class IAPManager : MonoBehaviour
         SkuPricesReady?.Invoke(new Dictionary<string, string>(skuToPrice));
     }
 
+    private void OnPoolakeyPurchaseStart(Result<PoolakeyData.PurchaseInfo> result)
+    {
+        Debug.Log($"[IAP] Purchase flow started. {result?.message}");
+    }
+
     private void OnPoolakeyPurchaseComplete(Result<PoolakeyData.PurchaseInfo> result)
     {
+        Debug.Log($"[IAP] OnPoolakeyPurchaseComplete: {result?.status}, {result?.message}, {result?.stackTrace}");
         if (result == null || result.status != Status.Success || result.data == null)
         {
-            Debug.Log($"[IAP] OnPoolakeyPurchaseComplete: failed — {result?.message}");
             OnPurchaseVerifyFailed?.Invoke(result?.message ?? "Purchase failed.");
             return;
         }
 
-        string sku = result.data.productId;
-        string token = result.data.purchaseToken;
-        Debug.Log($"[IAP] OnPoolakeyPurchaseComplete: success, sku={sku}, tokenLength={token?.Length ?? 0}");
-        if (!string.IsNullOrEmpty(sku) && !string.IsNullOrEmpty(token))
-            StartCoroutine(VerifyPurchaseAndNotify(sku, token));
-        else
-            OnPurchaseVerifyFailed?.Invoke("Could not read purchase data.");
+        Debug.Log($"[IAP] OnPoolakeyPurchaseComplete: success, sku={result.data.productId}, payload={result.data.payload}");
+        StartCoroutine(ConsumeThenVerify(result.data, true));
+    }
+
+    private void RestoreBazaarPurchases()
+    {
+        if (poolakeyPayment == null) return;
+        Debug.Log("[IAP] GetPurchases: type=inApp");
+        _ = poolakeyPayment.GetPurchases(PoolakeyData.SKUDetails.Type.inApp, OnPoolakeyOwnedPurchases);
+    }
+
+    private void OnPoolakeyOwnedPurchases(Result<List<PoolakeyData.PurchaseInfo>> result)
+    {
+        Debug.Log($"[IAP] GetPurchases: {result?.status}, {result?.message}, {result?.stackTrace}");
+        if (result == null || result.status != Status.Success || result.data == null)
+            return;
+
+        Debug.Log($"[IAP] GetPurchases: count={result.data.Count}");
+        foreach (var purchase in result.data)
+        {
+            if (purchase == null) continue;
+            Debug.Log(purchase.ToString());
+            if (string.IsNullOrEmpty(purchase.productId) || string.IsNullOrEmpty(purchase.purchaseToken))
+                continue;
+            StartCoroutine(ConsumeThenVerify(purchase, false));
+        }
+    }
+
+    private IEnumerator ConsumeThenVerify(PoolakeyData.PurchaseInfo purchase, bool notifyUser)
+    {
+        if (purchase == null || string.IsNullOrEmpty(purchase.purchaseToken))
+            yield break;
+        if (!inFlightPurchaseTokens.Add(purchase.purchaseToken))
+            yield break;
+        if (poolakeyPayment == null)
+        {
+            inFlightPurchaseTokens.Remove(purchase.purchaseToken);
+            yield break;
+        }
+
+        string sku = purchase.productId;
+        string token = purchase.purchaseToken;
+        Debug.Log($"[IAP] Consume: sku={sku}, payload={purchase.payload}, tokenLength={token.Length}");
+
+        bool consumeDone = false;
+        Result<bool> consumeResult = null;
+        _ = poolakeyPayment.Consume(token, r =>
+        {
+            consumeResult = r;
+            consumeDone = true;
+        });
+        while (!consumeDone)
+            yield return null;
+
+        Debug.Log($"[IAP] Consume: {consumeResult?.status}, {consumeResult?.message}, {consumeResult?.stackTrace}");
+        if (consumeResult == null || consumeResult.status != Status.Success)
+            Debug.LogWarning($"[IAP] Consume did not succeed — {consumeResult?.message}");
+
+        yield return VerifyPurchaseAndNotify(sku, token, notifyUser);
+        inFlightPurchaseTokens.Remove(token);
     }
 
     private void RequestBazaarSkuDetails(string[] skus)
@@ -238,8 +299,14 @@ public class IAPManager : MonoBehaviour
             OnPurchaseVerifyFailed?.Invoke("Poolakey Payment not available.");
             return;
         }
-        Debug.Log($"[IAP] PurchaseBazaar: productId={productId}");
-        _ = poolakeyPayment.Purchase(productId, PoolakeyData.SKUDetails.Type.inApp, null, OnPoolakeyPurchaseComplete);
+        string payload = Guid.NewGuid().ToString("N");
+        Debug.Log($"[IAP] PurchaseBazaar: productId={productId}, payload={payload}");
+        _ = poolakeyPayment.Purchase(
+            productId,
+            PoolakeyData.SKUDetails.Type.inApp,
+            OnPoolakeyPurchaseStart,
+            OnPoolakeyPurchaseComplete,
+            payload);
     }
 #endif
 
@@ -404,6 +471,7 @@ public class IAPManager : MonoBehaviour
         if (skus == null || skus.Length == 0) return;
 #if BAZAAR_IAP
         if (poolakeyPayment == null || !billingReady) return;
+        RestoreBazaarPurchases();
         RequestBazaarSkuDetails(skus);
         pendingSkus = skus;
 #elif MYKET_IAP
@@ -415,13 +483,19 @@ public class IAPManager : MonoBehaviour
 
     private IEnumerator VerifyPurchaseAndNotify(string sku, string token)
     {
+        yield return VerifyPurchaseAndNotify(sku, token, true);
+    }
+
+    private IEnumerator VerifyPurchaseAndNotify(string sku, string token, bool notifyUser)
+    {
         Debug.Log($"[IAP] VerifyPurchaseAndNotify: start, sku={sku}, store={GetStoreName()}, tokenLength={token?.Length ?? 0}");
         if (apiClient == null)
             apiClient = FindAnyObjectByType<ApiClient>();
         if (apiClient == null)
         {
             Debug.Log("[IAP] VerifyPurchaseAndNotify: ApiClient not found");
-            OnPurchaseVerifyFailed?.Invoke("ApiClient not found.");
+            if (notifyUser)
+                OnPurchaseVerifyFailed?.Invoke("ApiClient not found.");
             yield break;
         }
         string store = GetStoreName();
@@ -435,7 +509,8 @@ public class IAPManager : MonoBehaviour
         if (err != null)
         {
             Debug.Log($"[IAP] VerifyPurchaseAndNotify: server error — {err}");
-            OnPurchaseVerifyFailed?.Invoke(err);
+            if (notifyUser)
+                OnPurchaseVerifyFailed?.Invoke(err);
             yield break;
         }
         if (resp != null && resp.status == "ok")
@@ -446,7 +521,8 @@ public class IAPManager : MonoBehaviour
         else
         {
             Debug.Log($"[IAP] VerifyPurchaseAndNotify: verification failed, status={resp?.status}, message={resp?.message}");
-            OnPurchaseVerifyFailed?.Invoke(resp?.message ?? "Verification failed.");
+            if (notifyUser)
+                OnPurchaseVerifyFailed?.Invoke(resp?.message ?? "Verification failed.");
         }
     }
 }

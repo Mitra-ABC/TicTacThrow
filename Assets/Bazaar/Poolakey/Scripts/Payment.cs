@@ -18,6 +18,8 @@ namespace Bazaar.Poolakey
         ConnectionCallbackProxy connectCallback;
         SKUDetailsCallbackProxy skuCallback;
         PaymentCallbackProxy purchaseCallback;
+        PurchasesCallbackProxy purchasesCallback;
+        ConsumeCallbackProxy consumeCallback;
 
         public async Task<Result<bool>> Connect(Action<Result<bool>> onComplete = null)
         {
@@ -88,9 +90,9 @@ namespace Bazaar.Poolakey
             var result = Result<List<PurchaseInfo>>.GetDefault();
             if (isAndroid)
             {
-                var callback = new PurchasesCallbackProxy();
-                bridge.Call("getPurchases", type.ToString(), callback);
-                result = await callback.taskCompletionSource.Task;
+                purchasesCallback = new PurchasesCallbackProxy();
+                bridge.Call("getPurchases", type.ToString(), purchasesCallback);
+                result = await purchasesCallback.taskCompletionSource.Task;
             }
             else
             {
@@ -122,9 +124,9 @@ namespace Bazaar.Poolakey
             Result<bool> result = Result<bool>.GetDefault();
             if (isAndroid)
             {
-                var callback = new ConsumeCallbackProxy();
-                bridge.Call("consume", token, callback);
-                result = await callback.taskCompletionSource.Task;
+                consumeCallback = new ConsumeCallbackProxy();
+                bridge.Call("consume", token, consumeCallback);
+                result = await consumeCallback.taskCompletionSource.Task;
             }
             else
             {
