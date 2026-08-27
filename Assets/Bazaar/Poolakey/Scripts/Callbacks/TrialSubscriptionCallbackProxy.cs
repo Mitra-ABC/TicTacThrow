@@ -17,7 +17,8 @@ namespace Bazaar.Poolakey.Callbacks
             taskCompletionSource = new TaskCompletionSource<Result<SKUDetails>>();
         }
 
-        void onSuccess(bool isAvailable, int trialPeriodDays)
+        [UnityEngine.Scripting.Preserve]
+        public void onSuccess(bool isAvailable, int trialPeriodDays)
         {
             DateTime date = DateTime.Today;
             trialSubscription.subscriptionExpireDate = date.AddDays(trialPeriodDays);
@@ -26,12 +27,13 @@ namespace Bazaar.Poolakey.Callbacks
             {
                 trialSubscription.description = $"For {trialPeriodDays} days.";
             }
-            taskCompletionSource.SetResult(new Result<SKUDetails>(Status.Success, "Get TrialState completed.") { data = trialSubscription });
+            Complete(Status.Success, "Get TrialState completed.", trialSubscription);
         }
 
-        void onFailure(string message, string stackTrace)
+        [UnityEngine.Scripting.Preserve]
+        public void onFailure(string message, string stackTrace)
         {
-            taskCompletionSource.SetResult(new Result<SKUDetails>(Status.Failure, message, stackTrace));
+            Complete(Status.Failure, message, null, stackTrace);
         }
     }
 }

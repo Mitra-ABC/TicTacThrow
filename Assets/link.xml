@@ -1,0 +1,12 @@
+<linker>
+  <assembly fullname="Assembly-CSharp">
+    <type fullname="Bazaar.Callbacks.CallbackProxy`1" preserve="all" />
+    <type fullname="Bazaar.Poolakey.Callbacks.ConnectionCallbackProxy" preserve="all" />
+    <type fullname="Bazaar.Poolakey.Callbacks.ConsumeCallbackProxy" preserve="all" />
+    <type fullname="Bazaar.Poolakey.Callbacks.PaymentCallbackProxy" preserve="all" />
+    <type fullname="Bazaar.Poolakey.Callbacks.PurchasesCallbackProxy" preserve="all" />
+    <type fullname="Bazaar.Poolakey.Callbacks.SKUDetailsCallbackProxy" preserve="all" />
+    <type fullname="Bazaar.Poolakey.Callbacks.TrialSubscriptionCallbackProxy" preserve="all" />
+    <type fullname="IAPManager" preserve="all" />
+  </assembly>
+</linker>

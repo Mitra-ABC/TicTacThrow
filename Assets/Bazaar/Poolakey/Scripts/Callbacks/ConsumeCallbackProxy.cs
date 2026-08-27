@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 namespace Bazaar.Poolakey.Callbacks
 {
+    [UnityEngine.Scripting.Preserve]
     public class ConsumeCallbackProxy : CallbackProxy<bool>
     {
         public ConsumeCallbackProxy() : base("com.farsitel.bazaar.callback.ConsumeCallback")
@@ -11,14 +12,16 @@ namespace Bazaar.Poolakey.Callbacks
             taskCompletionSource = new TaskCompletionSource<Result<bool>>();
         }
 
-        void onSuccess()
+        [UnityEngine.Scripting.Preserve]
+        public void onSuccess()
         {
-            taskCompletionSource.SetResult(new Result<bool>(Status.Success, "Consumption Succeed.") { data = true });
+            Complete(Status.Success, "Consumption Succeed.", true);
         }
 
-        void onFailure(string message, string stackTrace)
+        [UnityEngine.Scripting.Preserve]
+        public void onFailure(string message, string stackTrace)
         {
-            taskCompletionSource.SetResult(new Result<bool>(Status.Failure, message, stackTrace) { data = false });
+            Complete(Status.Failure, message, false, stackTrace);
         }
     }
 }

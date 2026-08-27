@@ -7,13 +7,15 @@ using System.Threading.Tasks;
 
 namespace Bazaar.Poolakey.Callbacks
 {
+    [UnityEngine.Scripting.Preserve]
     public class PurchasesCallbackProxy : CallbackProxy<List<PurchaseInfo>>
     {
         public PurchasesCallbackProxy() : base("com.farsitel.bazaar.callback.PurchasesCallback") { 
             taskCompletionSource = new TaskCompletionSource<Result<List<PurchaseInfo>>>();
         }
 
-        void onSuccess(AndroidJavaObject purchaseEntity)
+        [UnityEngine.Scripting.Preserve]
+        public void onSuccess(AndroidJavaObject purchaseEntity)
         {
             var list = new List<PurchaseInfo>();
             var size = purchaseEntity.Call<int>("size");
@@ -21,12 +23,13 @@ namespace Bazaar.Poolakey.Callbacks
             {
                 list.Add(new PurchaseInfo(purchaseEntity.Call<AndroidJavaObject>("get", index)));
             }
-            taskCompletionSource.SetResult(new Result<List<PurchaseInfo>>(Status.Success, "Get purchases completed.") { data = list });
+            Complete(Status.Success, "Get purchases completed.", list);
         }
 
-        void onFailure(string message, string stackTrace)
+        [UnityEngine.Scripting.Preserve]
+        public void onFailure(string message, string stackTrace)
         {
-            taskCompletionSource.SetResult(new Result<List<PurchaseInfo>>(Status.Failure, message, stackTrace));
+            Complete(Status.Failure, message, null, stackTrace);
         }
     }
 }

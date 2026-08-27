@@ -3,6 +3,14 @@ apply from: '../shared/keepUnitySymbols.gradle'
 apply from: '../shared/common.gradle'
 **APPLY_PLUGINS**
 
+configurations.all {
+    resolutionStrategy {
+        force "org.jetbrains.kotlin:kotlin-stdlib:1.9.10"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10"
+    }
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.github.myketstore:myket-billing-unity:unity-1.7'

@@ -15,14 +15,24 @@ namespace Bazaar.Poolakey
             this.paymentConfiguration = paymentConfiguration;
         }
 
+        ConnectionCallbackProxy connectCallback;
+        SKUDetailsCallbackProxy skuCallback;
+        PaymentCallbackProxy purchaseCallback;
+
         public async Task<Result<bool>> Connect(Action<Result<bool>> onComplete = null)
         {
             Result<bool> result = Result<bool>.GetDefault();
             if (isAndroid)
             {
-                var callback = new ConnectionCallbackProxy();
-                bridge.Call("connect", paymentConfiguration.securityCheck.rsaPublicKey, callback);
-                result = await callback.taskCompletionSource.Task;
+                if (bridge == null)
+                {
+                    result = new Result<bool>(Status.Failure, "PoolakeyBridge is missing.") { data = false };
+                    onComplete?.Invoke(result);
+                    return result;
+                }
+                connectCallback = new ConnectionCallbackProxy();
+                bridge.Call("connect", paymentConfiguration.securityCheck.rsaPublicKey, connectCallback);
+                result = await connectCallback.taskCompletionSource.Task;
             }
             else
             {
@@ -38,42 +48,20 @@ namespace Bazaar.Poolakey
                 bridge.Call("disconnect");
             }
         }
-        public async Task<Result<List<SKUDetails>>> GetSkuDetails(IEnumerable<string> productIds, SKUDetails.Type type = SKUDetails.Type.all, Action<Result<List<SKUDetails>>> onComplete = null)
+        public Task<Result<List<SKUDetails>>> GetSkuDetails(IEnumerable<string> productIds, SKUDetails.Type type = SKUDetails.Type.all, Action<Result<List<SKUDetails>>> onComplete = null)
         {
-            var result = Result<List<SKUDetails>>.GetDefault();
-            if (isAndroid)
-            {
-                var callback = new SKUDetailsCallbackProxy();
-                bridge.Call("getSkuDetails", type.ToString(), productIds, callback);
-                result = await callback.taskCompletionSource.Task;
-
-                if (result.status == Status.Success)
-                {
-                    var trialSubscription = result.data.Find(x => x.sku == "trial_subscription");
-                    if (trialSubscription != null)
-                    {
-                        var trialCallback = new TrialSubscriptionCallbackProxy(trialSubscription);
-                        bridge.Call("checkTrialSubscriptionState", trialCallback);
-                        var trialResult = await trialCallback.taskCompletionSource.Task;
-                        trialSubscription = trialResult.data;
-                    }
-                }
-            }
-            else
-            {
-                await Task.Delay(1);
-            }
-            onComplete?.Invoke(result);
-            return result;
+            string joined = productIds == null ? "" : string.Join(",", productIds);
+            return GetSkuDetails(joined, type, onComplete);
         }
+
         public async Task<Result<List<SKUDetails>>> GetSkuDetails(string productIds, SKUDetails.Type type = SKUDetails.Type.all, Action<Result<List<SKUDetails>>> onComplete = null)
         {
             var result = Result<List<SKUDetails>>.GetDefault();
             if (isAndroid)
             {
-                var callback = new SKUDetailsCallbackProxy();
-                bridge.Call("getSkuDetails", type.ToString(), productIds, callback);
-                result = await callback.taskCompletionSource.Task;
+                skuCallback = new SKUDetailsCallbackProxy();
+                bridge.Call("getSkuDetails", type.ToString(), productIds, skuCallback);
+                result = await skuCallback.taskCompletionSource.Task;
 
                 if (result.status == Status.Success)
                 {
@@ -117,9 +105,9 @@ namespace Bazaar.Poolakey
             var result = Result<PurchaseInfo>.GetDefault();
             if (isAndroid)
             {
-                var callback = new PaymentCallbackProxy(onStart);
-                bridge.Call("purchase", type.ToString(), productId, payload, dynamicPriceToken, callback);
-                result = await callback.taskCompletionSource.Task;
+                purchaseCallback = new PaymentCallbackProxy(onStart);
+                bridge.Call("purchase", type.ToString(), productId, payload, dynamicPriceToken, purchaseCallback);
+                result = await purchaseCallback.taskCompletionSource.Task;
             }
             else
             {

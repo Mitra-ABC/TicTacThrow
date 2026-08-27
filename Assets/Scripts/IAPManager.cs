@@ -76,8 +76,8 @@ public class IAPManager : MonoBehaviour
             apiClient = FindAnyObjectByType<ApiClient>();
 
 #if BAZAAR_IAP
-        Debug.Log("[IAP] IAPManager.Awake: store=BAZAAR (Poolakey), InitBazaar");
-        InitBazaar();
+        Debug.Log("[IAP] IAPManager.Awake: store=BAZAAR (Poolakey), waiting for activity");
+        StartCoroutine(InitBazaarWhenReady());
 #elif MYKET_IAP
         Debug.Log("[IAP] IAPManager.Awake: store=MYKET, InitMyket");
         InitMyket();
@@ -102,6 +102,48 @@ public class IAPManager : MonoBehaviour
 
 #if BAZAAR_IAP
     private Payment poolakeyPayment;
+    private Coroutine bazaarConnectRoutine;
+    private System.Threading.Tasks.Task bazaarConnectTask;
+
+    private IEnumerator InitBazaarWhenReady()
+    {
+        yield return null;
+        float waited = 0f;
+        while (waited < 8f && GetUnityActivity() == null)
+        {
+            waited += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        Debug.Log($"[IAP] InitBazaarWhenReady: activityReady={GetUnityActivity() != null}, waited={waited:0.00}s");
+        InitBazaar();
+        if (bazaarConnectRoutine != null)
+            StopCoroutine(bazaarConnectRoutine);
+        bazaarConnectRoutine = StartCoroutine(BillingConnectTimeout());
+    }
+
+    private static AndroidJavaObject GetUnityActivity()
+    {
+        try
+        {
+            using (var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                return player.GetStatic<AndroidJavaObject>("currentActivity");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[IAP] GetUnityActivity failed: {e.Message}");
+            return null;
+        }
+    }
+
+    private IEnumerator BillingConnectTimeout()
+    {
+        yield return new WaitForSecondsRealtime(20f);
+        if (billingReady)
+            yield break;
+        Debug.LogWarning("[IAP] billing connect timeout after 20s, billingReady=false");
+        if (pendingSkus != null)
+            SkuPricesReady?.Invoke(new Dictionary<string, string>());
+    }
 
     private void InitBazaar()
     {
@@ -109,11 +151,19 @@ public class IAPManager : MonoBehaviour
         if (string.IsNullOrEmpty(key))
             Debug.LogWarning("[IAP] InitBazaar: Bazaar (Poolakey) public key is not set.");
 
-        var securityCheck = SecurityCheck.Enable(key);
-        var config = new PaymentConfiguration(securityCheck);
-        poolakeyPayment = new Payment(config);
-        Debug.Log("[IAP] InitBazaar: Payment created, connecting");
-        _ = poolakeyPayment.Connect(OnPoolakeyConnect);
+        try
+        {
+            var securityCheck = SecurityCheck.Enable(key);
+            var config = new PaymentConfiguration(securityCheck);
+            poolakeyPayment = new Payment(config);
+            Debug.Log("[IAP] InitBazaar: Payment created, connecting");
+            bazaarConnectTask = poolakeyPayment.Connect(OnPoolakeyConnect);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[IAP] InitBazaar exception: {e}");
+            billingReady = false;
+        }
     }
 
     private void OnPoolakeyConnect(Result<bool> result)
@@ -130,7 +180,11 @@ public class IAPManager : MonoBehaviour
             RequestPendingInventoryOrPrices();
         }
         else
+        {
             Debug.LogWarning($"[IAP] OnPoolakeyConnect: failed — {result.message}");
+            if (pendingSkus != null)
+                SkuPricesReady?.Invoke(new Dictionary<string, string>());
+        }
     }
 
     private void OnPoolakeySkuDetails(Result<List<PoolakeyData.SKUDetails>> result)
@@ -303,8 +357,7 @@ public class IAPManager : MonoBehaviour
         if (poolakeyPayment == null || !billingReady)
         {
             pendingSkus = skus;
-            Debug.Log("[IAP] RequestSkuPrices: billing not ready, returning empty prices");
-            SkuPricesReady?.Invoke(new Dictionary<string, string>());
+            Debug.Log("[IAP] RequestSkuPrices: billing not ready, waiting for connect");
             return;
         }
         RequestBazaarSkuDetails(skus);
@@ -332,6 +385,11 @@ public class IAPManager : MonoBehaviour
             return;
         }
 #if BAZAAR_IAP
+        if (!billingReady)
+        {
+            OnPurchaseVerifyFailed?.Invoke("Cafe Bazaar billing is not ready.");
+            return;
+        }
         PurchaseBazaar(platformProductId);
 #elif MYKET_IAP
         Debug.Log("[IAP] Purchase: calling Myket purchaseProduct");

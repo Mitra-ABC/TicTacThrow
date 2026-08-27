@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.Scripting;
 using Bazaar.Data;
 using Bazaar.Callbacks;
 using Bazaar.Poolakey.Data;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace Bazaar.Poolakey.Callbacks
 {
+    [Preserve]
     public class PaymentCallbackProxy : CallbackProxy<PurchaseInfo>
     {
         private Action<Result<PurchaseInfo>> onStartAction;
@@ -16,25 +18,29 @@ namespace Bazaar.Poolakey.Callbacks
             taskCompletionSource = new TaskCompletionSource<Result<PurchaseInfo>>();
         }
 
-        void onStart()
+        [Preserve]
+        public void onStart()
         {
             onStartAction?.Invoke(new Result<PurchaseInfo>(Status.Started, "Purchase flow started."));
         }
 
-        void onCancel()
+        [Preserve]
+        public void onCancel()
         {
-            taskCompletionSource.SetResult(new Result<PurchaseInfo>(Status.Canceled, null, "Purchase flow canceled."));
+            Complete(Status.Canceled, "Purchase flow canceled.");
         }
 
-        void onSuccess(string orderId, string purchaseToken, string payload, string packageName, int purchaseState, long purchaseTime, string productId, string originalJson, string dataSignature)
+        [Preserve]
+        public void onSuccess(string orderId, string purchaseToken, string payload, string packageName, int purchaseState, long purchaseTime, string productId, string originalJson, string dataSignature)
         {
             var purchase = new PurchaseInfo { orderId = orderId, purchaseToken = purchaseToken, payload = payload, packageName = packageName, purchaseState = (PurchaseInfo.State)purchaseState, purchaseTime = purchaseTime, productId = productId, originalJson = originalJson, dataSignature = dataSignature };
-            taskCompletionSource.SetResult(new Result<PurchaseInfo>(Status.Success, "Purchase Succeed.") { data = purchase });
+            Complete(Status.Success, "Purchase Succeed.", purchase);
         }
 
-        void onFailure(string message, string stackTrace)
+        [Preserve]
+        public void onFailure(string message, string stackTrace)
         {
-            taskCompletionSource.SetResult(new Result<PurchaseInfo>(Status.Failure, message, stackTrace));
+            Complete(Status.Failure, message, null, stackTrace);
         }
     }
 }

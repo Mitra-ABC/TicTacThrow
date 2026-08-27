@@ -1,9 +1,12 @@
 using Bazaar.Data;
 using Bazaar.Callbacks;
 using System.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace Bazaar.Poolakey.Callbacks
 {
+    [Preserve]
     public class ConnectionCallbackProxy : CallbackProxy<bool>
     {
         public ConnectionCallbackProxy() : base("com.farsitel.bazaar.callback.ConnectionCallback")
@@ -11,19 +14,47 @@ namespace Bazaar.Poolakey.Callbacks
             taskCompletionSource = new TaskCompletionSource<Result<bool>>();
         }
 
-        void onConnect()
+        public override AndroidJavaObject Invoke(string methodName, object[] args)
         {
-            taskCompletionSource.SetResult(new Result<bool>(Status.Success, "Connection Succeed.") { data = true });
+            if (methodName == "onConnect" || methodName == "onDisconnect" || methodName == "onFailure")
+            {
+                Handle(methodName, args);
+                return null;
+            }
+            return base.Invoke(methodName, args);
         }
 
-        void onDisconnect()
+        [Preserve]
+        public void onConnect()
         {
-            taskCompletionSource.SetResult(new Result<bool>(Status.Disconnected, "Connection Disconnect.") { data = false });
+            Handle("onConnect", null);
         }
 
-        void onFailure(string message, string stackTrace)
+        [Preserve]
+        public void onDisconnect()
         {
-            taskCompletionSource.SetResult(new Result<bool>(Status.Failure, message, stackTrace) { data = false });
+            Handle("onDisconnect", null);
+        }
+
+        [Preserve]
+        public void onFailure(string message, string stackTrace)
+        {
+            Handle("onFailure", new object[] { message, stackTrace });
+        }
+
+        private void Handle(string methodName, object[] args)
+        {
+            Debug.Log($"[IAP] ConnectionCallback: {methodName}");
+            if (methodName == "onConnect")
+                Complete(Status.Success, "Connection Succeed.", true);
+            else if (methodName == "onDisconnect")
+                Complete(Status.Disconnected, "Connection Disconnect.", false);
+            else if (methodName == "onFailure")
+            {
+                string message = args != null && args.Length > 0 ? args[0] as string : "Connection failed.";
+                string stackTrace = args != null && args.Length > 1 ? args[1] as string : null;
+                Complete(Status.Failure, message, false, stackTrace);
+            }
         }
     }
 }
