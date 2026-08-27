@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        **ARTIFACTORYREPOSITORY**
         gradlePluginPortal()
         google()
         mavenCentral()
@@ -18,6 +19,7 @@ include ':launcher', ':unityLibrary'
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
+        **ARTIFACTORYREPOSITORY**
         google()
         mavenCentral()
 

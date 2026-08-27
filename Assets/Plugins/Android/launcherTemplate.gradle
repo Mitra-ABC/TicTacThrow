@@ -1,10 +1,11 @@
 apply plugin: 'com.android.application'
 apply from: 'setupSymbols.gradle'
 apply from: '../shared/keepUnitySymbols.gradle'
+apply from: '../shared/common.gradle'
 
 dependencies {
     implementation project(':unityLibrary')
-    }
+}
 
 android {
     namespace "**NAMESPACE**"
@@ -67,5 +68,5 @@ android {
         }
     }
 
-	**GOOGLE_PLAY_DEPENDENCIES**
+    **GOOGLE_PLAY_DEPENDENCIES**
 }**SPLITS_VERSION_CODE****LAUNCHER_SOURCE_BUILD_SETUP**

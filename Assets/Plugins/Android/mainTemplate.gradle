@@ -1,22 +1,20 @@
 apply plugin: 'com.android.library'
 apply from: '../shared/keepUnitySymbols.gradle'
-APPLY_PLUGINS
+apply from: '../shared/common.gradle'
+**APPLY_PLUGINS**
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    // ✅ Myket Billing Unity (JitPack)
     implementation 'com.github.myketstore:myket-billing-unity:unity-1.7'
-
-DEPS}
+**DEPS**}
 
 android {
     namespace "com.unity3d.player"
-    ndkPath "NDKPATH"
-    ndkVersion "NDKVERSION"
+    ndkPath "**NDKPATH**"
+    ndkVersion "**NDKVERSION**"
 
-    compileSdk APIVERSION
-    buildToolsVersion = "BUILDTOOLS"
+    compileSdk **APIVERSION**
+    buildToolsVersion = "**BUILDTOOLS**"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -24,17 +22,16 @@ android {
     }
 
     defaultConfig {
-**DEFAULT_CONFIG_SETUP**
-        minSdk MINSDK
-        targetSdk TARGETSDK
+        minSdk **MINSDK**
+        targetSdk **TARGETSDK**
         ndk {
-            abiFilters ABIFILTERS
-            debugSymbolLevel DEBUGSYMBOLLEVEL
+            abiFilters **ABIFILTERS**
+            debugSymbolLevel **DEBUGSYMBOLLEVEL**
         }
-        versionCode VERSIONCODE
-        versionName 'VERSIONNAME'
-        consumerProguardFiles 'proguard-unity.txt' USER_PROGUARD
-DEFAULT_CONFIG_SETUP
+        versionCode **VERSIONCODE**
+        versionName '**VERSIONNAME**'
+        consumerProguardFiles 'proguard-unity.txt'**USER_PROGUARD**
+**DEFAULT_CONFIG_SETUP**
     }
 
     lint {
@@ -42,10 +39,10 @@ DEFAULT_CONFIG_SETUP
     }
 
     androidResources {
-        noCompress = BUILTIN_NOCOMPRESS + unityStreamingAssets.tokenize(', ')
+        noCompress = **BUILTIN_NOCOMPRESS** + unityStreamingAssets.tokenize(', ')
         ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~"
-    }PACKAGING
+    }**PACKAGING**
 }
-IL_CPP_BUILD_SETUP
-SOURCE_BUILD_SETUP
-EXTERNAL_SOURCES
+**IL_CPP_BUILD_SETUP**
+**SOURCE_BUILD_SETUP**
+**EXTERNAL_SOURCES**
