@@ -1998,8 +1998,9 @@ public class GameManager : MonoBehaviour
             var itemScript = item.GetComponent<CoinPackItem>();
             if (itemScript == null) continue;
 
+            string sdkPrice = null;
             bool hasSdkPrice = priceBySku != null && !string.IsNullOrEmpty(pack.platformProductId)
-                && priceBySku.TryGetValue(pack.platformProductId, out var sdkPrice) && !string.IsNullOrEmpty(sdkPrice);
+                && priceBySku.TryGetValue(pack.platformProductId, out sdkPrice) && !string.IsNullOrEmpty(sdkPrice);
             string price = hasSdkPrice ? sdkPrice : "—";
             bool purchasable = iap != null && iap.IsIAPEnabled && iap.IsBillingReady && hasSdkPrice;
             itemScript.SetCoinPack(pack, price, OnCoinPackClicked);
