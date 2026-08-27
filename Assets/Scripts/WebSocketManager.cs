@@ -802,7 +802,7 @@ public class WebSocketManager : MonoBehaviour
                                 player1_symbol = finalData.player1?.symbol ?? "",
                                 player2_symbol = finalData.player2?.symbol ?? "",
                                 status = finalData.status,
-                                current_turn_player_id = finalData.currentTurnPlayerId ?? 0
+                                current_turn_player_id = finalData.currentTurnPlayerId
                             },
                             isBot = false
                         };

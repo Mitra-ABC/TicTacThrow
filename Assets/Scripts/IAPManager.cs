@@ -71,7 +71,7 @@ public class IAPManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         if (apiClient == null)
-            apiClient = FindFirstObjectByType<ApiClient>();
+            apiClient = FindAnyObjectByType<ApiClient>();
 
 #if BAZAAR_IAP
         Debug.Log("[IAP] IAPManager.Awake: store=BAZAAR (Poolakey), InitBazaar");
@@ -111,7 +111,7 @@ public class IAPManager : MonoBehaviour
         var config = new PaymentConfiguration(securityCheck);
         poolakeyPayment = new Payment(config);
         Debug.Log("[IAP] InitBazaar: Payment created, connecting");
-        poolakeyPayment.Connect(OnPoolakeyConnect);
+        _ = poolakeyPayment.Connect(OnPoolakeyConnect);
     }
 
     private void OnPoolakeyConnect(Result<bool> result)
@@ -172,7 +172,7 @@ public class IAPManager : MonoBehaviour
     {
         if (poolakeyPayment == null || skus == null || skus.Length == 0) return;
         Debug.Log($"[IAP] RequestBazaarSkuDetails: skus={string.Join(",", skus)}");
-        poolakeyPayment.GetSkuDetails(skus, PoolakeyData.SKUDetails.Type.inApp, OnPoolakeySkuDetails);
+        _ = poolakeyPayment.GetSkuDetails(skus, PoolakeyData.SKUDetails.Type.inApp, OnPoolakeySkuDetails);
     }
 
     private void PurchaseBazaar(string productId)
@@ -183,7 +183,7 @@ public class IAPManager : MonoBehaviour
             return;
         }
         Debug.Log($"[IAP] PurchaseBazaar: productId={productId}");
-        poolakeyPayment.Purchase(productId, PoolakeyData.SKUDetails.Type.inApp, null, OnPoolakeyPurchaseComplete);
+        _ = poolakeyPayment.Purchase(productId, PoolakeyData.SKUDetails.Type.inApp, null, OnPoolakeyPurchaseComplete);
     }
 #endif
 
@@ -346,7 +346,7 @@ public class IAPManager : MonoBehaviour
     {
         Debug.Log($"[IAP] VerifyPurchaseAndNotify: start, sku={sku}, store={GetStoreName()}, tokenLength={token?.Length ?? 0}");
         if (apiClient == null)
-            apiClient = FindFirstObjectByType<ApiClient>();
+            apiClient = FindAnyObjectByType<ApiClient>();
         if (apiClient == null)
         {
             Debug.Log("[IAP] VerifyPurchaseAndNotify: ApiClient not found");

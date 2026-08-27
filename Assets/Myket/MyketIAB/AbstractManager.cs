@@ -28,7 +28,7 @@ namespace MyketPlugin
         {
             try
             {
-                if ((FindObjectOfType(type) as MonoBehaviour) != null)
+                if ((FindAnyObjectByType(type) as MonoBehaviour) != null)
                     return;
 
                 GameObject managerGameObject = getMyketManagerGameObject();

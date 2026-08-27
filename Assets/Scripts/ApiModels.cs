@@ -375,7 +375,7 @@ public class MatchmakingQueueSuccessData
     public string status;
     public PlayerData player1;
     public PlayerData player2;
-    public int? currentTurnPlayerId;
+    public int currentTurnPlayerId;
 }
 
 [Serializable]
