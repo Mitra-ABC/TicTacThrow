@@ -1,14 +1,15 @@
 pluginManagement {
     repositories {
         **ARTIFACTORYREPOSITORY**
+        maven { url "https://maven.aliyun.com/repository/google" }
+        maven { url "https://maven.aliyun.com/repository/central" }
+        maven { url "https://maven.aliyun.com/repository/gradle-plugin" }
+        maven { url "https://maven.aliyun.com/repository/public" }
+        maven { url "https://mirrors.huaweicloud.com/repository/maven/" }
         gradlePluginPortal()
         google()
         mavenCentral()
-
-        // ✅ Myket Maven
         maven { url "https://maven.myket.ir" }
-
-        // ✅ JitPack (for Myket Billing Unity)
         maven { url "https://jitpack.io" }
     }
 }
@@ -20,15 +21,14 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         **ARTIFACTORYREPOSITORY**
+        maven { url "https://maven.aliyun.com/repository/google" }
+        maven { url "https://maven.aliyun.com/repository/central" }
+        maven { url "https://maven.aliyun.com/repository/public" }
+        maven { url "https://mirrors.huaweicloud.com/repository/maven/" }
         google()
         mavenCentral()
-
-        // ✅ Myket Maven
         maven { url "https://maven.myket.ir" }
-
-        // ✅ JitPack (for com.github.myketstore:myket-billing-unity)
         maven { url "https://jitpack.io" }
-
         flatDir {
             dirs "${project(':unityLibrary').projectDir}/libs"
         }
