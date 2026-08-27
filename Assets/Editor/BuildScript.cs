@@ -18,8 +18,8 @@ public static class BuildScript
         if (!Directory.Exists(outputPath))
             Directory.CreateDirectory(outputPath);
         string apkPath = Path.Combine(outputPath, "Game_Bazaar.apk");
-        BuildAndroid(apkPath);
-        Debug.Log($"[BuildScript] Bazaar build complete: {Path.GetFullPath(apkPath)}");
+        if (BuildAndroid(apkPath))
+            Debug.Log($"[BuildScript] Bazaar build complete: {Path.GetFullPath(apkPath)}");
     }
 
     [MenuItem("Build/Build Myket APK")]
@@ -30,8 +30,8 @@ public static class BuildScript
         if (!Directory.Exists(outputPath))
             Directory.CreateDirectory(outputPath);
         string apkPath = Path.Combine(outputPath, "Game_Myket.apk");
-        BuildAndroid(apkPath);
-        Debug.Log($"[BuildScript] Myket build complete: {Path.GetFullPath(apkPath)}");
+        if (BuildAndroid(apkPath))
+            Debug.Log($"[BuildScript] Myket build complete: {Path.GetFullPath(apkPath)}");
     }
 
     private static void SetDefineSymbols(string activeSymbol)
@@ -45,7 +45,7 @@ public static class BuildScript
         PlayerSettings.SetScriptingDefineSymbols(buildTarget, string.Join(";", defines));
     }
 
-    private static void BuildAndroid(string apkPath)
+    private static bool BuildAndroid(string apkPath)
     {
         var scenes = EditorBuildSettings.scenes
             .Where(s => s.enabled)
@@ -54,7 +54,7 @@ public static class BuildScript
         if (scenes.Length == 0)
         {
             Debug.LogError("[BuildScript] No scenes in Build Settings. Add at least one scene.");
-            return;
+            return false;
         }
         var options = new BuildPlayerOptions
         {
@@ -65,6 +65,10 @@ public static class BuildScript
         };
         BuildReport report = BuildPipeline.BuildPlayer(options);
         if (report.summary.result != BuildResult.Succeeded)
+        {
             Debug.LogError($"[BuildScript] Build failed: {report.summary.result}");
+            return false;
+        }
+        return true;
     }
 }
