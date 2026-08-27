@@ -1,0 +1,67 @@
+# اقدامات سمت یونیتی برای IAP چندفروشگاهی (Bazaar / Myket)
+
+این سند خلاصه کارهایی است که در یونیتی انجام شده و کارهایی که شما باید خودتان انجام دهید.
+
+## کارهای انجام‌شده در کد
+
+1. **ApiModels.cs** — مدل `VerifyIAPResponse` (status, message) اضافه شد.
+2. **ApiResponseParser.cs** — متد `ParseVerifyIAPResponse` اضافه شد.
+3. **ApiClient.cs** — متد `VerifyIAP(sku, token, store, onSuccess, onError)` برای فراخوانی `POST /api/iap/verify` با JWT و بدنه JSON.
+4. **IAPManager.cs** — اتصال مستقیم به Poolakey (Bazaar) و MyketPlugin (Myket) پشت `#if BAZAAR_IAP` / `#if MYKET_IAP`.
+5. **CoinPackItem.cs** — کالبک به `Action<CoinPack>`؛ فیلد قیمت (`priceText`)؛ امضای `SetCoinPack(pack, priceString, onBuy)`.
+6. **GameManager.cs** — فلوی استور: هنگام باز شدن شاپ درخواست قیمت از IAPManager؛ نمایش لیست با قیمت؛ `OnCoinPackClicked(CoinPack)` و در صورت IAP فراخوانی `IAPManager.Purchase` و پس از verify به‌روزرسانی wallet.
+7. **Assets/Editor/BuildScript.cs** — منوهای `Build / Build Bazaar APK` و `Build / Build Myket APK` با تعریف سمبل و مسیر خروجی.
+8. **.github/workflows/build-android.yml** — workflow نمونه برای بیلد Bazaar و Myket و آپلود آرتیفکت.
+
+---
+
+## SDK locations (installed in repo)
+
+| Store | Path | Source | Version |
+|-------|------|--------|---------|
+| **Cafe Bazaar (Poolakey)** | `Assets/Bazaar/Poolakey/` | [PoolakeyUnitySdk 2.1.1](https://github.com/cafebazaar/PoolakeyUnitySdk/releases/tag/2.1.1) (Unity 6 essentials) | 2.1.1 |
+| **Myket** | `Assets/Myket/MyketIAB/` (C#) + Gradle `com.github.myketstore:myket-billing-unity:unity-1.7` | [myket-billing-unity-sample unity/2022](https://github.com/myketstore/myket-billing-unity-sample/tree/unity/2022) | unity-1.7 |
+
+Gradle repos for Myket: `settingsTemplate.gradle` → `maven.myket.ir`, `jitpack.io`.
+
+---
+
+## کارهایی که باید خودتان انجام دهید
+
+### ۱. کلید عمومی استور (در Inspector)
+
+- **Bazaar Public Key** و **Myket Public Key** را در `IAPManager` (Inspector) از پنل توسعه‌دهنده هر استور پر کنید.
+- برای بیلد Bazaar فقط کلید Bazaar و برای بیلد Myket فقط کلید Myket لازم است.
+
+### ۲. قرار دادن IAPManager در صحنه
+
+- یک GameObject در صحنه اصلی (مثلاً در کنار ApiClient) بسازید و اسکریپت `IAPManager` را به آن اضافه کنید.
+- در Inspector فیلد **Api Client** را به همان ApiClient صحنه وصل کنید.
+- **Bazaar Public Key** و **Myket Public Key** را از پنل توسعه‌دهنده هر استور پر کنید (برای بیلد Bazaar فقط کلید Bazaar و برای بیلد Myket فقط کلید Myket لازم است).
+
+### ۳. نمایش قیمت در پریفت استور
+
+- در پریفت **CoinPackItem** یک فیلد متنی (مثلاً TMP_Text) برای قیمت اضافه کنید و در اسکریپت `CoinPackItem` آن را به **Price Text** در Inspector وصل کنید. اگر از قبل فیلد قیمت دارید، فقط به همان رفرنس دهید.
+
+### ۴. تعریف سمبل و بیلد
+
+- برای بیلد **کافه‌بازار:** در Player Settings > Other Settings > Script Compilation > Script Define Symbols مقدار `BAZAAR_IAP` را اضافه کنید (و در صورت وجود `MYKET_IAP` را حذف کنید)، سپس از منو **Build / Build Bazaar APK** استفاده کنید.
+- برای بیلد **مایکت:** به همین شکل فقط `MYKET_IAP` را قرار دهید و از **Build / Build Myket APK** استفاده کنید.
+- خروجی‌ها در `Builds/Bazaar/Game_Bazaar.apk` و `Builds/Myket/Game_Myket.apk` ساخته می‌شوند.
+
+### ۵. CI (در صورت استفاده از GitHub Actions)
+
+- فایل `.github/workflows/build-android.yml` اضافه شده است. اگر Unity روی رانر نصب نیست، یا از [game-ci/unity-builder](https://github.com/game-ci/unity-builder) استفاده کنید یا مسیر یونیتی را در workflow با محیط خود تطبیق دهید.
+
+### ۶. تست
+
+- روی دستگاه اندروید با اپ استور (کافه‌بازار یا مایکت) نصب‌شده، بیلد مربوطه را اجرا کنید؛ استور را باز کنید و مطمئن شوید قیمت از SDK نمایش داده می‌شود و پس از خرید، verify سمت سرور و به‌روزرسانی کیف پول درست انجام می‌شود.
+
+---
+
+## نکات امنیتی و بهترین روش‌ها
+
+- پاداش فقط بعد از پاسخ موفق `POST /api/iap/verify` داده می‌شود (در بک‌اند).
+- در درخواست verify فقط JWT در هدر ارسال می‌شود؛ `userId` در بدنه نفرستید.
+- از `platformProductId` برگشتی از اقتصاد (مثلاً `duodooz.currency.coin.starter`) به‌عنوان SKU برای خرید و verify استفاده می‌شود.
+- در رلیز مایکت `enableLogging(false)` را در نظر بگیرید (در پلاگین مایکت).

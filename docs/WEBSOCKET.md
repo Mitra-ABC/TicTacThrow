@@ -1,0 +1,401 @@
+# راهنمای کامل پیاده‌سازی WebSocket و Form-Data در Unity
+
+این راهنما به صورت گام به گام و بسیار ریز، نحوه پیاده‌سازی WebSocket و تغییرات form-data را توضیح می‌دهد.
+
+---
+
+## 📋 فهرست مطالب
+
+1. [نصب کتابخانه Socket.IO](#1-نصب-کتابخانه-socketio)
+2. [بررسی فایل‌های ایجاد شده](#2-بررسی-فایلهای-ایجاد-شده)
+3. [تنظیمات WebSocketManager](#3-تنظیمات-websocketmanager)
+4. [تست اتصال WebSocket](#4-تست-اتصال-websocket)
+5. [تست عملیات Room](#5-تست-عملیات-room)
+6. [تست Matchmaking](#6-تست-matchmaking)
+
+---
+
+## 1. نصب کتابخانه Socket.IO
+
+### مرحله 1.1: نصب SocketIOUnity
+
+**روش 1: از طریق Unity Package Manager (توصیه می‌شود)**
+
+1. در Unity، به **Window → Package Manager** بروید
+2. روی دکمه **+** (Add package) کلیک کنید
+3. **Add package from git URL** را انتخاب کنید
+4. این URL را وارد کنید:
+   ```
+   https://github.com/itisnajim/SocketIOUnity.git
+   ```
+5. روی **Add** کلیک کنید
+6. صبر کنید تا دانلود و نصب شود
+
+**روش 2: Manual Installation**
+
+1. به این آدرس بروید: https://github.com/itisnajim/SocketIOUnity
+2. روی دکمه **Code** → **Download ZIP** کلیک کنید
+3. فایل ZIP را دانلود و Extract کنید
+4. پوشه `Runtime` را از فایل Extract شده کپی کنید
+5. در Unity، به **Assets** بروید
+6. پوشه را در **Assets** Paste کنید
+7. Unity به صورت خودکار فایل‌ها را Import می‌کند
+
+### مرحله 1.2: بررسی نصب
+
+1. در Unity، به **Assets** بروید
+2. به دنبال پوشه `Runtime` یا `SocketIOUnity` بگردید
+3. اگر پوشه وجود دارد، نصب موفق بوده است
+
+**⚠️ نکته:** اگر خطای کامپایل دارید، مطمئن شوید که همه فایل‌های کتابخانه Import شده‌اند.
+
+---
+
+## 2. بررسی فایل‌های ایجاد شده
+
+### مرحله 2.1: بررسی WebSocketManager.cs
+
+1. در Unity، به **Assets → Scripts** بروید
+2. فایل `WebSocketManager.cs` را پیدا کنید
+3. روی آن دوبار کلیک کنید تا در Visual Studio/IDE باز شود
+4. بررسی کنید که این using statements وجود دارند:
+   ```csharp
+   using SocketIOClient;
+   using SocketIOClient.Transport;
+   ```
+   
+   **نکته:** `SocketIOUnity` یک type است نه namespace، بنابراین نباید در using statement باشد. از `SocketIOUnity.SocketIOUnity` به صورت fully qualified استفاده می‌شود.
+
+**اگر خطای کامپایل دارید:**
+- مطمئن شوید کتابخانه Socket.IO نصب شده است
+- ممکن است نیاز باشد Namespace را تغییر دهید (بسته به نسخه کتابخانه)
+
+### مرحله 2.2: بررسی ApiClient.cs
+
+1. فایل `ApiClient.cs` را باز کنید
+2. بررسی کنید که متدهای `Register` و `Login` از `WWWForm` استفاده می‌کنند (نه JSON)
+3. بررسی کنید که متدهای `BuyHeart` و `BuyBooster` نیز از `WWWForm` استفاده می‌کنند
+
+### مرحله 2.3: بررسی ApiModels.cs
+
+1. فایل `ApiModels.cs` را باز کنید
+2. بررسی کنید که مدل‌های WebSocket اضافه شده‌اند:
+   - `TokenPayload`
+   - `RoomCreateSuccessData`
+   - `RoomJoinData`
+   - `RoomMoveData`
+   - `RoomFinishedData`
+   - `MatchmakingMatchedData`
+   - و سایر مدل‌ها
+
+### مرحله 2.4: بررسی GameManager.cs
+
+1. فایل `GameManager.cs` را باز کنید
+2. بررسی کنید که:
+   - `WebSocketManager` به عنوان SerializeField اضافه شده
+   - متد `SetupWebSocketListeners()` وجود دارد
+   - متدهای `OnWebSocketRoomCreated`, `OnWebSocketRoomJoined` و... وجود دارند
+
+---
+
+## 3. تنظیمات WebSocketManager
+
+### مرحله 3.1: اضافه کردن WebSocketManager به Scene
+
+**روش 1: به صورت خودکار (توصیه می‌شود)**
+
+کد `GameManager.Awake()` به صورت خودکار WebSocketManager را ایجاد می‌کند. نیازی به کار دستی نیست.
+
+**روش 2: Manual**
+
+1. در Unity، Scene اصلی را باز کنید
+2. در **Hierarchy**، راست کلیک کنید
+3. **Create Empty** را انتخاب کنید
+4. نام آن را به `WebSocketManager` تغییر دهید
+5. در **Inspector**، روی **Add Component** کلیک کنید
+6. `WebSocketManager` را جستجو و اضافه کنید
+
+### مرحله 3.2: تنظیمات Inspector
+
+1. روی GameObject `WebSocketManager` کلیک کنید
+2. در **Inspector**، بخش **WebSocketManager (Script)** را پیدا کنید
+3. تنظیمات:
+   - **Server Url**: می‌توانید خالی بگذارید (به صورت خودکار از ApiClient گرفته می‌شود)
+   - **Verbose Logging**: تیک بزنید برای Debug
+
+### مرحله 3.3: اتصال به GameManager
+
+1. روی GameObject که `GameManager` script روی آن است کلیک کنید
+2. در **Inspector**، بخش **Game Manager (Script)** را پیدا کنید
+3. در بخش **Core Components**:
+   - **Web Socket Manager**: GameObject `WebSocketManager` را از Hierarchy بکشید و اینجا رها کنید
+
+**⚠️ نکته:** اگر WebSocketManager به صورت خودکار ایجاد می‌شود، این مرحله اختیاری است.
+
+---
+
+## 4. تست اتصال WebSocket
+
+### مرحله 4.1: بررسی اتصال بعد از Login
+
+1. **Play** را بزنید
+2. وارد Scene شوید
+3. Login کنید
+4. در **Console** (Window → General → Console) به دنبال این پیام بگردید:
+   ```
+   [WebSocketManager] WebSocket Connected!
+   ```
+
+**اگر پیام را نمی‌بینید:**
+- بررسی کنید که Server در حال اجرا است
+- بررسی کنید که URL درست است (ws://localhost:3000)
+- Logs را در Console بررسی کنید
+
+### مرحله 4.2: بررسی Event Handlers
+
+1. در **Console**، به دنبال این پیام‌ها بگردید:
+   ```
+   [GameManager] WebSocket connected
+   ```
+2. اگر این پیام را می‌بینید، Event Handlers به درستی تنظیم شده‌اند
+
+---
+
+## 5. تست عملیات Room
+
+### مرحله 5.1: تست Create Room
+
+1. بعد از Login، به **Lobby** بروید
+2. روی **Play with Friends** کلیک کنید
+3. روی **Create Room** کلیک کنید
+4. در **Console**، به دنبال این پیام‌ها بگردید:
+   ```
+   [WebSocketManager] Room created: [roomId]
+   [GameManager] Room created via WebSocket: [roomId]
+   ```
+
+**اگر خطا دارید:**
+- بررسی کنید که WebSocket متصل است
+- بررسی کنید که Token معتبر است
+- Logs را در Console بررسی کنید
+
+### مرحله 5.2: تست Join Room
+
+1. Room ID را از Player 1 بگیرید
+2. به عنوان Player 2، Login کنید
+3. به **Play with Friends** → **Join Room** بروید
+4. Room ID را وارد کنید
+5. روی **Join** کلیک کنید
+6. در **Console**، به دنبال این پیام‌ها بگردید:
+   ```
+   [WebSocketManager] Room joined: [roomId]
+   [GameManager] Joined room via WebSocket: [roomId]
+   ```
+
+### مرحله 5.3: تست Make Move
+
+1. بعد از Join Room، بازی باید شروع شود
+2. روی یک خانه کلیک کنید
+3. در **Console**، به دنبال این پیام‌ها بگردید:
+   ```
+   [WebSocketManager] Move successful: Room [roomId], Cell [cellIndex]
+   [WebSocketManager] Room move: [roomId], Turn: [playerId]
+   ```
+
+**اگر Move کار نمی‌کند:**
+- بررسی کنید که نوبت شماست
+- بررسی کنید که خانه خالی است
+- بررسی کنید که WebSocket متصل است
+
+### مرحله 5.4: تست Game Finished
+
+1. بازی را تا انتها ادامه دهید
+2. وقتی بازی تمام شد، در **Console** باید این پیام را ببینید:
+   ```
+   [WebSocketManager] Room finished: [roomId], Result: [X/O/draw]
+   [GameManager] ShowGameResult: result='[result]'
+   ```
+
+---
+
+## 6. تست Matchmaking
+
+### مرحله 6.1: تست Queue Matchmaking
+
+1. بعد از Login، به **Lobby** بروید
+2. روی **Play Online** (Competitive Game) کلیک کنید
+3. در **Console**، به دنبال این پیام‌ها بگردید:
+   ```
+   [WebSocketManager] Matchmaking queue: [mode], Room: [roomId]
+   ```
+
+**اگر `mode: "waiting"` است:**
+- باید منتظر بمانید تا Player دیگری Join کند
+- یا Bot اضافه شود
+
+**اگر `mode: "matched"` است:**
+- بازی فوراً شروع می‌شود
+
+### مرحله 6.2: تست Matchmaking Matched
+
+1. اگر `mode: "waiting"` بود، منتظر بمانید
+2. وقتی Match پیدا شد، در **Console** باید این پیام را ببینید:
+   ```
+   [WebSocketManager] Matchmaking matched: Room [roomId]
+   [GameManager] Matchmaking matched via WebSocket: Room [roomId]
+   ```
+
+### مرحله 6.3: تست Cancel Matchmaking
+
+1. وقتی در Matchmaking هستید، روی **Cancel** کلیک کنید
+2. در **Console**، باید این پیام را ببینید:
+   ```
+   [WebSocketManager] Matchmaking cancelled
+   ```
+
+---
+
+## 7. تست Form-Data برای Authentication
+
+### مرحله 7.1: تست Register با Form-Data
+
+1. **Play** را بزنید
+2. روی **Register** کلیک کنید
+3. اطلاعات را وارد کنید و Register کنید
+4. در **Console**، به دنبال این پیام بگردید:
+   ```
+   [ApiClient] Sending POST [url] (form-data)
+   ```
+
+**اگر خطا دارید:**
+- بررسی کنید که Server از form-data پشتیبانی می‌کند
+- بررسی کنید که فیلدها درست هستند
+
+### مرحله 7.2: تست Login با Form-Data
+
+1. روی **Login** کلیک کنید
+2. اطلاعات را وارد کنید و Login کنید
+3. در **Console**، باید این پیام را ببینید:
+   ```
+   [ApiClient] Sending POST [url] (form-data)
+   [ApiClient] Login response: [response]
+   ```
+
+### مرحله 7.3: تست Buy Heart با Form-Data
+
+1. بعد از Login، به **Store** بروید
+2. روی **Buy Heart** کلیک کنید
+3. در **Console**، باید این پیام را ببینید:
+   ```
+   [ApiClient] Sending POST [url] (form-data)
+   [ApiClient] BuyHeart response: [response]
+   ```
+
+---
+
+## ✅ چک‌لیست نهایی
+
+قبل از تست کامل، این موارد را بررسی کنید:
+
+### نصب و تنظیمات:
+- [ ] کتابخانه Socket.IO نصب شده است
+- [ ] WebSocketManager.cs وجود دارد و کامپایل می‌شود
+- [ ] ApiClient.cs به‌روزرسانی شده (form-data)
+- [ ] ApiModels.cs مدل‌های WebSocket را دارد
+- [ ] GameManager.cs به‌روزرسانی شده
+
+### اتصال:
+- [ ] بعد از Login، WebSocket متصل می‌شود
+- [ ] پیام "WebSocket Connected!" در Console نمایش داده می‌شود
+- [ ] Event Handlers به درستی تنظیم شده‌اند
+
+### Room Operations:
+- [ ] Create Room از طریق WebSocket کار می‌کند
+- [ ] Join Room از طریق WebSocket کار می‌کند
+- [ ] Make Move از طریق WebSocket کار می‌کند
+- [ ] Room Move events دریافت می‌شوند
+- [ ] Room Finished event دریافت می‌شود
+
+### Matchmaking:
+- [ ] Queue Matchmaking از طریق WebSocket کار می‌کند
+- [ ] Matchmaking Matched event دریافت می‌شود
+- [ ] Cancel Matchmaking کار می‌کند
+
+### Form-Data:
+- [ ] Register با form-data کار می‌کند
+- [ ] Login با form-data کار می‌کند
+- [ ] Buy Heart با form-data کار می‌کند
+- [ ] Buy Booster با form-data کار می‌کند
+
+---
+
+## 🐛 عیب‌یابی
+
+### مشکل: WebSocket متصل نمی‌شود
+
+**راه حل:**
+1. بررسی کنید Server در حال اجرا است
+2. بررسی کنید URL درست است (ws://localhost:3000)
+3. بررسی کنید Token معتبر است
+4. Logs را در Console بررسی کنید
+
+### مشکل: Room Create/Join کار نمی‌کند
+
+**راه حل:**
+1. بررسی کنید WebSocket متصل است (`webSocketManager.IsConnected`)
+2. بررسی کنید Event Handlers تنظیم شده‌اند
+3. بررسی کنید که `SubscribeToRoom()` فراخوانی شده است
+
+### مشکل: Move کار نمی‌کند
+
+**راه حل:**
+1. بررسی کنید که نوبت شماست
+2. بررسی کنید که خانه خالی است
+3. بررسی کنید که WebSocket متصل است
+4. بررسی کنید که Room ID درست است
+
+### مشکل: Form-Data کار نمی‌کند
+
+**راه حل:**
+1. بررسی کنید که `WWWForm` استفاده می‌شود (نه JSON)
+2. بررسی کنید که فیلدها درست هستند
+3. بررسی کنید که Server از form-data پشتیبانی می‌کند
+
+### مشکل: خطای کامپایل
+
+**راه حل:**
+1. مطمئن شوید کتابخانه Socket.IO نصب شده است
+2. Namespace ها را بررسی کنید
+3. ممکن است نیاز باشد using statements را تغییر دهید
+
+---
+
+## 📝 نکات مهم
+
+1. **WebSocket باید متصل باشد** قبل از استفاده از Room/Matchmaking
+2. **Polling حذف شده** - همه چیز از طریق WebSocket events است
+3. **Form-data** برای Register/Login/BuyHeart/BuyBooster استفاده می‌شود
+4. **REST API** هنوز برای Leaderboard, Wallet, Economy Config استفاده می‌شود
+5. **Event Handlers** باید قبل از استفاده تنظیم شوند
+6. **SubscribeToRoom** به صورت خودکار بعد از Create/Join فراخوانی می‌شود
+
+---
+
+## 🎮 تست نهایی
+
+بعد از انجام همه مراحل:
+
+1. **Register** یک حساب جدید
+2. **Login** کنید
+3. **Create Room** کنید
+4. **Join Room** کنید (با Player دیگر)
+5. **Make Moves** کنید
+6. **Queue Matchmaking** کنید
+7. **Play Matchmaking Game** کنید
+8. **Buy Heart** کنید
+
+اگر همه این موارد کار می‌کنند، پیاده‌سازی موفق بوده است! 🎉
+
+---
+
+**موفق باشید! 🚀**
