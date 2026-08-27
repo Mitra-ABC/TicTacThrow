@@ -275,19 +275,6 @@
         "com.unity.modules.physics": "1.0.0"
       }
     },
-<<<<<<< HEAD
-    "com.unity.visualscripting": {
-      "version": "1.9.12",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.ugui": "2.0.0",
-        "com.unity.modules.jsonserialize": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
-    },
-=======
->>>>>>> 2d06fc5416fd1433bd0ac6711c4984750d865abe
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

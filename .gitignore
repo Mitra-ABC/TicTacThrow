@@ -15,6 +15,7 @@ UserSettings/
 .vs/
 .idea/
 *.sln
+*.slnx
 *.csproj
 .vsconfig
 
