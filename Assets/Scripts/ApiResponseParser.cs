@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 public static class ApiResponseParser
@@ -77,7 +78,7 @@ public static class ApiResponseParser
 
     public static EconomyConfigResponse ParseEconomyConfigResponse(string json)
     {
-        return Deserialize<EconomyConfigResponse>(json, nameof(EconomyConfigResponse));
+        return Deserialize<EconomyConfigResponse>(NormalizeNumericBools(json), nameof(EconomyConfigResponse));
     }
 
     // ============ Store Responses ============
@@ -115,6 +116,15 @@ public static class ApiResponseParser
     }
 
     // ============ Helper ============
+
+    // JsonUtility only accepts JSON true/false for bool; MySQL/Node often send 1/0.
+    private static string NormalizeNumericBools(string json)
+    {
+        if (string.IsNullOrEmpty(json)) return json;
+        json = Regex.Replace(json, "\"isActive\"\\s*:\\s*1\\b", "\"isActive\":true");
+        json = Regex.Replace(json, "\"isActive\"\\s*:\\s*0\\b", "\"isActive\":false");
+        return json;
+    }
 
     private static T Deserialize<T>(string json, string typeName)
     {

@@ -60,6 +60,12 @@ public class CoinPackItem : MonoBehaviour
         }
     }
 
+    public void SetPurchasable(bool purchasable)
+    {
+        if (buyButton != null)
+            buyButton.interactable = purchasable;
+    }
+
     /// <summary>
     /// Backward compatibility: set pack and callback only (no price). Use when IAP is disabled.
     /// </summary>

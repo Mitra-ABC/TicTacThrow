@@ -101,6 +101,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject coinPackItemPrefab;
     [SerializeField] private Button closeStoreButton;
     [SerializeField] private IAPManager iapManager;
+    private Action<Dictionary<string, string>> storePriceHandler;
 
     [Header("Boosters Panel")]
     [SerializeField] private GameObject boostersPanel;
@@ -202,6 +203,7 @@ public class GameManager : MonoBehaviour
             webSocketManager.OnConnected -= OnWebSocketConnected;
             webSocketManager.OnDisconnected -= OnWebSocketDisconnected;
         }
+        UnsubscribeStorePrices();
     }
     
     private void SetupWebSocketListeners()
@@ -1926,56 +1928,85 @@ public class GameManager : MonoBehaviour
             yield break;
         }
         if (response == null) yield break;
-        Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: economy loaded, coinPacks={response.coinPacks?.Length ?? 0}");
+        int packCount = response.coinPacks?.Length ?? 0;
+        Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: economy loaded, coinPacks={packCount}");
+        if (response.coinPacks != null)
+        {
+            foreach (var p in response.coinPacks)
+                Debug.Log($"[IAP] pack code={p.code}, isActive={p.isActive}, sku={p.platformProductId}");
+        }
+
+        DisplayStoreCoinPacksOnly(response, null);
 
         var iap = iapManager != null ? iapManager : IAPManager.Instance;
-        if (iap != null && iap.IsIAPEnabled && response.coinPacks != null && response.coinPacks.Length > 0)
+        if (iap == null || !iap.IsIAPEnabled || response.coinPacks == null || response.coinPacks.Length == 0)
+            yield break;
+
+        var skus = new List<string>();
+        foreach (var p in response.coinPacks)
         {
-            var skus = new List<string>();
-            foreach (var p in response.coinPacks)
-            {
-                if (p.isActive && !string.IsNullOrEmpty(p.platformProductId))
-                    skus.Add(p.platformProductId);
-            }
-            if (skus.Count > 0)
-            {
-                Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: requesting prices from SDK, skus={string.Join(",", skus)}");
-                bool pricesReceived = false;
-                Action<Dictionary<string, string>> onPrices = null;
-                onPrices = priceMap =>
-                {
-                    if (pricesReceived) return;
-                    pricesReceived = true;
-                    if (iap != null) iap.SkuPricesReady -= onPrices;
-                    Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: SkuPricesReady, price count={priceMap?.Count ?? 0}");
-                    DisplayStoreCoinPacksOnly(response, priceMap);
-                };
-                iap.SkuPricesReady += onPrices;
-                iap.RequestSkuPrices(skus.ToArray());
-                yield break;
-            }
+            if (!string.IsNullOrEmpty(p.platformProductId))
+                skus.Add(p.platformProductId);
         }
-        Debug.Log("[IAP] HandleLoadEconomyConfigForStore: showing list without SDK prices");
-        DisplayStoreCoinPacksOnly(response, null);
+        if (skus.Count == 0) yield break;
+
+        Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: requesting prices from SDK, skus={string.Join(",", skus)}");
+        UnsubscribeStorePrices();
+        storePriceHandler = priceMap =>
+        {
+            Debug.Log($"[IAP] HandleLoadEconomyConfigForStore: SkuPricesReady, price count={priceMap?.Count ?? 0}");
+            DisplayStoreCoinPacksOnly(response, priceMap);
+        };
+        iap.SkuPricesReady += storePriceHandler;
+        iap.RequestSkuPrices(skus.ToArray());
+    }
+
+    private void UnsubscribeStorePrices()
+    {
+        var iap = iapManager != null ? iapManager : IAPManager.Instance;
+        if (iap != null && storePriceHandler != null)
+            iap.SkuPricesReady -= storePriceHandler;
+        storePriceHandler = null;
     }
 
     private void DisplayStoreCoinPacksOnly(EconomyConfigResponse config, Dictionary<string, string> priceBySku)
     {
         if (storeTitle != null) storeTitle.text = GameStrings.StoreTitle;
-        if (coinPacksContent == null) return;
+        if (coinPacksContent == null)
+        {
+            Debug.LogWarning("[IAP] DisplayStoreCoinPacksOnly: coinPacksContent is null");
+            return;
+        }
+        if (coinPackItemPrefab == null)
+        {
+            Debug.LogWarning("[IAP] DisplayStoreCoinPacksOnly: coinPackItemPrefab is null");
+            return;
+        }
         foreach (Transform child in coinPacksContent) Destroy(child.gameObject);
-        if (config.coinPacks == null || coinPackItemPrefab == null) return;
+        if (config?.coinPacks == null)
+        {
+            Debug.LogWarning("[IAP] DisplayStoreCoinPacksOnly: coinPacks is null");
+            return;
+        }
+
+        var iap = iapManager != null ? iapManager : IAPManager.Instance;
+        int shown = 0;
         foreach (var pack in config.coinPacks)
         {
-            if (!pack.isActive) continue;
+            if (pack == null) continue;
             var item = Instantiate(coinPackItemPrefab, coinPacksContent);
             var itemScript = item.GetComponent<CoinPackItem>();
-            if (itemScript != null)
-            {
-                string price = (priceBySku != null && pack.platformProductId != null && priceBySku.TryGetValue(pack.platformProductId, out var p)) ? p : "—";
-                itemScript.SetCoinPack(pack, price, OnCoinPackClicked);
-            }
+            if (itemScript == null) continue;
+
+            bool hasSdkPrice = priceBySku != null && !string.IsNullOrEmpty(pack.platformProductId)
+                && priceBySku.TryGetValue(pack.platformProductId, out var sdkPrice) && !string.IsNullOrEmpty(sdkPrice);
+            string price = hasSdkPrice ? sdkPrice : "—";
+            bool purchasable = iap != null && iap.IsIAPEnabled && iap.IsBillingReady && hasSdkPrice;
+            itemScript.SetCoinPack(pack, price, OnCoinPackClicked);
+            itemScript.SetPurchasable(purchasable);
+            shown++;
         }
+        Debug.Log($"[IAP] DisplayStoreCoinPacksOnly: shown={shown} of {config.coinPacks.Length}");
     }
 
     private void LoadBoostersPage()
@@ -2031,6 +2062,11 @@ public class GameManager : MonoBehaviour
         Debug.Log($"[IAP] OnCoinPackClicked: iap={(iap != null ? "ok" : "null")}, IsIAPEnabled={iap?.IsIAPEnabled ?? false}");
         if (iap != null && iap.IsIAPEnabled)
         {
+            if (!iap.IsBillingReady)
+            {
+                ShowError("Store catalog is not ready yet. Packs are listed but purchase is disabled.");
+                return;
+            }
             Debug.Log($"[IAP] OnCoinPackClicked: IAP path — Purchase(sku={pack.platformProductId ?? pack.code})");
             iap.OnPurchaseVerifySuccess -= OnIAPVerifySuccess;
             iap.OnPurchaseVerifyFailed -= OnIAPVerifyFailed;

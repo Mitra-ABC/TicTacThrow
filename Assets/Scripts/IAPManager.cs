@@ -37,6 +37,8 @@ public class IAPManager : MonoBehaviour
     public event Action OnPurchaseVerifySuccess;
     public event Action<string> OnPurchaseVerifyFailed;
 
+    public bool IsBillingReady => billingReady;
+
     public bool IsIAPEnabled
     {
         get
@@ -298,11 +300,22 @@ public class IAPManager : MonoBehaviour
             return;
         }
 #if BAZAAR_IAP
-        if (poolakeyPayment == null) { pendingSkus = skus; return; }
-        if (!billingReady) { pendingSkus = skus; return; }
+        if (poolakeyPayment == null || !billingReady)
+        {
+            pendingSkus = skus;
+            Debug.Log("[IAP] RequestSkuPrices: billing not ready, returning empty prices");
+            SkuPricesReady?.Invoke(new Dictionary<string, string>());
+            return;
+        }
         RequestBazaarSkuDetails(skus);
 #elif MYKET_IAP
-        if (!billingReady) { pendingSkus = skus; return; }
+        if (!billingReady)
+        {
+            pendingSkus = skus;
+            Debug.Log("[IAP] RequestSkuPrices: billing not ready, returning empty prices");
+            SkuPricesReady?.Invoke(new Dictionary<string, string>());
+            return;
+        }
         Debug.Log("[IAP] RequestSkuPrices: calling Myket querySkuDetails");
         MyketIAB.querySkuDetails(skus);
 #else
