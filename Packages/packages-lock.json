@@ -1,9 +1,9 @@
 {
   "dependencies": {
     "com.itisnajim.socketiounity": {
-      "version": "https://github.com/itisnajim/SocketIOUnity.git#1.1.5",
+      "version": "file:com.itisnajim.socketiounity",
       "depth": 0,
-      "source": "git",
+      "source": "embedded",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.0.2"
       }
