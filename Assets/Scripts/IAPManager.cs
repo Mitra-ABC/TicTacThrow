@@ -110,29 +110,95 @@ public class IAPManager : MonoBehaviour
     {
         yield return null;
         float waited = 0f;
-        while (waited < 8f && GetUnityActivity() == null)
+        while (waited < 8f && !HasUnityActivity())
         {
             waited += Time.unscaledDeltaTime;
             yield return null;
         }
-        Debug.Log($"[IAP] InitBazaarWhenReady: activityReady={GetUnityActivity() != null}, waited={waited:0.00}s");
+        Debug.Log($"[IAP] InitBazaarWhenReady: activityReady={HasUnityActivity()}, waited={waited:0.00}s");
         InitBazaar();
         if (bazaarConnectRoutine != null)
             StopCoroutine(bazaarConnectRoutine);
         bazaarConnectRoutine = StartCoroutine(BillingConnectTimeout());
     }
 
-    private static AndroidJavaObject GetUnityActivity()
+    private static bool HasUnityActivity()
     {
+        AndroidJavaObject activity = null;
         try
         {
             using (var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-                return player.GetStatic<AndroidJavaObject>("currentActivity");
+                activity = player.GetStatic<AndroidJavaObject>("currentActivity");
+            return activity != null;
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[IAP] GetUnityActivity failed: {e.Message}");
-            return null;
+            Debug.LogWarning($"[IAP] HasUnityActivity failed: {e.Message}");
+            return false;
+        }
+        finally
+        {
+            activity?.Dispose();
+        }
+    }
+
+    private static void RunOnUiThread(Action action)
+    {
+        using (var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+        using (var activity = player.GetStatic<AndroidJavaObject>("currentActivity"))
+        {
+            if (activity == null)
+                throw new InvalidOperationException("Unity currentActivity is null");
+            activity.Call("runOnUiThread", new AndroidJavaRunnable(action));
+        }
+    }
+
+    private static void LogBazaarEnvironment(string rsaKey)
+    {
+        Debug.Log($"[IAP] env platform={Application.platform} rsaKeyLen={rsaKey?.Length ?? 0}");
+        try
+        {
+            using (var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            using (var activity = player.GetStatic<AndroidJavaObject>("currentActivity"))
+            {
+                if (activity == null)
+                {
+                    Debug.LogWarning("[IAP] env activity=null");
+                    return;
+                }
+                string activityName = "unknown";
+                try
+                {
+                    using (var cls = activity.Call<AndroidJavaObject>("getClass"))
+                        activityName = cls.Call<string>("getName");
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[IAP] env activity class failed: {e.Message}");
+                }
+                string packageName = activity.Call<string>("getPackageName");
+                Debug.Log($"[IAP] env activity={activityName} package={packageName}");
+
+                using (var pm = activity.Call<AndroidJavaObject>("getPackageManager"))
+                {
+                    try
+                    {
+                        using (var info = pm.Call<AndroidJavaObject>("getPackageInfo", "com.farsitel.bazaar", 0))
+                        {
+                            string ver = info.Get<string>("versionName");
+                            Debug.Log($"[IAP] env bazaarInstalled=true version={ver}");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"[IAP] env bazaarInstalled=false — {e.Message}");
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[IAP] env dump failed: {e}");
         }
     }
 
@@ -154,11 +220,24 @@ public class IAPManager : MonoBehaviour
 
         try
         {
+            LogBazaarEnvironment(key);
             var securityCheck = SecurityCheck.Enable(key);
             var config = new PaymentConfiguration(securityCheck);
             poolakeyPayment = new Payment(config);
-            Debug.Log("[IAP] InitBazaar: Payment created, connecting");
-            bazaarConnectTask = poolakeyPayment.Connect(OnPoolakeyConnect);
+            Debug.Log("[IAP] InitBazaar: Payment created, scheduling Connect on UI thread");
+            RunOnUiThread(() =>
+            {
+                try
+                {
+                    Debug.Log("[IAP] InitBazaar: UI thread Connect begin");
+                    bazaarConnectTask = poolakeyPayment.Connect(OnPoolakeyConnect);
+                    Debug.Log("[IAP] InitBazaar: Connect() invoked from UI thread");
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[IAP] InitBazaar UI Connect exception: {e}");
+                }
+            });
         }
         catch (Exception e)
         {

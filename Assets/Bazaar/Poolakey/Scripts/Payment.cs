@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using UnityEngine;
 using Bazaar.Poolakey.Data;
 using Bazaar.Poolakey.Callbacks;
 using Bazaar.Data;
@@ -32,9 +33,23 @@ namespace Bazaar.Poolakey
                     onComplete?.Invoke(result);
                     return result;
                 }
+                string rsaKey = paymentConfiguration?.securityCheck?.rsaPublicKey ?? "";
+                Debug.Log($"[IAP] Payment.Connect: isAndroid={isAndroid}, bridgeNull={bridge == null}, rsaKeyLen={rsaKey.Length}");
                 connectCallback = new ConnectionCallbackProxy();
-                bridge.Call("connect", paymentConfiguration.securityCheck.rsaPublicKey, connectCallback);
+                try
+                {
+                    bridge.Call("connect", rsaKey, connectCallback);
+                    Debug.Log("[IAP] Payment.Connect: PoolakeyBridge.connect() returned");
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[IAP] Payment.Connect: PoolakeyBridge.connect threw — {e}");
+                    result = new Result<bool>(Status.Failure, e.Message) { data = false };
+                    onComplete?.Invoke(result);
+                    return result;
+                }
                 result = await connectCallback.taskCompletionSource.Task;
+                Debug.Log($"[IAP] Payment.Connect: callback finished status={result.status} message={result.message}");
             }
             else
             {

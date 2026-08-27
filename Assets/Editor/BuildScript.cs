@@ -14,14 +14,28 @@ public static class BuildScript
     [MenuItem("Build/Build Bazaar APK")]
     public static void PerformBazaarBuild()
     {
+        BuildBazaarInternal(false);
+    }
+
+    [MenuItem("Build/Build Bazaar Debug APK")]
+    public static void PerformBazaarDebugBuild()
+    {
+        BuildBazaarInternal(true);
+    }
+
+    private static void BuildBazaarInternal(bool development)
+    {
         SetDefineSymbols(BAZAAR_SYMBOL);
         WriteMarketPlaceholders(false);
         string outputPath = Path.Combine("Builds", "Bazaar");
         if (!Directory.Exists(outputPath))
             Directory.CreateDirectory(outputPath);
-        string apkPath = Path.Combine(outputPath, "Game_Bazaar.apk");
-        if (BuildAndroid(apkPath))
-            Debug.Log($"[BuildScript] Bazaar build complete: {Path.GetFullPath(apkPath)}");
+        string apkPath = Path.Combine(outputPath, development ? "Game_Bazaar_Debug.apk" : "Game_Bazaar.apk");
+        var options = development
+            ? BuildOptions.Development | BuildOptions.ConnectWithProfiler
+            : BuildOptions.None;
+        if (BuildAndroid(apkPath, options))
+            Debug.Log($"[BuildScript] Bazaar {(development ? "debug" : "release")} build complete: {Path.GetFullPath(apkPath)}");
     }
 
     [MenuItem("Build/Build Myket APK")]
@@ -33,7 +47,7 @@ public static class BuildScript
         if (!Directory.Exists(outputPath))
             Directory.CreateDirectory(outputPath);
         string apkPath = Path.Combine(outputPath, "Game_Myket.apk");
-        if (BuildAndroid(apkPath))
+        if (BuildAndroid(apkPath, BuildOptions.None))
             Debug.Log($"[BuildScript] Myket build complete: {Path.GetFullPath(apkPath)}");
     }
 
@@ -83,7 +97,7 @@ public static class BuildScript
         lines.Add(prefix + value);
     }
 
-    private static bool BuildAndroid(string apkPath)
+    private static bool BuildAndroid(string apkPath, BuildOptions extraOptions)
     {
         var scenes = EditorBuildSettings.scenes
             .Where(s => s.enabled)
@@ -99,7 +113,7 @@ public static class BuildScript
             scenes = scenes,
             locationPathName = apkPath,
             target = BuildTarget.Android,
-            options = BuildOptions.None
+            options = extraOptions
         };
         BuildReport report = BuildPipeline.BuildPlayer(options);
         if (report.summary.result != BuildResult.Succeeded)

@@ -12,16 +12,36 @@ namespace Bazaar.Poolakey.Callbacks
         public ConnectionCallbackProxy() : base("com.farsitel.bazaar.callback.ConnectionCallback")
         {
             taskCompletionSource = new TaskCompletionSource<Result<bool>>();
+            Debug.Log("[IAP] ConnectionCallbackProxy created");
         }
 
         public override AndroidJavaObject Invoke(string methodName, object[] args)
         {
+            Debug.Log($"[IAP] ConnectionCallback.Invoke object[] method={methodName} argc={args?.Length ?? 0}");
             if (methodName == "onConnect" || methodName == "onDisconnect" || methodName == "onFailure")
             {
                 Handle(methodName, args);
                 return null;
             }
             return base.Invoke(methodName, args);
+        }
+
+        public override AndroidJavaObject Invoke(string methodName, AndroidJavaObject[] javaArgs)
+        {
+            Debug.Log($"[IAP] ConnectionCallback.Invoke java[] method={methodName} argc={javaArgs?.Length ?? 0}");
+            if (methodName == "onConnect" || methodName == "onDisconnect" || methodName == "onFailure")
+            {
+                object[] args = null;
+                if (javaArgs != null && javaArgs.Length > 0)
+                {
+                    args = new object[javaArgs.Length];
+                    for (int i = 0; i < javaArgs.Length; i++)
+                        args[i] = javaArgs[i] != null ? javaArgs[i].Call<string>("toString") : null;
+                }
+                Handle(methodName, args);
+                return null;
+            }
+            return base.Invoke(methodName, javaArgs);
         }
 
         [Preserve]

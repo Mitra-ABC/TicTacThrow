@@ -13,7 +13,11 @@ configurations.all {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.github.myketstore:myket-billing-unity:unity-1.7'
+    def marketId = project.findProperty("marketApplicationId") ?: "ir.mservices.market"
+    if (marketId == "ir.mservices.market") {
+        implementation 'com.github.myketstore:myket-billing-unity:unity-1.7'
+    }
+    implementation 'com.github.cafebazaar.Poolakey:poolakey:2.0.0'
 **DEPS**}
 
 android {
