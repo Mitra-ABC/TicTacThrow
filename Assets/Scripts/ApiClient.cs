@@ -960,10 +960,10 @@ public class ApiClient : MonoBehaviour
             try
             {
                 var errorResponse = JsonUtility.FromJson<ErrorResponse>(responseText);
+                if (!string.IsNullOrEmpty(errorResponse?.message))
+                    return errorResponse.message;
                 if (!string.IsNullOrEmpty(errorResponse?.error))
-                {
                     return errorResponse.error;
-                }
             }
             catch
             {
@@ -971,17 +971,26 @@ public class ApiClient : MonoBehaviour
             }
         }
 
-        // Fall back to request error or status code
+        if (request.result == UnityWebRequest.Result.ConnectionError
+            || request.result == UnityWebRequest.Result.DataProcessingError)
+            return "connection_failed";
+
         if (!string.IsNullOrEmpty(request.error))
         {
-            if (request.responseCode != 0)
-            {
-                return $"{request.responseCode}: {request.error}";
-            }
+            var lower = request.error.ToLowerInvariant();
+            if (lower.Contains("ssl") || lower.Contains("certificate") || lower.Contains("unable to complete ssl"))
+                return "connection_failed";
+            if (request.responseCode == 0)
+                return "connection_failed";
             return request.error;
         }
 
-        return $"Request failed with status {request.responseCode}";
+        if (request.responseCode >= 500)
+            return "Internal server error";
+        if (request.responseCode == 401 || request.responseCode == 403)
+            return "Session expired. Please login again.";
+
+        return "connection_failed";
     }
 
     private void LogResponseDiagnostics(string endpoint, string responseText)

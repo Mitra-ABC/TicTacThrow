@@ -43,12 +43,12 @@ public class AuthManager : MonoBehaviour
     {
         if (string.IsNullOrWhiteSpace(username))
         {
-            onError?.Invoke("Username is required.");
+            onError?.Invoke(GameStrings.UsernameRequired);
             return;
         }
         if (string.IsNullOrWhiteSpace(password))
         {
-            onError?.Invoke("Password is required.");
+            onError?.Invoke(GameStrings.PasswordRequired);
             return;
         }
 
@@ -78,12 +78,12 @@ public class AuthManager : MonoBehaviour
     {
         if (string.IsNullOrWhiteSpace(username))
         {
-            onError?.Invoke("Username is required.");
+            onError?.Invoke(GameStrings.UsernameRequired);
             return;
         }
         if (string.IsNullOrWhiteSpace(password))
         {
-            onError?.Invoke("Password is required.");
+            onError?.Invoke(GameStrings.PasswordRequired);
             return;
         }
 
@@ -125,7 +125,7 @@ public class AuthManager : MonoBehaviour
     {
         if (!IsLoggedIn)
         {
-            onInvalid?.Invoke("Not logged in.");
+            onInvalid?.Invoke(GameStrings.NotLoggedIn);
             return;
         }
 

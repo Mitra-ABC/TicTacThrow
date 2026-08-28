@@ -32,13 +32,18 @@ public class BoosterItem : MonoBehaviour
         onBuyClicked = onBuy;
 
         if (boosterNameText != null)
-            boosterNameText.text = booster.displayName ?? booster.code;
+        {
+            PersianUi.SetText(boosterNameText, booster.displayName);
+        }
         if (descriptionText != null)
-            descriptionText.text = booster.description ?? "";
+        {
+            PersianUi.SetText(descriptionText, booster.description);
+        }
 
         bool isActive = active != null && !string.IsNullOrEmpty(active.expiresAt);
         if (timeRemainingText != null)
         {
+            PersianUi.Style(timeRemainingText);
             timeRemainingText.gameObject.SetActive(isActive);
             if (isActive)
                 countdownCoroutine = StartCoroutine(UpdateTimeRemaining(active.expiresAt, timeRemainingText));
@@ -47,6 +52,11 @@ public class BoosterItem : MonoBehaviour
         {
             buyButton.gameObject.SetActive(!isActive);
             buyButton.onClick.RemoveAllListeners();
+            var buyLabel = buyButton.GetComponentInChildren<TMP_Text>(true);
+            if (buyLabel != null)
+            {
+                PersianUi.SetText(buyLabel, GameStrings.BuyButton);
+            }
             if (!isActive)
                 buyButton.onClick.AddListener(() => onBuyClicked?.Invoke(booster.code));
         }
@@ -56,13 +66,17 @@ public class BoosterItem : MonoBehaviour
         {
             priceText.gameObject.SetActive(!isActive);
             if (!isActive)
-                priceText.text = string.Format(GameStrings.BoosterPriceFormat, booster.priceCoins);
+            {
+                PersianUi.SetText(priceText, string.Format(GameStrings.BoosterPriceFormat, booster.priceCoins));
+            }
         }
         if (durationText != null)
         {
             durationText.gameObject.SetActive(!isActive);
             if (!isActive)
-                durationText.text = string.Format(GameStrings.BoosterDurationFormat, booster.durationMinutes);
+            {
+                PersianUi.SetText(durationText, string.Format(GameStrings.BoosterDurationFormat, booster.durationMinutes));
+            }
         }
     }
 
@@ -70,7 +84,7 @@ public class BoosterItem : MonoBehaviour
     {
         if (!DateTime.TryParse(expiresAtIso, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime target))
         {
-            label.text = GameStrings.BoosterExpired;
+            PersianUi.SetText(label, GameStrings.BoosterExpired);
             yield break;
         }
         var wait = new WaitForSeconds(1f);
@@ -79,15 +93,10 @@ public class BoosterItem : MonoBehaviour
             var remaining = target - DateTime.UtcNow;
             if (remaining <= TimeSpan.Zero)
             {
-                label.text = GameStrings.BoosterExpired;
+                PersianUi.SetText(label, GameStrings.BoosterExpired);
                 yield break;
             }
-            if (remaining.TotalHours >= 1)
-                label.text = string.Format(GameStrings.BoosterTimeRemainingFormat, $"{(int)remaining.TotalHours}h {remaining.Minutes}m");
-            else if (remaining.TotalMinutes >= 1)
-                label.text = string.Format(GameStrings.BoosterTimeRemainingFormat, $"{remaining.Minutes}m {remaining.Seconds}s");
-            else
-                label.text = string.Format(GameStrings.BoosterTimeRemainingFormat, $"{remaining.Seconds}s");
+            PersianUi.SetText(label, GameStrings.FormatRemaining(remaining));
             yield return wait;
         }
     }

@@ -154,7 +154,8 @@ public class CancelMatchmakingResponse
 [Serializable]
 public class LeaderboardResponse
 {
-    public string season; // Format: "YYYY-MM"
+    public string season;
+    public string seasonLabel;
     public LeaderboardPlayer[] players;
 }
 
@@ -174,7 +175,8 @@ public class LeaderboardPlayer
 [Serializable]
 public class MyStatsResponse
 {
-    public string season; // Format: "YYYY-MM"
+    public string season;
+    public string seasonLabel;
     public int playerId;
     public string nickname;
     public int rating; // Use -1 to represent null
@@ -414,4 +416,5 @@ public class RoomData
 public class ErrorData
 {
     public string error;
+    public string message;
 }

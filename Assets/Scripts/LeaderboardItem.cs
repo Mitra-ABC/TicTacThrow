@@ -21,13 +21,11 @@ public class LeaderboardItem : MonoBehaviour
     public void SetPlayer(LeaderboardPlayer player)
     {
         if (rankText != null)
-        {
             rankText.text = player.rank.ToString();
-        }
 
         if (nicknameText != null)
         {
-            nicknameText.text = player.nickname ?? "Unknown";
+            PersianUi.SetText(nicknameText, player.nickname ?? GameStrings.UnknownNickname);
         }
 
         if (ratingText != null)

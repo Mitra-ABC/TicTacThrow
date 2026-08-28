@@ -29,10 +29,14 @@ public class CoinPackItem : MonoBehaviour
         onBuyClicked = onBuy;
 
         if (packNameText != null)
-            packNameText.text = pack.displayName ?? "Coin Pack";
+        {
+            PersianUi.SetText(packNameText, pack.displayName);
+        }
 
         if (descriptionText != null)
-            descriptionText.text = pack.description ?? "";
+        {
+            PersianUi.SetText(descriptionText, pack.description);
+        }
 
         if (coinsAmountText != null)
             coinsAmountText.text = pack.coinsAmount.ToString();
@@ -41,7 +45,7 @@ public class CoinPackItem : MonoBehaviour
         {
             if (pack.bonusCoinsAmount > 0)
             {
-                bonusText.text = $"+{pack.bonusCoinsAmount} bonus";
+                PersianUi.SetText(bonusText, string.Format(GameStrings.CoinBonusFormat, pack.bonusCoinsAmount));
                 bonusText.gameObject.SetActive(true);
             }
             else
@@ -51,10 +55,17 @@ public class CoinPackItem : MonoBehaviour
         }
 
         if (priceText != null)
-            priceText.text = string.IsNullOrEmpty(priceString) ? "—" : priceString;
+        {
+            PersianUi.SetText(priceText, string.IsNullOrEmpty(priceString) ? "—" : priceString);
+        }
 
         if (buyButton != null)
         {
+            var buyLabel = buyButton.GetComponentInChildren<TMP_Text>(true);
+            if (buyLabel != null)
+            {
+                PersianUi.SetText(buyLabel, GameStrings.BuyButton);
+            }
             buyButton.onClick.RemoveAllListeners();
             buyButton.onClick.AddListener(() => onBuyClicked?.Invoke(currentPack));
         }

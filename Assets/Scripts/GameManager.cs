@@ -129,6 +129,8 @@ public class GameManager : MonoBehaviour
     [Header("General")]
     [SerializeField] private TMP_Text errorLabel;
 
+    private ErrorToast errorToast;
+    private bool ignoreNextDisconnect;
     private GameState currentState = GameState.AuthChoice;
     private bool requestInFlight;
     private bool isRegisterMode; // true = Register, false = Login
@@ -186,6 +188,8 @@ public class GameManager : MonoBehaviour
 
         SetupButtonListeners();
         SetupWebSocketListeners();
+        PersianUi.Apply();
+        errorToast = ErrorToast.Ensure(errorLabel);
     }
     
     private void OnDestroy()
@@ -198,6 +202,7 @@ public class GameManager : MonoBehaviour
             webSocketManager.OnRoomMove -= OnWebSocketRoomMove;
             webSocketManager.OnRoomFinished -= OnWebSocketRoomFinished;
             webSocketManager.OnMatchmakingMatched -= OnWebSocketMatchmakingMatched;
+            webSocketManager.OnMatchmakingQueued -= OnWebSocketMatchmakingQueued;
             webSocketManager.OnMatchmakingCanceled -= OnWebSocketMatchmakingCanceled;
             webSocketManager.OnError -= OnWebSocketError;
             webSocketManager.OnConnected -= OnWebSocketConnected;
@@ -215,6 +220,7 @@ public class GameManager : MonoBehaviour
         webSocketManager.OnRoomMove += OnWebSocketRoomMove;
         webSocketManager.OnRoomFinished += OnWebSocketRoomFinished;
         webSocketManager.OnMatchmakingMatched += OnWebSocketMatchmakingMatched;
+        webSocketManager.OnMatchmakingQueued += OnWebSocketMatchmakingQueued;
         webSocketManager.OnMatchmakingCanceled += OnWebSocketMatchmakingCanceled;
         webSocketManager.OnError += OnWebSocketError;
         webSocketManager.OnConnected += OnWebSocketConnected;
@@ -409,6 +415,7 @@ public class GameManager : MonoBehaviour
         currentRoomState = null;
         boardView?.Clear();
         ClearInputs();
+        ignoreNextDisconnect = true;
         SetState(GameState.AuthChoice);
     }
 
@@ -555,7 +562,7 @@ public class GameManager : MonoBehaviour
         if (webSocketManager == null || !webSocketManager.IsConnected)
         {
             Debug.LogWarning("[GameManager] WebSocket not connected");
-            ShowError("WebSocket not connected. Please wait...");
+            ShowError(GameStrings.WsNotReady);
             requestInFlight = false;
             ShowLoading(false);
             yield break;
@@ -620,8 +627,8 @@ public class GameManager : MonoBehaviour
         // Update player info display
         UpdatePlayerInfo(currentRoomState);
         
-        waitingStatusLabel?.SetText(GameStrings.WaitingForOpponent);
-        shareRoomIdLabel?.SetText(string.Format(GameStrings.ShareRoomFormat, currentRoomId));
+        PersianUi.SetText(waitingStatusLabel, GameStrings.WaitingForOpponent);
+        PersianUi.SetText(shareRoomIdLabel, string.Format(GameStrings.ShareRoomFormat, currentRoomId));
         SetState(GameState.WaitingForOpponent);
         // No need to poll - WebSocket will send room:joined event when player2 joins
     }
@@ -630,7 +637,7 @@ public class GameManager : MonoBehaviour
     {
         if (webSocketManager == null || !webSocketManager.IsConnected)
         {
-            ShowError("WebSocket not connected. Please wait...");
+            ShowError(GameStrings.WsNotReady);
             requestInFlight = false;
             ShowLoading(false);
             yield break;
@@ -805,6 +812,8 @@ public class GameManager : MonoBehaviour
         if (blockReason != null)
         {
             Debug.LogWarning($"[GameManager] Ignoring click on cell {index}: {blockReason}");
+            if (blockReason == "not_your_turn" || blockReason == "cell_taken" || blockReason == "game_not_ready")
+                ShowError(blockReason);
             return;
         }
 
@@ -819,7 +828,7 @@ public class GameManager : MonoBehaviour
         
         if (webSocketManager == null || !webSocketManager.IsConnected)
         {
-            ShowError("WebSocket not connected!");
+            ShowError(GameStrings.WsDisconnected);
             yield break;
         }
 
@@ -964,6 +973,8 @@ public class GameManager : MonoBehaviour
             nextHeartCountdownCoroutine = null;
         }
         UpdateUI();
+        if (newState == GameState.Matchmaking || newState == GameState.WaitingForOpponent)
+            ShowLoading(false);
 
         if (newState == GameState.InGame)
         {
@@ -1000,7 +1011,7 @@ public class GameManager : MonoBehaviour
             // Update form title
             if (authFormTitle != null)
             {
-                authFormTitle.text = isRegisterMode ? GameStrings.RegisterButton : GameStrings.LoginButton;
+                PersianUi.SetText(authFormTitle, isRegisterMode ? GameStrings.RegisterButton : GameStrings.LoginButton);
             }
 
             // Show/hide nickname field
@@ -1009,7 +1020,7 @@ public class GameManager : MonoBehaviour
             // Update submit button text
             if (submitAuthButtonText != null)
             {
-                submitAuthButtonText.text = isRegisterMode ? GameStrings.RegisterButton : GameStrings.LoginButton;
+                PersianUi.SetText(submitAuthButtonText, isRegisterMode ? GameStrings.RegisterButton : GameStrings.LoginButton);
             }
         }
 
@@ -1017,8 +1028,8 @@ public class GameManager : MonoBehaviour
         if (currentState == GameState.Lobby && apiClient != null && apiClient.CurrentPlayer != null)
         {
             var player = apiClient.CurrentPlayer;
-            welcomeLabel?.SetText(string.Format(GameStrings.WelcomeFormat, player.nickname ?? player.username));
-            playerInfoLabel?.SetText(string.Format(GameStrings.PlayerInfoFormat, player.nickname ?? player.username, player.id));
+            PersianUi.SetText(welcomeLabel, string.Format(GameStrings.WelcomeFormat, player.nickname ?? player.username));
+            PersianUi.SetText(playerInfoLabel, string.Format(GameStrings.PlayerInfoFormat, player.nickname ?? player.username, player.id));
             
             // Refresh wallet info in lobby when state changes to Lobby
             RefreshWallet();
@@ -1026,14 +1037,19 @@ public class GameManager : MonoBehaviour
 
         if (roomIdLabel != null)
         {
-            roomIdLabel.text = currentRoomId > 0
+            PersianUi.SetText(roomIdLabel, currentRoomId > 0
                 ? string.Format(GameStrings.RoomInfoFormat, currentRoomId)
-                : GameStrings.RoomInfoPlaceholder;
+                : GameStrings.RoomInfoPlaceholder);
         }
 
         if (waitingStatusLabel != null && currentState == GameState.WaitingForOpponent)
         {
-            waitingStatusLabel.text = GameStrings.WaitingForOpponent;
+            PersianUi.SetText(waitingStatusLabel, GameStrings.WaitingForOpponent);
+        }
+
+        if (matchmakingStatusLabel != null && currentState == GameState.Matchmaking)
+        {
+            PersianUi.SetText(matchmakingStatusLabel, GameStrings.SearchingForOpponent);
         }
     }
 
@@ -1107,7 +1123,7 @@ public class GameManager : MonoBehaviour
             ? $"{state.players.player2.nickname} ({state.players.player2.symbol})" 
             : GameStrings.UnknownPlayer;
 
-        playersLabel.text = string.Format(GameStrings.PlayerNamesFormat, player1Name, player2Name);
+        PersianUi.SetText(playersLabel, string.Format(GameStrings.PlayerNamesFormat, player1Name, player2Name));
     }
 
     private void UpdateTurnLabel(int? currentTurnPlayer)
@@ -1126,15 +1142,20 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        turnLabel.text = (apiClient != null && currentTurnPlayer.Value == apiClient.CurrentPlayerId)
+        PersianUi.SetText(turnLabel, (apiClient != null && currentTurnPlayer.Value == apiClient.CurrentPlayerId)
             ? GameStrings.YourTurn
-            : GameStrings.OpponentTurn;
+            : GameStrings.OpponentTurn);
     }
 
     private void UpdateStatus(string status)
     {
         if (statusLabel == null) return;
-        statusLabel.text = string.Format(GameStrings.StatusFormat, status ?? GameStrings.StatusUnknown);
+        var label = currentState == GameState.GameFinished
+            ? GameStrings.StatusFinishedDisplay
+            : currentState == GameState.InGame
+                ? GameStrings.StatusPlayingDisplay
+                : GameStrings.StatusWaitingDisplay;
+        PersianUi.SetText(statusLabel, string.Format(GameStrings.StatusFormat, label));
     }
 
     private void HandleStatusTransition(string status, string result)
@@ -1171,13 +1192,13 @@ public class GameManager : MonoBehaviour
         
         if (string.IsNullOrEmpty(result))
         {
-            resultLabel.text = GameStrings.ResultUnknown;
+            PersianUi.SetText(resultLabel, GameStrings.ResultUnknown);
             return;
         }
 
         if (string.Equals(result, GameStrings.ResultDraw, StringComparison.OrdinalIgnoreCase))
         {
-            resultLabel.text = GameStrings.Draw;
+            PersianUi.SetText(resultLabel, GameStrings.Draw);
             return;
         }
 
@@ -1185,7 +1206,7 @@ public class GameManager : MonoBehaviour
         if (string.IsNullOrEmpty(localPlayerSymbol))
         {
             Debug.LogWarning("[GameManager] localPlayerSymbol is not set!");
-            resultLabel.text = GameStrings.ResultUnknown;
+            PersianUi.SetText(resultLabel, GameStrings.ResultUnknown);
             return;
         }
 
@@ -1194,11 +1215,11 @@ public class GameManager : MonoBehaviour
         
         if (isWinner)
         {
-            resultLabel.text = GameStrings.YouWin;
+            PersianUi.SetText(resultLabel, GameStrings.YouWin);
         }
         else
         {
-            resultLabel.text = GameStrings.YouLose;
+            PersianUi.SetText(resultLabel, GameStrings.YouLose);
         }
     }
 
@@ -1228,28 +1249,28 @@ public class GameManager : MonoBehaviour
     {
         if (currentState != GameState.InGame)
         {
-            return $"state is {currentState}";
+            return "game_not_ready";
         }
 
         if (currentRoomState?.board == null)
         {
-            return "board is null";
+            return "game_not_ready";
         }
 
         if (index < 0 || index >= currentRoomState.board.Length)
         {
-            return $"index {index} out of range ({currentRoomState.board.Length})";
+            return "game_not_ready";
         }
 
         if (!IsLocalTurn())
         {
-            return $"not local turn (localPlayerId={apiClient?.CurrentPlayerId}, currentTurn={currentRoomState?.currentTurnPlayerId})";
+            return "not_your_turn";
         }
 
         var value = currentRoomState.board[index];
         if (!IsBoardCellEmpty(value))
         {
-            return $"cell already filled with '{value}'";
+            return "cell_taken";
         }
 
         return null;
@@ -1269,38 +1290,46 @@ public class GameManager : MonoBehaviour
     {
         if (string.IsNullOrWhiteSpace(message)) return;
         Debug.LogWarning($"[GameManager] Error: {message}");
-        if (errorLabel != null)
-        {
-            errorLabel.text = $"{GameStrings.ErrorPrefix}{message}";
-        }
+        var text = UserError.ToUserText(message);
+        if (errorToast == null)
+            errorToast = ErrorToast.Ensure(errorLabel);
+        errorToast?.Show(text, ErrorToast.Kind.Error);
+        if (currentState == GameState.AuthChoice || currentState == GameState.AuthForm)
+            SetAuthStatus(text);
     }
 
     private void ClearError()
     {
+        errorToast?.Hide();
         if (errorLabel != null)
-        {
             errorLabel.text = string.Empty;
-        }
     }
 
     private void ShowMessage(string message)
     {
         if (string.IsNullOrWhiteSpace(message)) return;
-        if (errorLabel != null)
-            errorLabel.text = message;
+        var text = UserError.ToUserText(message);
+        if (errorToast == null)
+            errorToast = ErrorToast.Ensure(errorLabel);
+        errorToast?.Show(text, ErrorToast.Kind.Success);
     }
 
     private void SetAuthStatus(string message)
     {
-        if (authStatusLabel != null)
-        {
-            authStatusLabel.text = message ?? string.Empty;
-        }
+        PersianUi.SetText(authStatusLabel, message ?? string.Empty);
     }
 
     private void ShowLoading(bool show)
     {
-        loadingOverlay?.SetActive(show);
+        if (loadingOverlay == null)
+            return;
+        loadingOverlay.SetActive(show);
+        var image = loadingOverlay.GetComponent<Image>();
+        if (image != null)
+            image.raycastTarget = show;
+        var extra = loadingOverlay.transform.Find("LoadingOverlayImage");
+        if (extra != null)
+            extra.gameObject.SetActive(false);
     }
 
     private void ClearInputs()
@@ -1356,7 +1385,7 @@ public class GameManager : MonoBehaviour
     {
         if (webSocketManager == null || !webSocketManager.IsConnected)
         {
-            ShowError("WebSocket not connected. Please wait...");
+            ShowError(GameStrings.WsNotReady);
             requestInFlight = false;
             ShowLoading(false);
             yield break;
@@ -1364,14 +1393,17 @@ public class GameManager : MonoBehaviour
         
         requestInFlight = true;
         ClearError();
-        ShowLoading(true);
         SetState(GameState.Matchmaking);
-
-        // Use WebSocket instead of REST API
         webSocketManager.QueueMatchmaking();
-        
-        // Don't reset requestInFlight here - let OnWebSocketMatchmakingMatched or OnWebSocketError handle it
-        // This ensures buttons stay disabled until we get a response
+        yield break;
+    }
+
+    private void OnWebSocketMatchmakingQueued()
+    {
+        requestInFlight = false;
+        ShowLoading(false);
+        if (matchmakingStatusLabel != null && currentState == GameState.Matchmaking)
+            PersianUi.SetText(matchmakingStatusLabel, GameStrings.SearchingForOpponent);
     }
     
     private void OnWebSocketMatchmakingMatched(MatchmakingMatchedData data)
@@ -1383,7 +1415,7 @@ public class GameManager : MonoBehaviour
         if (data.roomId <= 0)
         {
             Debug.LogError($"[GameManager] Invalid room ID in matchmaking matched: {data.roomId}");
-            ShowError("Invalid room ID received from matchmaking");
+            ShowError(GameStrings.InvalidMatchRoom);
             return;
         }
         
@@ -1506,7 +1538,7 @@ public class GameManager : MonoBehaviour
             // Update matchmaking status label if needed
             if (matchmakingStatusLabel != null)
             {
-                matchmakingStatusLabel.text = "Matched! Waiting for game to start...";
+                PersianUi.SetText(matchmakingStatusLabel, GameStrings.MatchFoundWaiting);
             }
         }
         else
@@ -1519,22 +1551,18 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator HandleCancelMatchmaking()
     {
+        ShowLoading(false);
         if (webSocketManager == null || !webSocketManager.IsConnected)
         {
-            ShowError("WebSocket not connected!");
+            ShowError(GameStrings.WsDisconnected);
             requestInFlight = false;
-            ShowLoading(false);
+            SetState(GameState.Lobby);
             yield break;
         }
-        
+
         requestInFlight = true;
         ClearError();
-
-        // Use WebSocket instead of REST API
         webSocketManager.CancelMatchmaking();
-        
-        // Don't reset requestInFlight here - let OnWebSocketMatchmakingCanceled or OnWebSocketError handle it
-        // This ensures buttons stay disabled until we get a response
     }
     
     private void OnWebSocketMatchmakingCanceled()
@@ -1556,14 +1584,31 @@ public class GameManager : MonoBehaviour
     private void OnWebSocketDisconnected(string reason)
     {
         Debug.LogWarning($"[GameManager] WebSocket disconnected: {reason}");
+        if (ignoreNextDisconnect)
+        {
+            ignoreNextDisconnect = false;
+            return;
+        }
+        if (currentState == GameState.AuthChoice || currentState == GameState.AuthForm)
+            return;
+        ShowError("connection_lost");
     }
     
     private void OnWebSocketError(string error)
     {
-        ShowError(error);
-        // Reset request flag on error so buttons work again
+        if (UserError.IsNotEnoughHearts(error))
+        {
+            ShowNoHeartsPopup();
+            ShowError("not_enough_hearts");
+        }
+        else
+        {
+            ShowError(error);
+        }
         requestInFlight = false;
         ShowLoading(false);
+        if (currentState == GameState.Matchmaking)
+            SetState(GameState.Lobby);
     }
 
     private void DetermineLocalSymbolFromMatchmaking(MatchmakingResponse response)
@@ -1605,11 +1650,14 @@ public class GameManager : MonoBehaviour
         SetState(GameState.Lobby);
     }
 
+    private static string SeasonDisplay(string seasonLabel, string season)
+    {
+        return !string.IsNullOrEmpty(seasonLabel) ? seasonLabel : (season ?? string.Empty);
+    }
+
     private void LoadLeaderboard()
     {
-        // استفاده از فصل فعلی (می‌توانید بعداً dropdown اضافه کنید)
-        string currentSeason = System.DateTime.Now.ToString("yyyy-MM");
-        StartCoroutine(HandleLoadLeaderboard(currentSeason, 50));
+        StartCoroutine(HandleLoadLeaderboard(null, 50));
     }
 
     private IEnumerator HandleLoadLeaderboard(string season, int limit)
@@ -1634,7 +1682,7 @@ public class GameManager : MonoBehaviour
     {
         if (seasonLabel != null)
         {
-            seasonLabel.text = string.Format(GameStrings.SeasonFormat, response.season);
+            PersianUi.SetText(seasonLabel, string.Format(GameStrings.SeasonFormat, SeasonDisplay(response.seasonLabel, response.season)));
         }
 
         // پاک کردن لیست قبلی
@@ -1667,8 +1715,7 @@ public class GameManager : MonoBehaviour
 
     private void LoadMyStats()
     {
-        string currentSeason = System.DateTime.Now.ToString("yyyy-MM");
-        StartCoroutine(HandleLoadMyStats(currentSeason));
+        StartCoroutine(HandleLoadMyStats(null));
     }
 
     private IEnumerator HandleLoadMyStats(string season)
@@ -1693,41 +1740,41 @@ public class GameManager : MonoBehaviour
     {
         if (myStatsSeasonLabel != null)
         {
-            myStatsSeasonLabel.text = string.Format(GameStrings.SeasonFormat, response.season);
+            PersianUi.SetText(myStatsSeasonLabel, string.Format(GameStrings.SeasonFormat, SeasonDisplay(response.seasonLabel, response.season)));
         }
 
         if (myStatsRankLabel != null)
         {
-            myStatsRankLabel.text = response.rank >= 0
+            PersianUi.SetText(myStatsRankLabel, response.rank >= 0
                 ? string.Format(GameStrings.RankFormat, response.rank)
-                : GameStrings.NoRank;
+                : GameStrings.NoRank);
         }
 
         if (myStatsRatingLabel != null)
         {
-            myStatsRatingLabel.text = response.rating >= 0
+            PersianUi.SetText(myStatsRatingLabel, response.rating >= 0
                 ? string.Format(GameStrings.RatingFormat, response.rating)
-                : GameStrings.NoRating;
+                : GameStrings.NoRating);
         }
 
         if (myStatsWinsLabel != null)
         {
-            myStatsWinsLabel.text = string.Format(GameStrings.WinsFormat, response.wins);
+            PersianUi.SetText(myStatsWinsLabel, string.Format(GameStrings.WinsFormat, response.wins));
         }
 
         if (myStatsLossesLabel != null)
         {
-            myStatsLossesLabel.text = string.Format(GameStrings.LossesFormat, response.losses);
+            PersianUi.SetText(myStatsLossesLabel, string.Format(GameStrings.LossesFormat, response.losses));
         }
 
         if (myStatsDrawsLabel != null)
         {
-            myStatsDrawsLabel.text = string.Format(GameStrings.DrawsFormat, response.draws);
+            PersianUi.SetText(myStatsDrawsLabel, string.Format(GameStrings.DrawsFormat, response.draws));
         }
 
         if (myStatsGamesLabel != null)
         {
-            myStatsGamesLabel.text = string.Format(GameStrings.GamesPlayedFormat, response.gamesPlayed);
+            PersianUi.SetText(myStatsGamesLabel, string.Format(GameStrings.GamesPlayedFormat, response.gamesPlayed));
         }
     }
 
@@ -1788,9 +1835,9 @@ public class GameManager : MonoBehaviour
         if (noHeartsMessageText != null)
         {
             if (price > 0)
-                noHeartsMessageText.text = "You need a heart to play. Buy one for " + price + " coins?";
+                PersianUi.SetText(noHeartsMessageText, string.Format(GameStrings.NoHeartsMessageWithPrice, price));
             else
-                noHeartsMessageText.text = GameStrings.NoHeartsMessage;
+                PersianUi.SetText(noHeartsMessageText, GameStrings.NoHeartsMessage);
         }
     }
 
@@ -1835,6 +1882,7 @@ public class GameManager : MonoBehaviour
             error =>
             {
                 Debug.LogWarning($"[GameManager] Failed to load wallet: {error}");
+                ShowError("failed to load wallet");
             });
     }
 
@@ -1848,16 +1896,16 @@ public class GameManager : MonoBehaviour
             if (TryParseNextHeartAt(response.nextHeartAt, out DateTime targetUtc))
             {
                 string timeStr = FormatTimeRemaining(targetUtc);
-                lobbyNextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, timeStr);
+                PersianUi.SetText(lobbyNextHeartLabel, string.Format(GameStrings.NextHeartFormat, timeStr));
                 if (nextHeartCountdownCoroutine != null) StopCoroutine(nextHeartCountdownCoroutine);
                 nextHeartCountdownCoroutine = StartCoroutine(NextHeartCountdownCoroutineLobby(targetUtc));
             }
             else
-                lobbyNextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, "...");
+                PersianUi.SetText(lobbyNextHeartLabel, string.Format(GameStrings.NextHeartFormat, "..."));
         }
         else
         {
-            lobbyNextHeartLabel.text = GameStrings.HeartsFull;
+            PersianUi.SetText(lobbyNextHeartLabel, GameStrings.HeartsFull);
             if (nextHeartCountdownCoroutine != null) { StopCoroutine(nextHeartCountdownCoroutine); nextHeartCountdownCoroutine = null; }
         }
     }
@@ -1891,7 +1939,7 @@ public class GameManager : MonoBehaviour
             if (remaining <= TimeSpan.Zero)
             {
                 if (lobbyNextHeartLabel != null)
-                    lobbyNextHeartLabel.text = GameStrings.HeartsFull;
+                    PersianUi.SetText(lobbyNextHeartLabel, GameStrings.HeartsFull);
                 LoadWalletForLobby();
                 nextHeartCountdownCoroutine = null;
                 yield break;
@@ -1899,7 +1947,7 @@ public class GameManager : MonoBehaviour
             if (lobbyNextHeartLabel != null)
             {
                 string timeStr = FormatTimeRemaining(targetUtc);
-                lobbyNextHeartLabel.text = string.Format(GameStrings.NextHeartFormat, timeStr);
+                PersianUi.SetText(lobbyNextHeartLabel, string.Format(GameStrings.NextHeartFormat, timeStr));
             }
         }
         nextHeartCountdownCoroutine = null;
@@ -1971,7 +2019,7 @@ public class GameManager : MonoBehaviour
 
     private void DisplayStoreCoinPacksOnly(EconomyConfigResponse config, Dictionary<string, string> priceBySku)
     {
-        if (storeTitle != null) storeTitle.text = GameStrings.StoreTitle;
+        PersianUi.SetText(storeTitle, GameStrings.StoreTitle);
         if (coinPacksContent == null)
         {
             Debug.LogWarning("[IAP] DisplayStoreCoinPacksOnly: coinPacksContent is null");
@@ -2150,7 +2198,7 @@ public class GameManager : MonoBehaviour
                 if (response?.wallet != null)
                     UpdateWalletDisplay(response.wallet);
                 else if (response != null && response.coins >= 0 && coinsLabel != null)
-                    coinsLabel.text = string.Format(GameStrings.CoinsFormat, response.coins);
+                    PersianUi.SetText(coinsLabel, string.Format(GameStrings.CoinsFormat, response.coins));
                 string name = response?.booster?.displayName ?? response?.booster?.code ?? response?.boosterCode ?? "Booster";
                 Debug.Log($"[GameManager] Booster purchased! Code: {response?.booster?.code ?? response?.boosterCode}");
                 ShowMessage(response != null ? $"{GameStrings.BuySuccess} {name}" : GameStrings.BuySuccess);
@@ -2168,9 +2216,9 @@ public class GameManager : MonoBehaviour
     {
         if (wallet == null) return;
         if (coinsLabel != null)
-            coinsLabel.text = string.Format(GameStrings.CoinsFormat, wallet.coins);
+            PersianUi.SetText(coinsLabel, string.Format(GameStrings.CoinsFormat, wallet.coins));
         if (heartsLabel != null)
-            heartsLabel.text = string.Format(GameStrings.HeartsFormat, wallet.hearts, wallet.maxHearts);
+            PersianUi.SetText(heartsLabel, string.Format(GameStrings.HeartsFormat, wallet.hearts, wallet.maxHearts));
     }
 
     // متد برای به‌روزرسانی wallet بعد از هر عملیات
@@ -2202,6 +2250,7 @@ public class GameManager : MonoBehaviour
             error =>
             {
                 Debug.LogWarning($"[GameManager] Failed to refresh wallet: {error}");
+                ShowError("failed to load wallet");
             });
     }
 }

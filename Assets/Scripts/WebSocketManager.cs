@@ -34,6 +34,7 @@ public class WebSocketManager : MonoBehaviour
     public event Action<RoomMoveData> OnRoomMove;
     public event Action<RoomFinishedData> OnRoomFinished;
     public event Action<MatchmakingMatchedData> OnMatchmakingMatched;
+    public event Action OnMatchmakingQueued;
     public event Action OnMatchmakingCanceled;
     public event Action<string> OnError;
     public event Action OnConnected;
@@ -46,7 +47,7 @@ public class WebSocketManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            PersistAcrossScenes(gameObject);
         }
         else
         {
@@ -54,6 +55,13 @@ public class WebSocketManager : MonoBehaviour
         }
     }
     
+    private static void PersistAcrossScenes(GameObject go)
+    {
+        if (go.transform.parent != null)
+            go.transform.SetParent(null, true);
+        DontDestroyOnLoad(go);
+    }
+
     void OnDestroy()
     {
         Disconnect();
@@ -315,7 +323,7 @@ public class WebSocketManager : MonoBehaviour
                 QueueOnMainThread(() =>
                 {
                     LogError($"Room create failed: {data.error}");
-                    OnError?.Invoke(data.error);
+                    OnError?.Invoke(PickError(data));
                 });
             }
             catch (Exception e)
@@ -416,7 +424,7 @@ public class WebSocketManager : MonoBehaviour
                 QueueOnMainThread(() =>
                 {
                     LogError($"Room join failed: {data.error}");
-                    OnError?.Invoke(data.error);
+                    OnError?.Invoke(PickError(data));
                 });
             }
             catch (Exception e)
@@ -692,7 +700,7 @@ public class WebSocketManager : MonoBehaviour
                 QueueOnMainThread(() =>
                 {
                     LogError($"Move failed: {data.error}");
-                    OnError?.Invoke(data.error);
+                    OnError?.Invoke(PickError(data));
                 });
             }
             catch (Exception e)
@@ -808,7 +816,12 @@ public class WebSocketManager : MonoBehaviour
                         };
                         OnMatchmakingMatched?.Invoke(matchedData);
                     }
-                    // If mode is "waiting", wait for matchmaking:matched or matchmaking:bot_added
+                    else
+                    {
+                        if (finalData.roomId > 0)
+                            currentRoomId = finalData.roomId;
+                        OnMatchmakingQueued?.Invoke();
+                    }
                 });
             }
             catch (Exception e)
@@ -830,7 +843,7 @@ public class WebSocketManager : MonoBehaviour
                     {
                         LogError($"Not enough hearts! You have {data.hearts} hearts.");
                     }
-                    OnError?.Invoke(data.error);
+                    OnError?.Invoke(PickError(data));
                 });
             }
             catch (Exception e)
@@ -1029,7 +1042,7 @@ public class WebSocketManager : MonoBehaviour
                 QueueOnMainThread(() =>
                 {
                     LogError($"Matchmaking cancel failed: {data.error}");
-                    OnError?.Invoke(data.error);
+                    OnError?.Invoke(PickError(data));
                 });
             }
             catch (Exception e)
@@ -1138,6 +1151,22 @@ public class WebSocketManager : MonoBehaviour
     public int CurrentRoomId => currentRoomId;
     public int MyPlayerId => myPlayerId;
     
+    private static string PickError(ErrorData data)
+    {
+        if (data == null) return "connection_failed";
+        if (!string.IsNullOrEmpty(data.message)) return data.message;
+        if (!string.IsNullOrEmpty(data.error)) return data.error;
+        return "connection_failed";
+    }
+
+    private static string PickError(MatchmakingQueueErrorData data)
+    {
+        if (data == null) return "connection_failed";
+        if (!string.IsNullOrEmpty(data.message)) return data.message;
+        if (!string.IsNullOrEmpty(data.error)) return data.error;
+        return "connection_failed";
+    }
+
     private void Log(string message)
     {
         if (verboseLogging)
