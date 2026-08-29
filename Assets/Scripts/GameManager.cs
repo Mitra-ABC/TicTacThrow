@@ -599,7 +599,7 @@ public class GameManager : MonoBehaviour
         
         // Initialize room state with player1 (room creator) info
         var playerId = apiClient?.CurrentPlayerId ?? 0;
-        var playerNickname = apiClient?.CurrentPlayer?.nickname ?? apiClient?.CurrentPlayer?.username ?? $"Player {playerId}";
+        var playerNickname = apiClient?.CurrentPlayer?.nickname ?? apiClient?.CurrentPlayer?.username ?? string.Format(GameStrings.PlayerFallbackFormat, playerId);
         
         currentRoomState = new RoomStateResponse
         {
@@ -766,7 +766,7 @@ public class GameManager : MonoBehaviour
         // Priority 3: Use placeholder if we still don't have nickname
         if (string.IsNullOrEmpty(nickname))
         {
-            nickname = $"Player {playerData.id}";
+            nickname = string.Format(GameStrings.PlayerFallbackFormat, playerData.id);
         }
         
         return new PlayerInRoom
@@ -792,7 +792,7 @@ public class GameManager : MonoBehaviour
         // If we don't have nickname, use a placeholder
         if (string.IsNullOrEmpty(nickname))
         {
-            nickname = $"Player {playerId}";
+            nickname = string.Format(GameStrings.PlayerFallbackFormat, playerId);
         }
         
         return new PlayerInRoom
@@ -1025,14 +1025,19 @@ public class GameManager : MonoBehaviour
         }
 
         // Update labels based on state
-        if (currentState == GameState.Lobby && apiClient != null && apiClient.CurrentPlayer != null)
+        if (currentState == GameState.Lobby)
         {
-            var player = apiClient.CurrentPlayer;
-            PersianUi.SetText(welcomeLabel, string.Format(GameStrings.WelcomeFormat, player.nickname ?? player.username));
-            PersianUi.SetText(playerInfoLabel, string.Format(GameStrings.PlayerInfoFormat, player.nickname ?? player.username, player.id));
-            
-            // Refresh wallet info in lobby when state changes to Lobby
-            RefreshWallet();
+            if (apiClient != null && apiClient.CurrentPlayer != null)
+            {
+                var player = apiClient.CurrentPlayer;
+                PersianUi.SetText(welcomeLabel, string.Format(GameStrings.WelcomeFormat, player.nickname ?? player.username));
+                PersianUi.SetText(playerInfoLabel, string.Format(GameStrings.PlayerInfoFormat, player.nickname ?? player.username, player.id));
+                RefreshWallet();
+            }
+            else
+            {
+                PersianUi.SetText(welcomeLabel, GameStrings.WelcomeGuest);
+            }
         }
 
         if (roomIdLabel != null)
@@ -1591,7 +1596,7 @@ public class GameManager : MonoBehaviour
         }
         if (currentState == GameState.AuthChoice || currentState == GameState.AuthForm)
             return;
-        ShowError("connection_lost");
+        ShowError(UserError.ConnectionLost);
     }
     
     private void OnWebSocketError(string error)
@@ -1599,7 +1604,7 @@ public class GameManager : MonoBehaviour
         if (UserError.IsNotEnoughHearts(error))
         {
             ShowNoHeartsPopup();
-            ShowError("not_enough_hearts");
+            ShowError(UserError.NotEnoughHearts);
         }
         else
         {
@@ -1882,7 +1887,7 @@ public class GameManager : MonoBehaviour
             error =>
             {
                 Debug.LogWarning($"[GameManager] Failed to load wallet: {error}");
-                ShowError("failed to load wallet");
+                ShowError(GameStrings.WalletError);
             });
     }
 
@@ -2080,7 +2085,7 @@ public class GameManager : MonoBehaviour
         ShowLoading(false);
         if (economyConfig?.boosterTypes == null || boostersContent == null || boosterItemPrefab == null)
         {
-            if (economyConfig?.boosterTypes == null) ShowError("Failed to load boosters.");
+            if (economyConfig?.boosterTypes == null) ShowError(GameStrings.BoostersError);
             yield break;
         }
         foreach (Transform child in boostersContent) Destroy(child.gameObject);
@@ -2104,7 +2109,7 @@ public class GameManager : MonoBehaviour
         if (requestInFlight) { Debug.Log("[IAP] OnCoinPackClicked: requestInFlight=true, return"); return; }
         if (pack == null)
         {
-            ShowError("Coin pack is missing. The store may not have loaded correctly.");
+            ShowError(GameStrings.CoinPackMissing);
             return;
         }
         var iap = iapManager != null ? iapManager : IAPManager.Instance;
@@ -2113,7 +2118,7 @@ public class GameManager : MonoBehaviour
         {
             if (!iap.IsBillingReady)
             {
-                ShowError("Store catalog is not ready yet. Packs are listed but purchase is disabled.");
+                ShowError(GameStrings.BillingNotReady);
                 return;
             }
             Debug.Log($"[IAP] OnCoinPackClicked: IAP path — Purchase(sku={pack.platformProductId ?? pack.code})");
@@ -2250,7 +2255,7 @@ public class GameManager : MonoBehaviour
             error =>
             {
                 Debug.LogWarning($"[GameManager] Failed to refresh wallet: {error}");
-                ShowError("failed to load wallet");
+                ShowError(GameStrings.WalletError);
             });
     }
 }

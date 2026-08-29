@@ -300,7 +300,7 @@ public class IAPManager : MonoBehaviour
         Debug.Log($"[IAP] OnPoolakeyPurchaseComplete: {result?.status}, {result?.message}, {result?.stackTrace}");
         if (result == null || result.status != Status.Success || result.data == null)
         {
-            OnPurchaseVerifyFailed?.Invoke(result?.message ?? "Purchase failed.");
+            OnPurchaseVerifyFailed?.Invoke(result?.message ?? GameStrings.PurchaseFailed);
             return;
         }
 
@@ -377,7 +377,7 @@ public class IAPManager : MonoBehaviour
     {
         if (poolakeyPayment == null)
         {
-            OnPurchaseVerifyFailed?.Invoke("Poolakey Payment not available.");
+            OnPurchaseVerifyFailed?.Invoke(GameStrings.BillingNotReady);
             return;
         }
         string payload = Guid.NewGuid().ToString("N");
@@ -462,7 +462,7 @@ public class IAPManager : MonoBehaviour
         if (!string.IsNullOrEmpty(sku) && !string.IsNullOrEmpty(token))
             StartCoroutine(VerifyPurchaseAndNotify(sku, token));
         else
-            OnPurchaseVerifyFailed?.Invoke("Could not read purchase data.");
+            OnPurchaseVerifyFailed?.Invoke(GameStrings.PurchaseFailed);
     }
 #endif
 
@@ -481,7 +481,7 @@ public class IAPManager : MonoBehaviour
     private void OnPurchaseFailed(string msg)
     {
         Debug.Log($"[IAP] OnPurchaseFailed: {msg}");
-        OnPurchaseVerifyFailed?.Invoke(msg ?? "Purchase failed.");
+        OnPurchaseVerifyFailed?.Invoke(msg ?? GameStrings.PurchaseFailed);
     }
 
     private void RequestPendingInventoryOrPrices()
@@ -529,13 +529,13 @@ public class IAPManager : MonoBehaviour
         Debug.Log($"[IAP] Purchase: platformProductId={platformProductId}");
         if (string.IsNullOrEmpty(platformProductId))
         {
-            OnPurchaseVerifyFailed?.Invoke("Invalid product.");
+            OnPurchaseVerifyFailed?.Invoke(GameStrings.InvalidProduct);
             return;
         }
 #if BAZAAR_IAP
         if (!billingReady)
         {
-            OnPurchaseVerifyFailed?.Invoke("Cafe Bazaar billing is not ready.");
+            OnPurchaseVerifyFailed?.Invoke(GameStrings.BillingNotReady);
             return;
         }
         PurchaseBazaar(platformProductId);
@@ -543,7 +543,7 @@ public class IAPManager : MonoBehaviour
         Debug.Log("[IAP] Purchase: calling Myket purchaseProduct");
         MyketIAB.purchaseProduct(platformProductId);
 #else
-        OnPurchaseVerifyFailed?.Invoke("IAP is not enabled.");
+        OnPurchaseVerifyFailed?.Invoke(GameStrings.IapDisabled);
 #endif
     }
 
@@ -576,7 +576,7 @@ public class IAPManager : MonoBehaviour
         {
             Debug.Log("[IAP] VerifyPurchaseAndNotify: ApiClient not found");
             if (notifyUser)
-                OnPurchaseVerifyFailed?.Invoke("ApiClient not found.");
+                OnPurchaseVerifyFailed?.Invoke(UserError.Generic);
             yield break;
         }
         string store = GetStoreName();
@@ -603,7 +603,7 @@ public class IAPManager : MonoBehaviour
         {
             Debug.Log($"[IAP] VerifyPurchaseAndNotify: verification failed, status={resp?.status}, message={resp?.message}");
             if (notifyUser)
-                OnPurchaseVerifyFailed?.Invoke(resp?.message ?? "Verification failed.");
+                OnPurchaseVerifyFailed?.Invoke(resp?.message ?? GameStrings.VerifyFailed);
         }
     }
 }

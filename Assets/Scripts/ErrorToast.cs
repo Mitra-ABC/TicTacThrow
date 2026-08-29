@@ -98,7 +98,7 @@ public class ErrorToast : MonoBehaviour
 
         label = textGo.AddComponent<RTLTextMeshPro>();
         PersianUi.Style(label);
-        label.fontSize = 28f;
+        label.fontSize = 32f;
         label.alignment = TextAlignmentOptions.Midline;
         label.enableWordWrapping = true;
         label.color = Color.white;

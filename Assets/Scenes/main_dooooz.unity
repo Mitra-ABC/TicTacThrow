@@ -153,7 +153,7 @@ RectTransform:
   - {fileID: 1200681261}
   - {fileID: 1970615240}
   - {fileID: 981020208}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000108}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -453,8 +453,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 17
-  m_fontSizeBase: 17
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -515,7 +515,7 @@ GameObject:
   - component: {fileID: 32808205}
   - component: {fileID: 32808204}
   m_Layer: 5
-  m_Name: WalletButtonimage
+  m_Name: WalletButtonImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -712,7 +712,7 @@ GameObject:
   - component: {fileID: 71528392}
   - component: {fileID: 71528391}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: LeaderboardButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1010,7 +1010,7 @@ GameObject:
   - component: {fileID: 85713758}
   - component: {fileID: 85713757}
   m_Layer: 5
-  m_Name: CloseNoHeartButton
+  m_Name: NoHeartsCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1336,8 +1336,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1972,7 +1972,7 @@ GameObject:
   - component: {fileID: 204239793}
   - component: {fileID: 204239792}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: CloseStoreButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2220,7 +2220,7 @@ RectTransform:
   - {fileID: 1662442807}
   - {fileID: 2006655111}
   - {fileID: 731849821}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000108}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -2465,7 +2465,7 @@ GameObject:
   - component: {fileID: 276811632}
   - component: {fileID: 276811631}
   m_Layer: 0
-  m_Name: PersianLabel
+  m_Name: SubmitJoinButtonLabelLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2607,7 +2607,7 @@ GameObject:
   - component: {fileID: 281769010}
   - component: {fileID: 281769009}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: ChooseLoginButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2749,7 +2749,7 @@ GameObject:
   - component: {fileID: 311674322}
   - component: {fileID: 311674321}
   m_Layer: 0
-  m_Name: PersianLabel
+  m_Name: JoinRoomLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2988,7 +2988,7 @@ GameObject:
   - component: {fileID: 332682579}
   - component: {fileID: 332682578}
   m_Layer: 5
-  m_Name: Image
+  m_Name: BuyHeartButtonImage2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3173,11 +3173,11 @@ Transform:
   m_GameObject: {fileID: 333748395}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 374.92633, y: 240.48296, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1900000102}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &334959489
 GameObject:
@@ -3671,7 +3671,7 @@ GameObject:
   - component: {fileID: 356517674}
   - component: {fileID: 356517673}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: CloseBoostersButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3910,7 +3910,7 @@ GameObject:
   - component: {fileID: 366689723}
   - component: {fileID: 366689722}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: ChooseRegisterButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4124,8 +4124,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -4221,11 +4221,11 @@ Transform:
   m_GameObject: {fileID: 387142097}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 670.5843, y: 285.61377, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1900000102}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &395137842
 GameObject:
@@ -4239,7 +4239,7 @@ GameObject:
   - component: {fileID: 395137845}
   - component: {fileID: 395137844}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: PlayAgainButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4311,8 +4311,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -4662,7 +4662,7 @@ GameObject:
   - component: {fileID: 429762598}
   - component: {fileID: 429762597}
   m_Layer: 5
-  m_Name: MatchMakingStatusLabel
+  m_Name: MatchmakingStatusLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4943,7 +4943,7 @@ GameObject:
   - component: {fileID: 438109308}
   - component: {fileID: 438109307}
   m_Layer: 5
-  m_Name: Image
+  m_Name: LoadingOverlayImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5018,7 +5018,7 @@ GameObject:
   - component: {fileID: 466582931}
   - component: {fileID: 466582930}
   m_Layer: 5
-  m_Name: BackFromFriendlyPanelButtonImage
+  m_Name: BackFromFriendlyGameButtonImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5093,7 +5093,7 @@ GameObject:
   - component: {fileID: 477402115}
   - component: {fileID: 477402114}
   m_Layer: 0
-  m_Name: PersianLabel
+  m_Name: CreateRoomLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5332,7 +5332,7 @@ GameObject:
   - component: {fileID: 483318921}
   - component: {fileID: 483318920}
   m_Layer: 0
-  m_Name: PersianLabel
+  m_Name: BackFromJoinButtonLabelLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5474,7 +5474,7 @@ GameObject:
   - component: {fileID: 489907396}
   - component: {fileID: 489907395}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: CancelMatchmakingButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5645,7 +5645,7 @@ RectTransform:
   - {fileID: 1294997699}
   - {fileID: 1748009107}
   - {fileID: 1097956025}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000106}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -5890,7 +5890,7 @@ GameObject:
   - component: {fileID: 521065152}
   - component: {fileID: 521065151}
   m_Layer: 5
-  m_Name: MatchMakingPanel
+  m_Name: MatchmakingPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5910,7 +5910,7 @@ RectTransform:
   m_Children:
   - {fileID: 429762596}
   - {fileID: 1938062166}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000108}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -5967,7 +5967,7 @@ GameObject:
   - component: {fileID: 542498145}
   - component: {fileID: 542498144}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: LogoutButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6610,7 +6610,7 @@ GameObject:
   - component: {fileID: 601156007}
   - component: {fileID: 601156006}
   m_Layer: 5
-  m_Name: Image (2)
+  m_Name: InGamePanelImage2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6807,7 +6807,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1900000104}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &615983891
 GameObject:
@@ -6963,7 +6963,7 @@ GameObject:
   - component: {fileID: 627828529}
   - component: {fileID: 627828528}
   m_Layer: 0
-  m_Name: PersianLabel
+  m_Name: CreateRoomLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7132,7 +7132,7 @@ RectTransform:
   - {fileID: 2141168517}
   - {fileID: 904489447}
   - {fileID: 1690834651}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000112}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -7189,7 +7189,7 @@ GameObject:
   - component: {fileID: 636345323}
   - component: {fileID: 636345322}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: StoreButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7438,7 +7438,7 @@ RectTransform:
   - {fileID: 2060489595}
   - {fileID: 1671751506}
   - {fileID: 168343919}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000110}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -7522,11 +7522,11 @@ Transform:
   m_GameObject: {fileID: 651240622}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 485.11652, y: 262.55612, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1900000102}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &654162029
 GameObject:
@@ -7620,8 +7620,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 35
-  m_fontSizeBase: 35
+  m_fontSize: 42
+  m_fontSizeBase: 42
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -7682,7 +7682,7 @@ GameObject:
   - component: {fileID: 655602537}
   - component: {fileID: 655602536}
   m_Layer: 5
-  m_Name: Image (4)
+  m_Name: InGamePanelImage4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7852,7 +7852,7 @@ RectTransform:
   m_Children:
   - {fileID: 438109306}
   - {fileID: 1402838732}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000114}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -7967,7 +7967,7 @@ GameObject:
   - component: {fileID: 707443516}
   - component: {fileID: 707443515}
   m_Layer: 5
-  m_Name: PlayOnlineButton
+  m_Name: CompetitiveGameButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8100,7 +8100,7 @@ GameObject:
   - component: {fileID: 712565101}
   - component: {fileID: 712565100}
   m_Layer: 5
-  m_Name: ClosetButtonImage
+  m_Name: CloseLeaderboardButtonImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8175,7 +8175,7 @@ GameObject:
   - component: {fileID: 717075205}
   - component: {fileID: 717075204}
   m_Layer: 0
-  m_Name: PersianLabel
+  m_Name: BuyHeartButtonLabelLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8539,7 +8539,7 @@ GameObject:
   - component: {fileID: 736975750}
   - component: {fileID: 736975751}
   m_Layer: 5
-  m_Name: PlayerLabel
+  m_Name: PlayersLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8619,8 +8619,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 17
-  m_fontSizeBase: 17
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -8886,7 +8886,7 @@ GameObject:
   - component: {fileID: 779198747}
   - component: {fileID: 779198746}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: CloseMyStatsButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8958,8 +8958,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -9196,11 +9196,11 @@ Transform:
   m_GameObject: {fileID: 788625994}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 374.92633, y: 240.48296, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1900000102}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &795135579
 GameObject:
@@ -9286,8 +9286,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -9432,7 +9432,7 @@ GameObject:
   - component: {fileID: 805128217}
   - component: {fileID: 805128219}
   m_Layer: 5
-  m_Name: PlayFriendlyButton
+  m_Name: FriendlyGameButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9565,7 +9565,7 @@ GameObject:
   - component: {fileID: 813110263}
   - component: {fileID: 813110262}
   m_Layer: 5
-  m_Name: Text (Legacy)
+  m_Name: BackToLobbyButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9645,7 +9645,7 @@ GameObject:
   - component: {fileID: 826542838}
   - component: {fileID: 826542837}
   m_Layer: 5
-  m_Name: CancelMatchMakingImage
+  m_Name: CancelMatchmakingButtonImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9720,7 +9720,7 @@ GameObject:
   - component: {fileID: 852341179}
   - component: {fileID: 852341178}
   m_Layer: 5
-  m_Name: Text (Legacy)
+  m_Name: SubmitJoinButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9800,7 +9800,7 @@ GameObject:
   - component: {fileID: 883849888}
   - component: {fileID: 883849887}
   m_Layer: 5
-  m_Name: CloseNoHeartButtonImage
+  m_Name: NoHeartsCancelButtonImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9895,23 +9895,11 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 338439596}
-  - {fileID: 1894550818}
-  - {fileID: 493521277}
-  - {fileID: 212865002}
-  - {fileID: 1076369823}
-  - {fileID: 4198405}
-  - {fileID: 967148703}
-  - {fileID: 1356869598}
-  - {fileID: 638279722}
-  - {fileID: 669708343}
-  - {fileID: 1843267790}
-  - {fileID: 521065150}
-  - {fileID: 1951284280}
-  - {fileID: 635364122}
-  - {fileID: 946841631}
-  - {fileID: 1842668255}
-  - {fileID: 1038979720}
-  - {fileID: 1392375160}
+  - {fileID: 1900000106}
+  - {fileID: 1900000108}
+  - {fileID: 1900000110}
+  - {fileID: 1900000112}
+  - {fileID: 1900000114}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -9995,7 +9983,7 @@ GameObject:
   - component: {fileID: 903611685}
   - component: {fileID: 903611684}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: CancelWaitingButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10067,8 +10055,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -10219,7 +10207,7 @@ GameObject:
   - component: {fileID: 931833992}
   - component: {fileID: 931833991}
   m_Layer: 5
-  m_Name: CloseLeaderBoardButton
+  m_Name: CloseLeaderboardButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10341,7 +10329,7 @@ GameObject:
   - component: {fileID: 943458140}
   - component: {fileID: 943458142}
   m_Layer: 5
-  m_Name: LeaderBoardButton
+  m_Name: LeaderboardButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10484,7 +10472,7 @@ RectTransform:
   - {fileID: 1615202114}
   - {fileID: 1771696455}
   - {fileID: 1352889807}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000108}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -10539,7 +10527,7 @@ GameObject:
   m_Component:
   - component: {fileID: 949360838}
   m_Layer: 5
-  m_Name: NickNameFieldContainer
+  m_Name: NicknameFieldContainer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10694,7 +10682,7 @@ GameObject:
   - component: {fileID: 966799972}
   - component: {fileID: 966799971}
   m_Layer: 5
-  m_Name: NickNameFieldContainerImage
+  m_Name: NicknameFieldContainerImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10796,7 +10784,7 @@ RectTransform:
   - {fileID: 1333214153}
   - {fileID: 1251109246}
   - {fileID: 636770864}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000110}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.102372535, y: 0.106000006}
   m_AnchorMax: {x: 1, y: 1}
@@ -10934,8 +10922,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -11163,7 +11151,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Season: 2025-12'
+  m_text: "\u0641\u0635\u0644: -"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 30f33182866bb8449a8a98015572f3ae, type: 2}
   m_sharedMaterial: {fileID: -8052362331370349301, guid: 30f33182866bb8449a8a98015572f3ae, type: 2}
@@ -11190,8 +11178,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -11237,7 +11225,7 @@ MonoBehaviour:
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
   preserveNumbers: 0
   farsi: 1
-  originalText: 'Season: 2025-12'
+  originalText: "\u0641\u0635\u0644: -"
   fixTags: 1
   forceFix: 0
 --- !u!222 &1022464673
@@ -11368,7 +11356,7 @@ GameObject:
   - component: {fileID: 1032146969}
   - component: {fileID: 1032146968}
   m_Layer: 5
-  m_Name: WelcomeLabel
+  m_Name: FriendlyPanelTitle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11606,7 +11594,7 @@ RectTransform:
   - {fileID: 1056142747}
   - {fileID: 1030455872}
   - {fileID: 60325588}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000112}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -11735,8 +11723,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 42
+  m_fontSizeBase: 42
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -11829,7 +11817,7 @@ RectTransform:
   - {fileID: 100528829}
   - {fileID: 426497174}
   - {fileID: 1370921002}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000108}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -11966,8 +11954,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 17
-  m_fontSizeBase: 17
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -12103,7 +12091,7 @@ GameObject:
   - component: {fileID: 1089085130}
   - component: {fileID: 1089085129}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: NoHeartsCancelButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12325,8 +12313,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 28
+  m_fontSizeBase: 28
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -12550,7 +12538,7 @@ GameObject:
   - component: {fileID: 1114752987}
   - component: {fileID: 1114752986}
   m_Layer: 5
-  m_Name: NoHeartTitle
+  m_Name: NoHeartsTitle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12793,7 +12781,7 @@ GameObject:
   - component: {fileID: 1129848830}
   - component: {fileID: 1129848829}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: MyStatsButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12935,7 +12923,7 @@ GameObject:
   - component: {fileID: 1139861625}
   - component: {fileID: 1139861624}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: BackFromAuthFormButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13182,11 +13170,11 @@ Transform:
   m_GameObject: {fileID: 1168751575}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 645.12164, y: 298.26898, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1900000102}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1179340974
 GameObject:
@@ -13200,7 +13188,7 @@ GameObject:
   - component: {fileID: 1179340977}
   - component: {fileID: 1179340976}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: CloseLeaderboardButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13342,7 +13330,7 @@ GameObject:
   - component: {fileID: 1185879079}
   - component: {fileID: 1185879078}
   m_Layer: 5
-  m_Name: StoreButtonimage
+  m_Name: StoreButtonImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13796,8 +13784,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 17
-  m_fontSizeBase: 17
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -13955,7 +13943,7 @@ GameObject:
   - component: {fileID: 1287594970}
   - component: {fileID: 1287594969}
   m_Layer: 0
-  m_Name: PersianLabel
+  m_Name: CreateRoomLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14465,7 +14453,7 @@ GameObject:
   - component: {fileID: 1333214155}
   - component: {fileID: 1333214154}
   m_Layer: 5
-  m_Name: Image (5)
+  m_Name: InGamePanelImage5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14593,7 +14581,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Welcome!!
+  m_text: "\u062E\u0648\u0634 \u0622\u0645\u062F\u06CC"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 30f33182866bb8449a8a98015572f3ae, type: 2}
   m_sharedMaterial: {fileID: -8052362331370349301, guid: 30f33182866bb8449a8a98015572f3ae, type: 2}
@@ -14667,7 +14655,7 @@ MonoBehaviour:
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
   preserveNumbers: 0
   farsi: 1
-  originalText: Welcome!!
+  originalText: "\u062E\u0648\u0634 \u0622\u0645\u062F\u06CC"
   fixTags: 1
   forceFix: 0
 --- !u!1 &1347680443
@@ -14762,8 +14750,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 42
+  m_fontSizeBase: 42
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -14825,7 +14813,7 @@ GameObject:
   - component: {fileID: 1352889808}
   - component: {fileID: 1352889810}
   m_Layer: 5
-  m_Name: BackFromFriendlyPanelButton
+  m_Name: BackFromFriendlyGameButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14946,7 +14934,7 @@ GameObject:
   - component: {fileID: 1356869597}
   - component: {fileID: 1356869596}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: ErrorLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15069,7 +15057,7 @@ RectTransform:
   m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000114}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -15296,7 +15284,7 @@ GameObject:
   - component: {fileID: 1392375162}
   - component: {fileID: 1392375161}
   m_Layer: 5
-  m_Name: NoHeartPanel
+  m_Name: NoHeartsPopup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15317,7 +15305,7 @@ RectTransform:
   - {fileID: 1858753753}
   - {fileID: 1114752985}
   - {fileID: 85713756}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000114}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -15659,7 +15647,7 @@ GameObject:
   - component: {fileID: 1435185008}
   - component: {fileID: 1435185007}
   m_Layer: 5
-  m_Name: BackToLabbyButtonImage
+  m_Name: BackToLobbyButtonImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16095,8 +16083,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -16423,7 +16411,7 @@ GameObject:
   - component: {fileID: 1514959121}
   - component: {fileID: 1514959120}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: BackFromFriendlyGameButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16495,8 +16483,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -16637,8 +16625,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -16707,7 +16695,7 @@ GameObject:
   - component: {fileID: 1538015573}
   - component: {fileID: 1538015572}
   m_Layer: 0
-  m_Name: PersianLabel
+  m_Name: BackToLobbyButtonLabelLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16779,8 +16767,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 0
@@ -16991,7 +16979,7 @@ GameObject:
   - component: {fileID: 1577241709}
   - component: {fileID: 1577241708}
   m_Layer: 5
-  m_Name: PlayOnlineButtonImage
+  m_Name: CompetitiveGameButtonImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17669,7 +17657,7 @@ GameObject:
   - component: {fileID: 1689996366}
   - component: {fileID: 1689996365}
   m_Layer: 5
-  m_Name: PlayFriendlyButtonImage
+  m_Name: FriendlyGameButtonImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -18190,7 +18178,7 @@ GameObject:
   - component: {fileID: 1771696457}
   - component: {fileID: 1771696456}
   m_Layer: 5
-  m_Name: JoinRoomButton
+  m_Name: JoinRoomModeButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -18570,7 +18558,7 @@ GameObject:
   - component: {fileID: 1786097101}
   - component: {fileID: 1786097100}
   m_Layer: 5
-  m_Name: LeaderBoardButtonImage
+  m_Name: LeaderboardButtonImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -18645,7 +18633,7 @@ GameObject:
   - component: {fileID: 1808469981}
   - component: {fileID: 1808469980}
   m_Layer: 5
-  m_Name: Image (3)
+  m_Name: InGamePanelImage3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -18843,7 +18831,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1900000104}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1842668254
 GameObject:
@@ -18878,7 +18866,7 @@ RectTransform:
   - {fileID: 1347680444}
   - {fileID: 225745281}
   - {fileID: 1896118791}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000112}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -18935,7 +18923,7 @@ GameObject:
   - component: {fileID: 1843267792}
   - component: {fileID: 1843267791}
   m_Layer: 5
-  m_Name: ErrorLabel
+  m_Name: ErrorLabelUnused
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -18953,7 +18941,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000114}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -19007,8 +18995,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 25
-  m_fontSizeBase: 25
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -19077,7 +19065,7 @@ GameObject:
   - component: {fileID: 1848750622}
   - component: {fileID: 1848750621}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: BoostersButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -19149,8 +19137,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28
-  m_fontSizeBase: 28
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -19578,7 +19566,7 @@ RectTransform:
   - {fileID: 412292804}
   - {fileID: 2113385996}
   - {fileID: 996403281}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000106}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -19757,7 +19745,7 @@ GameObject:
   - component: {fileID: 1896718419}
   - component: {fileID: 1896718418}
   m_Layer: 5
-  m_Name: Text (Legacy)
+  m_Name: BackFromJoinButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -19837,7 +19825,7 @@ GameObject:
   - component: {fileID: 1905375307}
   - component: {fileID: 1905375306}
   m_Layer: 5
-  m_Name: BuyHeartTMP
+  m_Name: BuyHeartButtonLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -19989,8 +19977,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -20238,7 +20226,7 @@ GameObject:
   - component: {fileID: 1926431607}
   - component: {fileID: 1926431606}
   m_Layer: 5
-  m_Name: LeaderBoardScrollView
+  m_Name: LeaderboardScrollView
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20333,37 +20321,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1926431604}
   m_CullTransparentMesh: 1
---- !u!1 &1933421907
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1933421909}
-  m_Layer: 0
-  m_Name: FontHelper
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1933421909
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1933421907}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 464.3288, y: 208.07866, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1938062165
 GameObject:
   m_ObjectHideFlags: 0
@@ -20377,7 +20334,7 @@ GameObject:
   - component: {fileID: 1938062168}
   - component: {fileID: 1938062167}
   m_Layer: 5
-  m_Name: CancelMatchMakingButton
+  m_Name: CancelMatchmakingButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20498,7 +20455,7 @@ GameObject:
   - component: {fileID: 1951284282}
   - component: {fileID: 1951284281}
   m_Layer: 5
-  m_Name: LeaderBoardPanel
+  m_Name: LeaderboardPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20520,7 +20477,7 @@ RectTransform:
   - {fileID: 1022464671}
   - {fileID: 1926431605}
   - {fileID: 931833990}
-  m_Father: {fileID: 891142196}
+  m_Father: {fileID: 1900000112}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -20657,8 +20614,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 40
+  m_fontSizeBase: 40
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -21152,7 +21109,7 @@ GameObject:
   - component: {fileID: 2030371569}
   - component: {fileID: 2030371568}
   m_Layer: 5
-  m_Name: LeaderBoardTitle
+  m_Name: LeaderboardTitle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -21498,7 +21455,7 @@ GameObject:
   - component: {fileID: 2060489597}
   - component: {fileID: 2060489596}
   m_Layer: 5
-  m_Name: BackToLabbyButton
+  m_Name: BackToLobbyButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -22264,8 +22221,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -22326,12 +22283,274 @@ CanvasRenderer:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1816299193}
+  - {fileID: 1900000102}
   - {fileID: 891142196}
-  - {fileID: 613154811}
-  - {fileID: 788625996}
+  - {fileID: 1900000104}
+
+--- !u!1 &1900000101
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1900000102}
+  m_Layer: 0
+  m_Name: --Managers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1900000102
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000101}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
   - {fileID: 333748397}
+  - {fileID: 788625996}
   - {fileID: 387142099}
   - {fileID: 651240624}
-  - {fileID: 1933421909}
   - {fileID: 1168751577}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+
+--- !u!1 &1900000103
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1900000104}
+  m_Layer: 0
+  m_Name: --System
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1900000104
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000103}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1816299193}
+  - {fileID: 613154811}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+
+--- !u!1 &1900000105
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1900000106}
+  m_Layer: 5
+  m_Name: --Auth
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1900000106
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000105}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1894550818}
+  - {fileID: 493521277}
+  m_Father: {fileID: 891142196}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+
+--- !u!1 &1900000107
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1900000108}
+  m_Layer: 5
+  m_Name: --Lobby
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1900000108
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000107}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 212865002}
+  - {fileID: 946841631}
+  - {fileID: 1076369823}
+  - {fileID: 4198405}
+  - {fileID: 521065150}
+  m_Father: {fileID: 891142196}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+
+--- !u!1 &1900000109
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1900000110}
+  m_Layer: 5
+  m_Name: --Game
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1900000110
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000109}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 967148703}
+  - {fileID: 638279722}
+  m_Father: {fileID: 891142196}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+
+--- !u!1 &1900000111
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1900000112}
+  m_Layer: 5
+  m_Name: --Meta
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1900000112
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000111}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1951284280}
+  - {fileID: 635364122}
+  - {fileID: 1842668255}
+  - {fileID: 1038979720}
+  m_Father: {fileID: 891142196}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+
+--- !u!1 &1900000113
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1900000114}
+  m_Layer: 5
+  m_Name: --Overlays
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1900000114
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000113}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1392375160}
+  - {fileID: 669708343}
+  - {fileID: 1356869598}
+  - {fileID: 1843267790}
+  m_Father: {fileID: 891142196}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}

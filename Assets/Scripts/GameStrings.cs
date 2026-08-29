@@ -18,7 +18,9 @@ public static class GameStrings
     public const string PlayerInfoFormat = "{0} (شناسه: {1})";
     public const string PlayerInfoPlaceholder = "وارد نشده‌اید";
     public const string WelcomeFormat = "خوش آمدی، {0}!";
+    public const string WelcomeGuest = "خوش آمدی";
     public const string WelcomeTitle = "به دوووز\nخوش آمدید";
+    public const string PlayerFallbackFormat = "بازیکن {0}";
     public const string RoomInfoFormat = "اتاق: {0}";
     public const string RoomInfoPlaceholder = "وارد اتاقی نشده‌اید";
     public const string CreatingRoom = "در حال ساخت اتاق...";
@@ -101,6 +103,13 @@ public static class GameStrings
     public const string BuyFailed = "خرید انجام نشد";
     public const string LoadingStore = "در حال بارگذاری فروشگاه...";
     public const string StoreError = "فروشگاه بارگذاری نشد";
+    public const string BoostersError = "بوسترها بارگذاری نشد";
+    public const string CoinPackMissing = "بسته سکه پیدا نشد.";
+    public const string BillingNotReady = "فروشگاه هنوز آماده نیست. کمی صبر کنید.";
+    public const string PurchaseFailed = "خرید انجام نشد.";
+    public const string IapDisabled = "خرید فقط از نسخهٔ استور امکان‌پذیر است.";
+    public const string VerifyFailed = "تأیید خرید انجام نشد.";
+    public const string InvalidProduct = "محصول نامعتبر است.";
     public const string CoinPackFallback = "بسته سکه";
     public const string CoinBonusFormat = "+{0} سکه جایزه";
     public const string BuyButton = "خرید";

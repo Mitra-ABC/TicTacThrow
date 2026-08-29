@@ -651,7 +651,7 @@ public class ApiClient : MonoBehaviour
         if (string.IsNullOrWhiteSpace(coinPackCode))
         {
             LogWarning("[ApiClient] GrantCoinPack: coinPackCode is empty");
-            onError?.Invoke("Coin pack code is required.");
+            onError?.Invoke(GameStrings.CoinPackMissing);
             yield break;
         }
 
@@ -704,14 +704,14 @@ public class ApiClient : MonoBehaviour
     {
         if (string.IsNullOrWhiteSpace(sku) || string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(store))
         {
-            onError?.Invoke("sku, token, and store are required.");
+            onError?.Invoke(GameStrings.InvalidProduct);
             yield break;
         }
 
         var tokenAuth = GetToken();
         if (string.IsNullOrEmpty(tokenAuth))
         {
-            onError?.Invoke("Not authenticated. Please login first.");
+            onError?.Invoke(GameStrings.NotLoggedIn);
             yield break;
         }
 
@@ -789,7 +789,7 @@ public class ApiClient : MonoBehaviour
                 if (string.IsNullOrEmpty(token))
                 {
                     LogWarning("[ApiClient] No auth token available for authenticated request");
-                    onError?.Invoke("Not authenticated. Please login first.");
+                    onError?.Invoke(GameStrings.NotLoggedIn);
                     yield break;
                 }
                 request.SetRequestHeader("Authorization", $"Bearer {token}");
@@ -827,7 +827,7 @@ public class ApiClient : MonoBehaviour
                 if (request.responseCode == 401)
                 {
                     ClearSession();
-                    onError?.Invoke("Session expired. Please login again.");
+                    onError?.Invoke(GameStrings.SessionExpired);
                     yield break;
                 }
                 
@@ -843,7 +843,7 @@ public class ApiClient : MonoBehaviour
                 if (string.IsNullOrEmpty(responseText))
                 {
                     LogWarning($"[ApiClient] Empty response from server for {endpoint}");
-                    onError?.Invoke("Empty response from server.");
+                    onError?.Invoke(UserError.Generic);
                     yield break;
                 }
 
@@ -912,7 +912,7 @@ public class ApiClient : MonoBehaviour
                     if (request.responseCode == 401)
                     {
                         ClearSession();
-                        onError?.Invoke("Session expired. Please login again.");
+                        onError?.Invoke(GameStrings.SessionExpired);
                         yield break;
                     }
                     
@@ -926,7 +926,7 @@ public class ApiClient : MonoBehaviour
                 if (string.IsNullOrEmpty(responseText))
                 {
                     LogWarning($"[ApiClient] Empty response from server for {endpoint}");
-                    onError?.Invoke("Empty response from server.");
+                    onError?.Invoke(UserError.Generic);
                     yield break;
                 }
 

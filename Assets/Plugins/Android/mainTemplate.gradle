@@ -16,9 +16,19 @@ dependencies {
     def marketId = project.findProperty("marketApplicationId") ?: "ir.mservices.market"
     if (marketId == "ir.mservices.market") {
         implementation 'com.github.myketstore:myket-billing-unity:unity-1.7'
+    } else {
+        implementation 'com.github.cafebazaar.Poolakey:poolakey:2.0.0'
     }
-    implementation 'com.github.cafebazaar.Poolakey:poolakey:2.0.0'
 **DEPS**}
+
+configurations.configureEach {
+    def marketId = project.findProperty("marketApplicationId") ?: "ir.mservices.market"
+    if (marketId == "ir.mservices.market") {
+        exclude group: 'com.github.cafebazaar.Poolakey', module: 'poolakey'
+    } else {
+        exclude group: 'com.github.myketstore', module: 'myket-billing-unity'
+    }
+}
 
 android {
     namespace "com.unity3d.player"

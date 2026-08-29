@@ -23,7 +23,7 @@ public static class PersianUi
         { "login", GameStrings.LoginButton },
         { "register", GameStrings.RegisterButton },
         { "logout", GameStrings.LogoutButton },
-        { "welcome!!", "خوش آمدی" },
+        { "welcome", GameStrings.WelcomeGuest },
         { "welcome to dodoooz", GameStrings.WelcomeTitle },
         { "play online", GameStrings.PlayOnlineButton },
         { "friendly match", GameStrings.FriendlyMatchButton },

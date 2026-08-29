@@ -23,6 +23,8 @@ public static class UserError
         var key = trimmed.ToLowerInvariant().Replace('_', ' ').TrimEnd('.', '!', ' ');
         if (key == "connection failed" || key == "connection lost")
             return key.Contains("lost") ? ConnectionLost : ConnectionFailed;
+        if (IsNotEnoughHearts(trimmed))
+            return NotEnoughHearts;
 
         return Generic;
     }

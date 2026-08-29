@@ -263,7 +263,7 @@ PlayerSettings:
   clonedFromGUID: c19f32bac17ee4170b3bf8a6a0333fb9
   templatePackageId: com.unity.template.universal-2d@6.1.1
   templateDefaultScene: Assets/Scenes/main_dooooz.unity
-  useCustomMainManifest: 1
+  useCustomMainManifest: 0
   useCustomLauncherManifest: 0
   useCustomMainGradleTemplate: 1
   useCustomLauncherGradleManifest: 1
@@ -694,7 +694,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Android: BAZAAR_IAP;UNITY_MCP_READY;UNITY_MCP_DEPS_3
+    Android: UNITY_MCP_READY;UNITY_MCP_DEPS_3;MYKET_IAP
     EmbeddedLinux: UNITY_MCP_READY;UNITY_MCP_DEPS_3
     GameCoreScarlett: UNITY_MCP_READY;UNITY_MCP_DEPS_3
     GameCoreXboxOne: UNITY_MCP_READY;UNITY_MCP_DEPS_3
