@@ -289,6 +289,7 @@ public class GameManager : MonoBehaviour
         // Auth form buttons
         submitAuthButton?.onClick.AddListener(OnSubmitAuthClicked);
         backFromAuthFormButton?.onClick.AddListener(OnBackToAuthChoice);
+        authFormPanel?.GetComponent<AuthFormChrome>()?.BindToggle(OnToggleAuthMode);
 
         // Lobby buttons
         competitiveGameButton?.onClick.AddListener(OnCompetitiveGameClicked);
@@ -356,6 +357,13 @@ public class GameManager : MonoBehaviour
         ClearError();
         ClearAuthInputs();
         SetState(GameState.AuthChoice);
+    }
+
+    public void OnToggleAuthMode()
+    {
+        isRegisterMode = !isRegisterMode;
+        ClearError();
+        UpdateUI();
     }
 
     public void OnSubmitAuthClicked()
@@ -1022,6 +1030,8 @@ public class GameManager : MonoBehaviour
             {
                 PersianUi.SetText(submitAuthButtonText, isRegisterMode ? GameStrings.RegisterButton : GameStrings.LoginButton);
             }
+
+            authFormPanel?.GetComponent<AuthFormChrome>()?.Apply(isRegisterMode);
         }
 
         // Update labels based on state

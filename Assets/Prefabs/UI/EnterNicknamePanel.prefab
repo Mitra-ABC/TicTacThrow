@@ -166,6 +166,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4548698357907182594, guid: 4cccd941c3fa61e45b10401a2e5523cc, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 31c3f28b28d08bf4e8620cbd470296d9, type: 2}
+    - target: {fileID: 4548698357907182594, guid: 4cccd941c3fa61e45b10401a2e5523cc, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1620932164210871542, guid: 31c3f28b28d08bf4e8620cbd470296d9, type: 2}
     - target: {fileID: 5683410715700885006, guid: 4cccd941c3fa61e45b10401a2e5523cc, type: 3}
       propertyPath: m_Name
       value: Text (TMP)
@@ -188,6 +196,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1398585782243295905}
     m_Modifications:
+    - target: {fileID: 59299077058270588, guid: ea984d7301b70334ba05c684a4cede1f, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 31c3f28b28d08bf4e8620cbd470296d9, type: 2}
+    - target: {fileID: 59299077058270588, guid: ea984d7301b70334ba05c684a4cede1f, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1620932164210871542, guid: 31c3f28b28d08bf4e8620cbd470296d9, type: 2}
+    - target: {fileID: 2799582357682834233, guid: ea984d7301b70334ba05c684a4cede1f, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 31c3f28b28d08bf4e8620cbd470296d9, type: 2}
+    - target: {fileID: 2799582357682834233, guid: ea984d7301b70334ba05c684a4cede1f, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1620932164210871542, guid: 31c3f28b28d08bf4e8620cbd470296d9, type: 2}
     - target: {fileID: 7319661265764352022, guid: ea984d7301b70334ba05c684a4cede1f, type: 3}
       propertyPath: m_Name
       value: InputField (TMP)

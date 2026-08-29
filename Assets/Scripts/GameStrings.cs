@@ -127,6 +127,11 @@ public static class GameStrings
     public const string NoHeartsBuyButton = "خرید قلب";
     public const string NoHeartsCancelButton = "انصراف";
 
+    public const string AuthTagline = "بازی کن، برنده شو، بالا بیا!";
+    public const string AuthVersion = "نسخه ۱.۰";
+    public const string AuthEnterGame = "ورود به بازی";
+    public const string AuthSwitchToRegister = "حساب کاربری ندارید؟ <color=#FFD24A>ثبت‌نام</color>";
+    public const string AuthSwitchToLogin = "حساب دارید؟ <color=#FFD24A>ورود</color>";
     public const string LoginButton = "ورود";
     public const string RegisterButton = "ثبت‌نام";
     public const string LogoutButton = "خروج";

@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Lalezar + RTLTMPro shaping so Persian letters join and read right-to-left.
+/// Vazir + RTLTMPro shaping so Persian letters join and read right-to-left.
 /// Does not move or resize UI — only font and glyph order.
 /// </summary>
 public static class PersianUi
@@ -152,6 +152,14 @@ public static class PersianUi
             tmp.font = font;
         if (tmp is not RTLTextMeshPro)
             tmp.isRightToLeftText = false;
+        tmp.fontStyle &= ~FontStyles.Italic;
+        if (!tmp.enableAutoSizing)
+        {
+            var size = tmp.fontSize > 0f ? tmp.fontSize : 18f;
+            tmp.fontSizeMax = size;
+            tmp.fontSizeMin = Mathf.Max(10f, Mathf.Min(18f, size * 0.5f));
+            tmp.enableAutoSizing = true;
+        }
     }
 
     private static void UpgradeLegacyText(Text text, TMP_FontAsset font)
@@ -273,25 +281,48 @@ public static class PersianUi
         if (cachedFont != null)
             return cachedFont;
 
+        TMP_FontAsset vazir = null;
+        TMP_FontAsset fallback = null;
         foreach (var font in Resources.FindObjectsOfTypeAll<TMP_FontAsset>())
         {
-            if (font != null && font.name.IndexOf("Lalezar", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (font == null)
+                continue;
+            if (IsVazirBlack(font.name))
             {
                 cachedFont = font;
                 return cachedFont;
             }
+            if (vazir == null && IsVazirFont(font.name))
+                vazir = font;
+            if (fallback == null && IsProjectFont(font.name))
+                fallback = font;
         }
-
-        foreach (var tmp in Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-        {
-            if (tmp != null && tmp.font != null
-                && tmp.font.name.IndexOf("Lalezar", System.StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                cachedFont = tmp.font;
-                return cachedFont;
-            }
-        }
+        cachedFont = vazir != null ? vazir : fallback;
+        if (cachedFont != null)
+            return cachedFont;
 
         return TMP_Settings.defaultFontAsset;
+    }
+
+    private static bool IsVazirBlack(string name)
+    {
+        return !string.IsNullOrEmpty(name)
+            && name.IndexOf("Black", System.StringComparison.OrdinalIgnoreCase) >= 0
+            && (name.IndexOf("Vazir", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("Vazirmatn", System.StringComparison.OrdinalIgnoreCase) >= 0);
+    }
+
+    private static bool IsVazirFont(string name)
+    {
+        return !string.IsNullOrEmpty(name)
+            && (name.IndexOf("Vazir", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("Vazirmatn", System.StringComparison.OrdinalIgnoreCase) >= 0);
+    }
+
+    private static bool IsProjectFont(string name)
+    {
+        return IsVazirFont(name)
+            || (!string.IsNullOrEmpty(name)
+                && name.IndexOf("Lalezar", System.StringComparison.OrdinalIgnoreCase) >= 0);
     }
 }
