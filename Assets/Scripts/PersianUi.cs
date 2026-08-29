@@ -27,6 +27,7 @@ public static class PersianUi
         { "welcome to dodoooz", GameStrings.WelcomeTitle },
         { "play online", GameStrings.PlayOnlineButton },
         { "friendly match", GameStrings.FriendlyMatchButton },
+        { "play with friends", GameStrings.PlayWithFriendsButton },
         { "with friends", GameStrings.WithFriends },
         { "leader board", GameStrings.LeaderboardTitle },
         { "leaderboard", GameStrings.LeaderboardTitle },
@@ -52,8 +53,8 @@ public static class PersianUi
         { "time remaining", "زمان باقی‌مانده" },
         { "loading", GameStrings.Loading },
         { "buy", GameStrings.BuyButton },
-        { "coins 0", string.Format(GameStrings.CoinsFormat, 0) },
-        { "hearts 0/5", string.Format(GameStrings.HeartsFormat, 0, 5) },
+        { "coins 0", GameStrings.FormatLobbyCoins(0) },
+        { "hearts 0/5", GameStrings.FormatLobbyHearts(0, 5) },
         { "season -", string.Format(GameStrings.SeasonFormat, "-") },
         { "rank -", string.Format(GameStrings.RankFormat, "-") },
         { "rating -", string.Format(GameStrings.RatingFormat, "-") },
@@ -82,6 +83,8 @@ public static class PersianUi
             if (tmp == null)
                 continue;
             if (tmp.GetComponentInParent<BoardCell>(true) != null)
+                continue;
+            if (tmp.name == "BackFromAuthFormButtonLabel" || tmp.name == "LogoutButtonLabel")
                 continue;
             if (IsTypingField(tmp))
             {
@@ -175,6 +178,32 @@ public static class PersianUi
         if (parent == null)
         {
             text.text = Shape(translated);
+            return;
+        }
+
+        if (text.GetComponent<TMP_Text>() != null)
+        {
+            text.enabled = false;
+            text.text = string.Empty;
+            return;
+        }
+
+        TMP_Text existingTmp = null;
+        foreach (var candidate in parent.GetComponentsInChildren<TMP_Text>(true))
+        {
+            if (candidate != null && candidate.name != "PersianLabel")
+            {
+                existingTmp = candidate;
+                break;
+            }
+        }
+
+        if (existingTmp != null)
+        {
+            text.enabled = false;
+            text.text = string.Empty;
+            if (text.transform != parent)
+                text.gameObject.SetActive(false);
             return;
         }
 

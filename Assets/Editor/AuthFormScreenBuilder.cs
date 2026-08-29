@@ -16,8 +16,7 @@ public static class AuthFormScreenBuilder
     private const string LogoPath = "Assets/UI/Auth/AuthLogo.png";
     private const string ButtonPath = "Assets/UI/Auth/AuthButton.png";
     private const string FieldPath = "Assets/UI/Auth/FormField.png";
-    private const string BackLoginPath = "Assets/UI/Auth/FormBackLogin.png";
-    private const string BackRegisterPath = "Assets/UI/Auth/FormBackRegister.png";
+    private const string FriendsBackPath = "Assets/UI/Friends/FriendsBack.png";
     private const string SparkleLeftPath = "Assets/UI/Auth/FormSparkleLeft.png";
     private const string SparkleRightPath = "Assets/UI/Auth/FormSparkleRight.png";
     private const string IconUserPath = "Assets/UI/Auth/FormIconUser.png";
@@ -45,8 +44,7 @@ public static class AuthFormScreenBuilder
         var logoSprite = ImportSprite(LogoPath);
         var buttonSprite = ImportSprite(ButtonPath);
         var fieldSprite = ImportSprite(FieldPath, 180, 50, 180, 50);
-        var backLogin = ImportSprite(BackLoginPath);
-        var backRegister = ImportSprite(BackRegisterPath);
+        var friendsBack = ImportSprite(FriendsBackPath);
         var sparkleLeft = ImportSprite(SparkleLeftPath);
         var sparkleRight = ImportSprite(SparkleRightPath);
         var iconUser = ImportSprite(IconUserPath);
@@ -69,7 +67,13 @@ public static class AuthFormScreenBuilder
         bg.raycastTarget = false;
 
         var logo = EnsureImage(root, "AuthFormLogo", logoSprite, 1);
-        Place(logo.rectTransform, new Vector2(0f, 228f), new Vector2(400f, 208f));
+        var logoRt = logo.rectTransform;
+        logoRt.localScale = Vector3.one;
+        logoRt.anchorMin = new Vector2(1f, 1f);
+        logoRt.anchorMax = new Vector2(1f, 1f);
+        logoRt.pivot = new Vector2(1f, 1f);
+        logoRt.anchoredPosition = new Vector2(-18f, -14f);
+        logoRt.sizeDelta = new Vector2(240f, 125f);
         logo.preserveAspect = true;
         logo.raycastTarget = false;
 
@@ -103,9 +107,9 @@ public static class AuthFormScreenBuilder
             right.raycastTarget = false;
         }
 
-        var userIcon = StyleField(root.Find("UsernameInput"), fieldSprite, new Vector2(0f, 8f), new Vector2(520f, 78f), iconUser, null, font, GameStrings.UsernamePlaceholder, false);
+        var userIcon = StyleField(root.Find("UsernameInput"), fieldSprite, new Vector2(0f, 12f), new Vector2(560f, 94f), iconUser, null, font, GameStrings.UsernamePlaceholder, false);
         var passField = root.Find("PasswordInput");
-        var lockImg = StyleField(passField, fieldSprite, new Vector2(0f, -82f), new Vector2(520f, 78f), iconLock, iconEye, font, GameStrings.PasswordPlaceholder, true);
+        var lockImg = StyleField(passField, fieldSprite, new Vector2(0f, -90f), new Vector2(560f, 94f), iconLock, iconEye, font, GameStrings.PasswordPlaceholder, true);
         var passInput = passField != null ? passField.GetComponent<TMP_InputField>() : null;
         if (passInput != null)
             passInput.contentType = TMP_InputField.ContentType.Password;
@@ -115,12 +119,12 @@ public static class AuthFormScreenBuilder
         if (nickContainer != null)
         {
             nickContainer.localScale = Vector3.one;
-            Place(nickContainer, new Vector2(0f, -44f), new Vector2(520f, 78f));
+            Place(nickContainer, new Vector2(0f, -64f), new Vector2(560f, 94f));
             var nickInput = nickContainer.Find("NicknameInput") as RectTransform;
             if (nickInput != null)
             {
                 Stretch(nickInput);
-                heartIcon = StyleField(nickInput, fieldSprite, Vector2.zero, new Vector2(520f, 78f), iconHeart, null, font, GameStrings.NicknamePlaceholder, false);
+                heartIcon = StyleField(nickInput, fieldSprite, Vector2.zero, new Vector2(560f, 94f), iconHeart, null, font, GameStrings.NicknamePlaceholder, false);
                 Stretch(nickInput);
             }
         }
@@ -129,19 +133,7 @@ public static class AuthFormScreenBuilder
         StyleSpriteButton(submit, buttonSprite, new Vector2(0f, -188f), new Vector2(500f, 108f), GameStrings.LoginButton, font);
 
         var back = root.Find("BackFromAuthFormButton");
-        StyleSpriteButton(back, backLogin, new Vector2(-572f, 300f), new Vector2(78f, 78f), null, font);
-        if (back != null)
-        {
-            var backRt = back as RectTransform;
-            if (backRt != null)
-            {
-                backRt.anchorMin = new Vector2(0f, 1f);
-                backRt.anchorMax = new Vector2(0f, 1f);
-                backRt.pivot = new Vector2(0.5f, 0.5f);
-                backRt.anchoredPosition = new Vector2(52f, -48f);
-                backRt.sizeDelta = new Vector2(78f, 78f);
-            }
-        }
+        StyleIconButton(back, friendsBack, new Vector2(0f, 1f), new Vector2(18f, -14f), new Vector2(72f, 72f), new Vector2(0f, 1f));
 
         var status = root.Find("AuthStatusLabel") as RectTransform;
         if (status != null)
@@ -190,8 +182,8 @@ public static class AuthFormScreenBuilder
         so.FindProperty("passwordInput").objectReferenceValue = passInput;
         so.FindProperty("loginBg").objectReferenceValue = loginBg;
         so.FindProperty("registerBg").objectReferenceValue = registerBg;
-        so.FindProperty("loginBack").objectReferenceValue = backLogin;
-        so.FindProperty("registerBack").objectReferenceValue = backRegister;
+        so.FindProperty("loginBack").objectReferenceValue = friendsBack;
+        so.FindProperty("registerBack").objectReferenceValue = friendsBack;
         so.FindProperty("loginUserIcon").objectReferenceValue = iconUser;
         so.FindProperty("registerUserIcon").objectReferenceValue = iconUserJelly;
         so.FindProperty("loginLockIcon").objectReferenceValue = iconLock;
@@ -242,8 +234,8 @@ public static class AuthFormScreenBuilder
         if (image != null)
         {
             image.sprite = sprite;
-            image.type = Image.Type.Sliced;
-            image.preserveAspect = false;
+            image.type = Image.Type.Simple;
+            image.preserveAspect = true;
             image.color = Color.white;
             image.raycastTarget = true;
         }
@@ -459,11 +451,48 @@ public static class AuthFormScreenBuilder
         rt.sizeDelta = size;
     }
 
+    private static void StyleIconButton(Transform button, Sprite sprite, Vector2 anchor, Vector2 pos, Vector2 size, Vector2 pivot)
+    {
+        if (button == null)
+            return;
+        button.gameObject.SetActive(true);
+        var rt = button as RectTransform;
+        if (rt != null)
+        {
+            rt.localScale = Vector3.one;
+            rt.anchorMin = anchor;
+            rt.anchorMax = anchor;
+            rt.pivot = pivot;
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = size;
+        }
+
+        var image = button.GetComponent<Image>();
+        if (image != null)
+        {
+            image.sprite = sprite;
+            image.type = Image.Type.Simple;
+            image.preserveAspect = true;
+            image.color = Color.white;
+            image.raycastTarget = true;
+        }
+
+        foreach (var tmp in button.GetComponentsInChildren<TMP_Text>(true))
+        {
+            if (tmp != null)
+                tmp.gameObject.SetActive(false);
+        }
+    }
+
     private static void Hide(Transform parent, string name)
     {
-        var t = parent.Find(name);
-        if (t != null)
-            t.gameObject.SetActive(false);
+        if (parent == null)
+            return;
+        foreach (var t in parent.GetComponentsInChildren<Transform>(true))
+        {
+            if (t != null && t.name == name)
+                t.gameObject.SetActive(false);
+        }
     }
 
     private static Sprite ImportSprite(string path, float l = 0, float b = 0, float r = 0, float t = 0)

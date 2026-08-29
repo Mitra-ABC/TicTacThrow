@@ -43,8 +43,9 @@ public static class GameStrings
     public const string ResultUnknown = "بازی تمام شد";
 
     public const string NicknameRequired = "نام نمایشی را وارد کنید.";
-    public const string JoinRoomIdRequired = "شناسه اتاق را وارد کنید.";
-    public const string JoinRoomIdInvalid = "شناسه اتاق باید عدد مثبت باشد.";
+    public const string JoinRoomIdRequired = "کد اتاق را وارد کنید.";
+    public const string JoinRoomIdInvalid = "کد اتاق باید ۶ رقم باشد.";
+    public const int RoomCodeLength = 6;
     public const string PlayerNotCreated = "لطفاً اول وارد شوید.";
     public const string WsNotReady = "در حال اتصال... کمی صبر کنید.";
     public const string WsDisconnected = "اتصال بازی قطع است. کمی صبر کنید.";
@@ -60,6 +61,7 @@ public static class GameStrings
     public const string ResultDraw = "draw";
 
     public const string QueueMatchmaking = "ورود به صف";
+    public const string MatchmakingTitle = "جستجوی حریف";
     public const string CancelMatchmaking = "لغو جستجو";
     public const string SearchingForOpponent = "در حال پیدا کردن حریف...";
     public const string MatchmakingWaiting = "در انتظار حریف...";
@@ -85,6 +87,9 @@ public static class GameStrings
 
     public const string CoinsFormat = "سکه: {0}";
     public const string HeartsFormat = "قلب: {0}/{1}";
+    public const string PlayWithFriendsButton = "بازی با دوستان";
+    public const string LobbyRankButton = "رتبه‌بندی";
+    public const string LobbyBoostersButton = "تقویت‌کننده‌ها";
     public const string NextHeartFormat = "قلب بعدی: {0}";
     public const string HeartsFull = "قلب‌ها پر است";
     public const string NotEnoughCoins = "سکه کافی ندارید";
@@ -136,7 +141,18 @@ public static class GameStrings
     public const string RegisterButton = "ثبت‌نام";
     public const string LogoutButton = "خروج";
     public const string CreateRoomButton = "ساخت اتاق";
+    public const string CreateRoomHint = "یک اتاق خصوصی بساز";
     public const string JoinRoomButton = "ورود به اتاق";
+    public const string JoinRoomHint = "با کد دوستت وارد شو";
+    public const string JoinRoomInstruction = "کد اتاقی را که دوستت فرستاده وارد کن";
+    public const string JoinRoomNumbersOnly = "کد اتاق ۶ رقمی است";
+    public const string RoomCreatedTitle = "اتاق ساخته شد";
+    public const string WaitingForFriend = "در انتظار پیوستن دوست شما...";
+    public const string YourRoomCode = "کد اتاق شما";
+    public const string CopyButton = "کپی";
+    public const string ShareButton = "اشتراک‌گذاری";
+    public const string CancelRoomButton = "لغو اتاق";
+    public const string RoomCodeCopied = "کد اتاق کپی شد.";
     public const string JoinButton = "ورود";
     public const string BackButton = "بازگشت";
     public const string BackToLobbyButton = "بازگشت به لابی";
@@ -165,5 +181,101 @@ public static class GameStrings
         if (remaining.TotalMinutes >= 1)
             return string.Format(BoosterTimeRemainingFormat, $"{remaining.Minutes} دقیقه و {remaining.Seconds} ثانیه");
         return string.Format(BoosterTimeRemainingFormat, $"{remaining.Seconds} ثانیه");
+    }
+
+    public static string FormatLobbyCoins(int coins)
+    {
+        return ToPersianDigits(WithThousands(coins));
+    }
+
+    public static string FormatLobbyHearts(int hearts, int maxHearts)
+    {
+        return ToPersianDigits(hearts + "/" + maxHearts);
+    }
+
+    public static string FormatLobbyScore(int score)
+    {
+        return ToPersianDigits(WithThousands(score));
+    }
+
+    public static string NormalizeRoomCode(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        var chars = new char[value.Length];
+        var count = 0;
+        foreach (var c in value)
+        {
+            var digit = ToWesternDigit(c);
+            if (digit != '\0')
+                chars[count++] = digit;
+        }
+
+        return new string(chars, 0, count);
+    }
+
+    public static string PadRoomCode(int roomId)
+    {
+        return roomId > 0 ? roomId.ToString().PadLeft(RoomCodeLength, '0') : string.Empty;
+    }
+
+    public static string PadRoomCode(string code)
+    {
+        var digits = NormalizeRoomCode(code);
+        if (string.IsNullOrEmpty(digits))
+            return string.Empty;
+        return digits.Length >= RoomCodeLength
+            ? digits.Substring(0, RoomCodeLength)
+            : digits.PadLeft(RoomCodeLength, '0');
+    }
+
+    public static string FormatRoomCode(string code)
+    {
+        return ToPersianDigits(PadRoomCode(code));
+    }
+
+    public static char ToWesternDigit(char c)
+    {
+        if (c >= '0' && c <= '9')
+            return c;
+        if (c >= '۰' && c <= '۹')
+            return (char)('0' + (c - '۰'));
+        if (c >= '٠' && c <= '٩')
+            return (char)('0' + (c - '٠'));
+        return '\0';
+    }
+
+    public static string ToPersianDigits(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return value;
+
+        var chars = value.ToCharArray();
+        for (var i = 0; i < chars.Length; i++)
+        {
+            if (chars[i] >= '0' && chars[i] <= '9')
+                chars[i] = (char)('۰' + (chars[i] - '0'));
+            else if (chars[i] == ',')
+                chars[i] = '٬';
+        }
+
+        return new string(chars);
+    }
+
+    private static string WithThousands(int value)
+    {
+        var raw = Math.Abs(value).ToString();
+        var sb = new System.Text.StringBuilder(raw.Length + raw.Length / 3 + 1);
+        if (value < 0)
+            sb.Append('-');
+        for (var i = 0; i < raw.Length; i++)
+        {
+            if (i > 0 && (raw.Length - i) % 3 == 0)
+                sb.Append(',');
+            sb.Append(raw[i]);
+        }
+
+        return sb.ToString();
     }
 }

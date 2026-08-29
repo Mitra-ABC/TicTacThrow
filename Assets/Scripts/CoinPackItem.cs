@@ -39,7 +39,7 @@ public class CoinPackItem : MonoBehaviour
         }
 
         if (coinsAmountText != null)
-            coinsAmountText.text = pack.coinsAmount.ToString();
+            PersianUi.SetText(coinsAmountText, GameStrings.ToPersianDigits(pack.coinsAmount.ToString()));
 
         if (bonusText != null)
         {

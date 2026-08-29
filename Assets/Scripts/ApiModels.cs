@@ -325,6 +325,7 @@ public class TokenPayload
 public class RoomCreateSuccessData
 {
     public int roomId;
+    public string joinCode;
     public string status;
 }
 

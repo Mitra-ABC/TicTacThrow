@@ -19,6 +19,7 @@ public class WebSocketManager : MonoBehaviour
     private string serverUrl = "ws://localhost:3000";
     private string authToken = "";
     private int currentRoomId = 0;
+    private string currentJoinCode = string.Empty;
     private int myPlayerId = 0;
     
     // Thread-safe event queue for main thread execution
@@ -301,7 +302,9 @@ public class WebSocketManager : MonoBehaviour
                     }
                     
                     currentRoomId = finalData.roomId;
-                    Log($"Room created: {finalData.roomId}");
+                    currentJoinCode = GameStrings.PadRoomCode(
+                        !string.IsNullOrEmpty(finalData.joinCode) ? finalData.joinCode : finalData.roomId.ToString());
+                    Log($"Room created: {finalData.roomId} joinCode={currentJoinCode}");
                     OnRoomCreated?.Invoke(finalData.roomId);
                     
                     // Auto subscribe to room
@@ -1069,18 +1072,25 @@ public class WebSocketManager : MonoBehaviour
             return;
         }
         
+        currentJoinCode = string.Empty;
         socket.Emit("room:create");
     }
-    
+
     public void JoinRoom(int roomId)
+    {
+        JoinRoomByCode(GameStrings.PadRoomCode(roomId));
+    }
+
+    public void JoinRoomByCode(string joinCode)
     {
         if (socket == null || !socket.Connected)
         {
             LogError("WebSocket not connected!");
             return;
         }
-        
-        socket.Emit("room:join", new { roomId });
+
+        var code = GameStrings.PadRoomCode(joinCode);
+        socket.Emit("room:join", new { joinCode = code });
     }
     
     public void SubscribeToRoom(int roomId)
@@ -1149,6 +1159,7 @@ public class WebSocketManager : MonoBehaviour
     
     public bool IsConnected => socket != null && socket.Connected;
     public int CurrentRoomId => currentRoomId;
+    public string CurrentJoinCode => currentJoinCode;
     public int MyPlayerId => myPlayerId;
     
     private static string PickError(ErrorData data)

@@ -136,9 +136,11 @@ public class GameManager : MonoBehaviour
     private bool isRegisterMode; // true = Register, false = Login
 
     private int currentRoomId;
+    private string currentJoinCode;
     private string localPlayerSymbol;
     private RoomStateResponse currentRoomState;
     private Coroutine nextHeartCountdownCoroutine;
+    private int lobbyRating = int.MinValue;
 
     private enum GameState
     {
@@ -309,6 +311,7 @@ public class GameManager : MonoBehaviour
 
         // Waiting buttons
         cancelWaitingButton?.onClick.AddListener(OnBackToLobby);
+        waitingPanel?.GetComponent<WaitingChrome>()?.Bind(OnCopyRoomCode, OnCopyRoomCode);
 
         // Matchmaking buttons
         cancelMatchmakingButton?.onClick.AddListener(OnCancelMatchmakingClicked);
@@ -321,6 +324,7 @@ public class GameManager : MonoBehaviour
 
         // Store, Boosters, No-Hearts popup
         storeButton?.onClick.AddListener(OnStoreClicked);
+        lobbyPanel?.GetComponent<LobbyChrome>()?.BindStore(OnStoreClicked);
         boostersButton?.onClick.AddListener(OnBoostersClicked);
         closeStoreButton?.onClick.AddListener(OnCloseStore);
         closeBoostersButton?.onClick.AddListener(OnCloseBoosters);
@@ -419,6 +423,7 @@ public class GameManager : MonoBehaviour
             apiClient?.Logout();
         }
         currentRoomId = 0;
+        currentJoinCode = null;
         localPlayerSymbol = null;
         currentRoomState = null;
         boardView?.Clear();
@@ -523,19 +528,20 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        var text = joinRoomInput.text.Trim();
-        if (!int.TryParse(text, out var roomId) || roomId <= 0)
+        var code = GameStrings.NormalizeRoomCode(joinRoomInput.text);
+        if (code.Length != GameStrings.RoomCodeLength)
         {
             ShowError(GameStrings.JoinRoomIdInvalid);
             return;
         }
 
-        StartCoroutine(HandleJoinRoom(roomId));
+        StartCoroutine(HandleJoinRoom(code));
     }
 
     public void OnBackToLobby()
     {
         currentRoomId = 0;
+        currentJoinCode = null;
         localPlayerSymbol = null;
         currentRoomState = null;
         boardView?.Clear();
@@ -597,8 +603,9 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log($"[GameManager] OnWebSocketRoomCreated called with roomId: {roomId}");
         currentRoomId = roomId;
+        currentJoinCode = webSocketManager != null ? webSocketManager.CurrentJoinCode : GameStrings.PadRoomCode(roomId);
         localPlayerSymbol = GameStrings.SymbolX; // Room creator is always X
-        Debug.Log($"[GameManager] Room created via WebSocket: {currentRoomId}");
+        Debug.Log($"[GameManager] Room created via WebSocket: {currentRoomId} joinCode={currentJoinCode}");
         
         // Reset request flag since WebSocket response arrived
         Debug.Log("[GameManager] Resetting requestInFlight = false");
@@ -635,13 +642,13 @@ public class GameManager : MonoBehaviour
         // Update player info display
         UpdatePlayerInfo(currentRoomState);
         
-        PersianUi.SetText(waitingStatusLabel, GameStrings.WaitingForOpponent);
-        PersianUi.SetText(shareRoomIdLabel, string.Format(GameStrings.ShareRoomFormat, currentRoomId));
+        PersianUi.SetText(waitingStatusLabel, GameStrings.WaitingForFriend);
+        PersianUi.SetText(shareRoomIdLabel, GameStrings.FormatRoomCode(currentJoinCode));
         SetState(GameState.WaitingForOpponent);
         // No need to poll - WebSocket will send room:joined event when player2 joins
     }
 
-    private IEnumerator HandleJoinRoom(int roomId)
+    private IEnumerator HandleJoinRoom(string joinCode)
     {
         if (webSocketManager == null || !webSocketManager.IsConnected)
         {
@@ -658,8 +665,7 @@ public class GameManager : MonoBehaviour
         // Reset symbol before joining - will be set from join response
         localPlayerSymbol = null;
 
-        // Use WebSocket instead of REST API
-        webSocketManager.JoinRoom(roomId);
+        webSocketManager.JoinRoomByCode(joinCode);
         
         // Don't reset requestInFlight here - let OnWebSocketRoomJoined or OnWebSocketError handle it
         // This ensures buttons stay disabled until we get a response
@@ -1040,26 +1046,29 @@ public class GameManager : MonoBehaviour
             if (apiClient != null && apiClient.CurrentPlayer != null)
             {
                 var player = apiClient.CurrentPlayer;
-                PersianUi.SetText(welcomeLabel, string.Format(GameStrings.WelcomeFormat, player.nickname ?? player.username));
-                PersianUi.SetText(playerInfoLabel, string.Format(GameStrings.PlayerInfoFormat, player.nickname ?? player.username, player.id));
+                PersianUi.SetText(welcomeLabel, player.nickname ?? player.username);
+                UpdateLobbyScoreLabel();
+                RefreshLobbyRating();
                 RefreshWallet();
             }
             else
             {
                 PersianUi.SetText(welcomeLabel, GameStrings.WelcomeGuest);
+                PersianUi.SetText(playerInfoLabel, string.Empty);
             }
         }
 
         if (roomIdLabel != null)
         {
             PersianUi.SetText(roomIdLabel, currentRoomId > 0
-                ? string.Format(GameStrings.RoomInfoFormat, currentRoomId)
+                ? string.Format(GameStrings.RoomInfoFormat, GameStrings.FormatRoomCode(
+                    !string.IsNullOrEmpty(currentJoinCode) ? currentJoinCode : GameStrings.PadRoomCode(currentRoomId)))
                 : GameStrings.RoomInfoPlaceholder);
         }
 
         if (waitingStatusLabel != null && currentState == GameState.WaitingForOpponent)
         {
-            PersianUi.SetText(waitingStatusLabel, GameStrings.WaitingForOpponent);
+            PersianUi.SetText(waitingStatusLabel, GameStrings.WaitingForFriend);
         }
 
         if (matchmakingStatusLabel != null && currentState == GameState.Matchmaking)
@@ -1382,6 +1391,17 @@ public class GameManager : MonoBehaviour
     {
         if (!EnsureLoggedIn()) return;
         SetState(GameState.FriendlyGame);
+    }
+
+    public void OnCopyRoomCode()
+    {
+        var code = !string.IsNullOrEmpty(currentJoinCode)
+            ? GameStrings.PadRoomCode(currentJoinCode)
+            : GameStrings.PadRoomCode(currentRoomId);
+        if (string.IsNullOrEmpty(code))
+            return;
+        GUIUtility.systemCopyBuffer = code;
+        ShowMessage(GameStrings.RoomCodeCopied);
     }
 
     public void OnBackFromFriendlyGame()
@@ -1791,6 +1811,40 @@ public class GameManager : MonoBehaviour
         {
             PersianUi.SetText(myStatsGamesLabel, string.Format(GameStrings.GamesPlayedFormat, response.gamesPlayed));
         }
+
+        if (response != null)
+            lobbyRating = response.rating;
+        if (currentState == GameState.Lobby)
+            UpdateLobbyScoreLabel();
+    }
+
+    private void RefreshLobbyRating()
+    {
+        if (apiClient == null)
+            return;
+        StartCoroutine(HandleLoadLobbyRating());
+    }
+
+    private IEnumerator HandleLoadLobbyRating()
+    {
+        yield return apiClient.GetMyStats(null,
+            response =>
+            {
+                if (response != null)
+                    lobbyRating = response.rating;
+                if (currentState == GameState.Lobby)
+                    UpdateLobbyScoreLabel();
+            },
+            _ => { });
+    }
+
+    private void UpdateLobbyScoreLabel()
+    {
+        if (playerInfoLabel == null)
+            return;
+        PersianUi.SetText(playerInfoLabel, lobbyRating >= 0
+            ? GameStrings.FormatLobbyScore(lobbyRating)
+            : string.Empty);
     }
 
     // ============ Store (فقط کوین) و Boosters و پاپ‌آپ قلب ============
@@ -2213,7 +2267,7 @@ public class GameManager : MonoBehaviour
                 if (response?.wallet != null)
                     UpdateWalletDisplay(response.wallet);
                 else if (response != null && response.coins >= 0 && coinsLabel != null)
-                    PersianUi.SetText(coinsLabel, string.Format(GameStrings.CoinsFormat, response.coins));
+                    PersianUi.SetText(coinsLabel, GameStrings.FormatLobbyCoins(response.coins));
                 string name = response?.booster?.displayName ?? response?.booster?.code ?? response?.boosterCode ?? "Booster";
                 Debug.Log($"[GameManager] Booster purchased! Code: {response?.booster?.code ?? response?.boosterCode}");
                 ShowMessage(response != null ? $"{GameStrings.BuySuccess} {name}" : GameStrings.BuySuccess);
@@ -2231,9 +2285,9 @@ public class GameManager : MonoBehaviour
     {
         if (wallet == null) return;
         if (coinsLabel != null)
-            PersianUi.SetText(coinsLabel, string.Format(GameStrings.CoinsFormat, wallet.coins));
+            PersianUi.SetText(coinsLabel, GameStrings.FormatLobbyCoins(wallet.coins));
         if (heartsLabel != null)
-            PersianUi.SetText(heartsLabel, string.Format(GameStrings.HeartsFormat, wallet.hearts, wallet.maxHearts));
+            PersianUi.SetText(heartsLabel, GameStrings.FormatLobbyHearts(wallet.hearts, wallet.maxHearts));
     }
 
     // متد برای به‌روزرسانی wallet بعد از هر عملیات

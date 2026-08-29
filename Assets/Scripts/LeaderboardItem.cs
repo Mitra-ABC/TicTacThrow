@@ -21,7 +21,7 @@ public class LeaderboardItem : MonoBehaviour
     public void SetPlayer(LeaderboardPlayer player)
     {
         if (rankText != null)
-            rankText.text = player.rank.ToString();
+            PersianUi.SetText(rankText, GameStrings.ToPersianDigits(player.rank.ToString()));
 
         if (nicknameText != null)
         {
@@ -30,7 +30,7 @@ public class LeaderboardItem : MonoBehaviour
 
         if (ratingText != null)
         {
-            ratingText.text = player.rating.ToString();
+            PersianUi.SetText(ratingText, GameStrings.FormatLobbyScore(player.rating));
         }
 
         if (winsText != null)
