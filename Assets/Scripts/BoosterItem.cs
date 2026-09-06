@@ -14,7 +14,7 @@ public class BoosterItem : MonoBehaviour
     [SerializeField] private TMP_Text descriptionText;
     [SerializeField] private TMP_Text priceText;
     [SerializeField] private TMP_Text durationText;
-    [SerializeField] private TMP_Text timeRemainingText; // وقتی بوستر فعاله نشون داده میشه
+    [SerializeField] private TMP_Text timeRemainingText;
     [SerializeField] private Button buyButton;
     [SerializeField] private GameObject buyButtonContainer; // اختیاری: برای مخفی کردن کل دکمه
 
@@ -23,7 +23,7 @@ public class BoosterItem : MonoBehaviour
     private Coroutine countdownCoroutine;
 
     /// <summary>
-    /// booster: نوع بوستر، active: اگر کاربر این بوستر رو خریده و فعاله (با expiresAt)، onBuy: کلیک خرید.
+    /// booster: نوع تقویت‌کننده، active: اگر کاربر این تقویت‌کننده را خریده و فعال است، onBuy: کلیک خرید.
     /// </summary>
     public void SetBooster(BoosterType booster, BoosterInfo active, Action<string> onBuy)
     {

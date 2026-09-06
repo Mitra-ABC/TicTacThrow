@@ -11,31 +11,33 @@ public static class BuildScript
     private const string BAZAAR_SYMBOL = "BAZAAR_IAP";
     private const string MYKET_SYMBOL = "MYKET_IAP";
 
-    [MenuItem("Build/Build Bazaar APK")]
+    [MenuItem("Build/Apply Release Settings")]
+    public static void ApplyReleaseSettings()
+    {
+        PlayerSettings.bundleVersion = "1.0.0";
+        PlayerSettings.Android.bundleVersionCode = 1;
+        PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
+        PlayerSettings.Android.targetSdkVersion = (AndroidSdkVersions)34;
+        PlayerSettings.Android.forceInternetPermission = true;
+        PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
+        PlayerSettings.SetIl2CppCompilerConfiguration(NamedBuildTarget.Android, Il2CppCompilerConfiguration.Master);
+        PlayerSettings.SetManagedStrippingLevel(NamedBuildTarget.Android, ManagedStrippingLevel.Medium);
+        PlayerSettings.stripUnusedMeshComponents = true;
+        PlayerSettings.stripEngineCode = true;
+        Debug.Log("[BuildScript] Release settings applied. No APK was built. Use cafe or myket profile when you build.");
+    }
+
+    [MenuItem("Build/Build Cafe Bazaar APK")]
     public static void PerformBazaarBuild()
-    {
-        BuildBazaarInternal(false);
-    }
-
-    [MenuItem("Build/Build Bazaar Debug APK")]
-    public static void PerformBazaarDebugBuild()
-    {
-        BuildBazaarInternal(true);
-    }
-
-    private static void BuildBazaarInternal(bool development)
     {
         SetDefineSymbols(BAZAAR_SYMBOL);
         WriteMarketPlaceholders(false);
         string outputPath = Path.Combine("Builds", "Bazaar");
         if (!Directory.Exists(outputPath))
             Directory.CreateDirectory(outputPath);
-        string apkPath = Path.Combine(outputPath, development ? "Game_Bazaar_Debug.apk" : "Game_Bazaar.apk");
-        var options = development
-            ? BuildOptions.Development | BuildOptions.ConnectWithProfiler
-            : BuildOptions.None;
-        if (BuildAndroid(apkPath, options))
-            Debug.Log($"[BuildScript] Bazaar {(development ? "debug" : "release")} build complete: {Path.GetFullPath(apkPath)}");
+        string apkPath = Path.Combine(outputPath, "Game_Bazaar.apk");
+        if (BuildAndroid(apkPath, BuildOptions.None))
+            Debug.Log($"[BuildScript] Cafe Bazaar APK complete: {Path.GetFullPath(apkPath)}");
     }
 
     [MenuItem("Build/Build Myket APK")]
@@ -48,7 +50,7 @@ public static class BuildScript
             Directory.CreateDirectory(outputPath);
         string apkPath = Path.Combine(outputPath, "Game_Myket.apk");
         if (BuildAndroid(apkPath, BuildOptions.None))
-            Debug.Log($"[BuildScript] Myket build complete: {Path.GetFullPath(apkPath)}");
+            Debug.Log($"[BuildScript] Myket APK complete: {Path.GetFullPath(apkPath)}");
     }
 
     private static void SetDefineSymbols(string activeSymbol)

@@ -21,16 +21,21 @@ public class LeaderboardItem : MonoBehaviour
     public void SetPlayer(LeaderboardPlayer player)
     {
         if (rankText != null)
+        {
             PersianUi.SetText(rankText, GameStrings.ToPersianDigits(player.rank.ToString()));
+            MakeReadable(rankText, new Color(1f, 0.92f, 0.45f, 1f), 42f);
+        }
 
         if (nicknameText != null)
         {
             PersianUi.SetText(nicknameText, player.nickname ?? GameStrings.UnknownNickname);
+            MakeReadable(nicknameText, Color.white, 36f);
         }
 
         if (ratingText != null)
         {
             PersianUi.SetText(ratingText, GameStrings.FormatLobbyScore(player.rating));
+            MakeReadable(ratingText, Color.white, 36f);
         }
 
         if (winsText != null)
@@ -52,5 +57,15 @@ public class LeaderboardItem : MonoBehaviour
         {
             gamesPlayedText.text = player.gamesPlayed.ToString();
         }
+    }
+
+    private static void MakeReadable(TMP_Text tmp, Color color, float size)
+    {
+        tmp.margin = Vector4.zero;
+        tmp.enableAutoSizing = false;
+        tmp.fontSize = size;
+        tmp.color = color;
+        tmp.outlineWidth = 0.22f;
+        tmp.outlineColor = new Color(0.06f, 0.03f, 0.14f, 1f);
     }
 }

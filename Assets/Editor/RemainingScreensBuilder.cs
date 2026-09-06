@@ -75,14 +75,11 @@ public static class RemainingScreensBuilder
     public static void Build()
     {
         var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
-        BuildMatchmaking(font);
-        BuildFinished(font);
         BuildLeaderboard(font);
         BuildMyStats(font);
         BuildStore(font);
         BuildBoosters(font);
         BuildNoHearts(font);
-        BuildInGameHud(font);
 
         var scene = EditorSceneManager.GetActiveScene();
         if (scene.IsValid())

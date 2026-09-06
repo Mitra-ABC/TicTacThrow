@@ -35,7 +35,7 @@ public class WebSocketManager : MonoBehaviour
     public event Action<RoomMoveData> OnRoomMove;
     public event Action<RoomFinishedData> OnRoomFinished;
     public event Action<MatchmakingMatchedData> OnMatchmakingMatched;
-    public event Action OnMatchmakingQueued;
+    public event Action<MatchmakingQueueSuccessData> OnMatchmakingQueued;
     public event Action OnMatchmakingCanceled;
     public event Action<string> OnError;
     public event Action OnConnected;
@@ -711,6 +711,23 @@ public class WebSocketManager : MonoBehaviour
                 QueueOnMainThread(() => LogError($"Error handling game:move:error: {e.Message}"));
             }
         });
+
+        socket.On("game:surrender:error", (response) =>
+        {
+            try
+            {
+                var data = response.GetValue<ErrorData>();
+                QueueOnMainThread(() =>
+                {
+                    LogError($"Surrender failed: {data.error}");
+                    OnError?.Invoke(PickError(data));
+                });
+            }
+            catch (Exception e)
+            {
+                QueueOnMainThread(() => LogError($"Error handling game:surrender:error: {e.Message}"));
+            }
+        });
     }
     
     private void SetupMatchmakingEventHandlers()
@@ -823,7 +840,7 @@ public class WebSocketManager : MonoBehaviour
                     {
                         if (finalData.roomId > 0)
                             currentRoomId = finalData.roomId;
-                        OnMatchmakingQueued?.Invoke();
+                        OnMatchmakingQueued?.Invoke(finalData);
                     }
                 });
             }
@@ -1132,6 +1149,17 @@ public class WebSocketManager : MonoBehaviour
         }
         
         socket.Emit("game:move", new { roomId, cellIndex });
+    }
+
+    public void Surrender(int roomId)
+    {
+        if (socket == null || !socket.Connected)
+        {
+            LogError("WebSocket not connected!");
+            return;
+        }
+
+        socket.Emit("game:surrender", new { roomId });
     }
     
     // Matchmaking Operations

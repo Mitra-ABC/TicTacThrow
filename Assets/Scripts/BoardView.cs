@@ -19,6 +19,8 @@ public class BoardView : MonoBehaviour
 
 
     [SerializeField] private BoardCell[] cells;
+    [SerializeField] private Sprite markX;
+    [SerializeField] private Sprite markO;
 
 
 
@@ -158,7 +160,7 @@ public class BoardView : MonoBehaviour
 
 
 
-            cell.SetMark(cellEmpty ? null : symbol?.Trim());
+            cell.SetMark(cellEmpty ? null : symbol?.Trim(), markX, markO);
 
 
 

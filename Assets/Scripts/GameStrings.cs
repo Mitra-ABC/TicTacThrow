@@ -38,7 +38,7 @@ public static class GameStrings
     public const string OpponentTurn = "نوبت حریف";
     public const string ErrorPrefix = "خطا: ";
     public const string Draw = "مساوی!";
-    public const string YouWin = "بردی!";
+    public const string YouWin = "پیروزی!";
     public const string YouLose = "باختی!";
     public const string ResultUnknown = "بازی تمام شد";
 
@@ -61,9 +61,18 @@ public static class GameStrings
     public const string ResultDraw = "draw";
 
     public const string QueueMatchmaking = "ورود به صف";
-    public const string MatchmakingTitle = "جستجوی حریف";
+    public const string MatchmakingTitle = "درحال یافتن حریف";
     public const string CancelMatchmaking = "لغو جستجو";
-    public const string SearchingForOpponent = "در حال پیدا کردن حریف...";
+    public const string SearchingForOpponent = "...در حال جستجو";
+    public const string YourScoreFormat = "امتیاز شما: {0}";
+    public const string ChatButton = "چت";
+    public const string SurrenderButton = "تسلیم";
+    public const string ComingSoon = "به‌زودی";
+    public const string VictorySubtitle = "تبریک! شما برنده این بازی شدید.";
+    public const string DefeatSubtitle = "این بار نشد. دوباره تلاش کنید.";
+    public const string DrawSubtitle = "بازی مساوی شد.";
+    public const string ScoreLabel = "امتیاز";
+    public const string CoinPrizeLabel = "جایزه سکه";
     public const string MatchmakingWaiting = "در انتظار حریف...";
     public const string MatchmakingMatched = "حریف پیدا شد!";
     public const string MatchmakingCancelled = "جستجو لغو شد";
@@ -100,7 +109,7 @@ public static class GameStrings
 
     public const string StoreTitle = "فروشگاه";
     public const string BuyHeartButton = "خرید قلب";
-    public const string BuyBoosterButton = "خرید بوستر";
+    public const string BuyBoosterButton = "خرید تقویت‌کننده";
     public const string HeartPriceFormat = "قیمت: {0} سکه";
     public const string BoosterPriceFormat = "قیمت: {0} سکه";
     public const string BoosterDurationFormat = "مدت: {0} دقیقه";
@@ -108,7 +117,7 @@ public static class GameStrings
     public const string BuyFailed = "خرید انجام نشد";
     public const string LoadingStore = "در حال بارگذاری فروشگاه...";
     public const string StoreError = "فروشگاه بارگذاری نشد";
-    public const string BoostersError = "بوسترها بارگذاری نشد";
+    public const string BoostersError = "تقویت‌کننده‌ها بارگذاری نشد";
     public const string CoinPackMissing = "بسته سکه پیدا نشد.";
     public const string BillingNotReady = "فروشگاه هنوز آماده نیست. کمی صبر کنید.";
     public const string PurchaseFailed = "خرید انجام نشد.";
@@ -119,9 +128,9 @@ public static class GameStrings
     public const string CoinBonusFormat = "+{0} سکه جایزه";
     public const string BuyButton = "خرید";
 
-    public const string BoostersTitle = "بوسترها";
-    public const string ActiveBoosters = "بوسترهای فعال";
-    public const string NoActiveBoosters = "بوستر فعالی ندارید";
+    public const string BoostersTitle = "تقویت‌کننده‌ها";
+    public const string ActiveBoosters = "تقویت‌کننده‌های فعال";
+    public const string NoActiveBoosters = "تقویت‌کننده فعالی ندارید";
     public const string BoosterExpiresFormat = "انقضا: {0}";
     public const string BoosterExpired = "منقضی شد";
     public const string BoosterTimeRemainingFormat = "مانده: {0}";
@@ -139,7 +148,7 @@ public static class GameStrings
     public const string AuthSwitchToLogin = "حساب دارید؟ <color=#FFD24A>ورود</color>";
     public const string LoginButton = "ورود";
     public const string RegisterButton = "ثبت‌نام";
-    public const string LogoutButton = "خروج";
+    public const string LogoutButton = "خروج از اکانت";
     public const string CreateRoomButton = "ساخت اتاق";
     public const string CreateRoomHint = "یک اتاق خصوصی بساز";
     public const string JoinRoomButton = "ورود به اتاق";
@@ -158,7 +167,7 @@ public static class GameStrings
     public const string BackToLobbyButton = "بازگشت به لابی";
     public const string CloseButton = "بستن";
     public const string CancelButton = "انصراف";
-    public const string PlayAgainButton = "بازی دوباره";
+    public const string PlayAgainButton = "بازی مجدد";
     public const string PlayOnlineButton = "بازی آنلاین";
     public const string FriendlyMatchButton = "بازی دوستانه";
     public const string WithFriends = "با دوستان";
@@ -166,12 +175,21 @@ public static class GameStrings
     public const string MyStatsButton = "آمار من";
     public const string RefreshButton = "تازه‌سازی";
     public const string StoreButton = "فروشگاه";
-    public const string BoostersButton = "بوسترها";
+    public const string BoostersButton = "تقویت‌کننده‌ها";
     public const string LobbyTitle = "لابی";
     public const string Loading = "در حال بارگذاری...";
     public const string UsernamePlaceholder = "نام کاربری";
     public const string PasswordPlaceholder = "رمز عبور";
     public const string NicknamePlaceholder = "نام نمایشی";
+    public const string NicknameTooLong = "نام نمایشی خیلی طولانی است.";
+    public const string SettingsTitle = "تنظیمات";
+    public const string SaveNicknameButton = "ذخیره نام";
+    public const string NicknameSaved = "نام نمایشی ذخیره شد.";
+    public const string SavingNickname = "در حال ذخیره...";
+    public const string UsernameReadonlyFormat = "نام کاربری: {0}";
+    public const string AvatarPickerTitle = "عکس پروفایل";
+    public const string AvatarSaved = "عکس پروفایل ذخیره شد.";
+    public const string SavingAvatar = "در حال ذخیره...";
     public const string RoomIdPlaceholder = "شناسه اتاق";
 
     public static string FormatRemaining(TimeSpan remaining)

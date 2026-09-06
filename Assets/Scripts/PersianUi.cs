@@ -40,6 +40,9 @@ public static class PersianUi
         { "back", GameStrings.BackButton },
         { "back to lobby", GameStrings.BackToLobbyButton },
         { "play again", GameStrings.PlayAgainButton },
+        { "chat", GameStrings.ChatButton },
+        { "surrender", GameStrings.SurrenderButton },
+        { "coming soon", GameStrings.ComingSoon },
         { "create room", GameStrings.CreateRoomButton },
         { "join room", GameStrings.JoinRoomButton },
         { "join", GameStrings.JoinButton },
@@ -86,6 +89,11 @@ public static class PersianUi
                 continue;
             if (tmp.name == "BackFromAuthFormButtonLabel" || tmp.name == "LogoutButtonLabel")
                 continue;
+            if (IsNumberLabel(tmp.name))
+            {
+                Style(tmp, font);
+                continue;
+            }
             if (IsTypingField(tmp))
             {
                 Style(tmp, font);
@@ -127,6 +135,29 @@ public static class PersianUi
         else
         {
             tmp.text = string.IsNullOrEmpty(logical) ? string.Empty : Shape(logical);
+        }
+    }
+
+    /// <summary>
+    /// Digits, slashes and thousand separators stay LTR so 2902 does not become 902,2.
+    /// </summary>
+    public static void SetNumber(TMP_Text tmp, string value)
+    {
+        if (tmp == null)
+            return;
+        Style(tmp);
+        tmp.isRightToLeftText = false;
+        var text = value ?? string.Empty;
+        if (tmp is RTLTextMeshPro rtl)
+        {
+            rtl.Farsi = false;
+            rtl.ForceFix = false;
+            rtl.PreserveNumbers = true;
+            rtl.text = text;
+        }
+        else
+        {
+            tmp.text = text;
         }
     }
 
@@ -331,6 +362,11 @@ public static class PersianUi
             return cachedFont;
 
         return TMP_Settings.defaultFontAsset;
+    }
+
+    private static bool IsNumberLabel(string name)
+    {
+        return name == "HeartsLabel" || name == "CoinsLabel";
     }
 
     private static bool IsVazirBlack(string name)

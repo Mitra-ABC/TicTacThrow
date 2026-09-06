@@ -141,6 +141,9 @@ public class GameManager : MonoBehaviour
     private RoomStateResponse currentRoomState;
     private Coroutine nextHeartCountdownCoroutine;
     private int lobbyRating = int.MinValue;
+    private int ratingAtMatchStart = int.MinValue;
+    private MatchReward lastMatchReward;
+    private bool surrenderInFlight;
 
     private enum GameState
     {
@@ -298,7 +301,7 @@ public class GameManager : MonoBehaviour
         friendlyGameButton?.onClick.AddListener(OnFriendlyGameClicked);
         leaderboardButton?.onClick.AddListener(OnLeaderboardClicked);
         myStatsButton?.onClick.AddListener(OnMyStatsClicked);
-        logoutButton?.onClick.AddListener(OnLogoutClicked);
+        lobbyPanel?.GetComponent<LobbyChrome>()?.BindSettings(OnLogoutClicked);
 
         // Friendly Game Panel buttons
         createRoomButton?.onClick.AddListener(OnCreateRoomClicked);
@@ -315,6 +318,7 @@ public class GameManager : MonoBehaviour
 
         // Matchmaking buttons
         cancelMatchmakingButton?.onClick.AddListener(OnCancelMatchmakingClicked);
+        inGamePanel?.GetComponent<GameHudChrome>()?.Bind(OnBackToLobby, OnSurrenderClicked, OnChatComingSoon);
 
         // Leaderboard buttons
         closeLeaderboardButton?.onClick.AddListener(OnCloseLeaderboard);
@@ -787,7 +791,9 @@ public class GameManager : MonoBehaviour
         {
             id = playerData.id,
             symbol = playerData.symbol,
-            nickname = nickname
+            nickname = nickname,
+            rating = playerData.rating,
+            avatarId = playerData.avatarId
         };
     }
     
@@ -935,6 +941,21 @@ public class GameManager : MonoBehaviour
         }
         
         Debug.Log($"[GameManager] Received room:finished for room {data.roomId}. Result: {data.result}");
+        surrenderInFlight = false;
+        lastMatchReward = FindLocalReward(data);
+        if (lastMatchReward != null)
+            lobbyRating = lastMatchReward.ratingAfter;
+        if (data.player1 != null || data.player2 != null)
+        {
+            if (currentRoomState == null)
+                currentRoomState = new RoomStateResponse { roomId = data.roomId };
+            if (currentRoomState.players == null)
+                currentRoomState.players = new RoomPlayers();
+            if (data.player1 != null)
+                currentRoomState.players.player1 = ConvertPlayerDataToPlayerInRoom(data.player1);
+            if (data.player2 != null)
+                currentRoomState.players.player2 = ConvertPlayerDataToPlayerInRoom(data.player2);
+        }
         
         // Update final state
         if (currentRoomState == null)
@@ -971,6 +992,7 @@ public class GameManager : MonoBehaviour
         
         ShowGameResult(data.result);
         SetState(GameState.GameFinished);
+        StartCoroutine(CheckNoHeartsPopupAfterGame(data.result));
     }
 
 
@@ -981,6 +1003,15 @@ public class GameManager : MonoBehaviour
         var previousState = currentState;
         currentState = newState;
         Debug.Log($"[GameManager] State: {previousState} -> {newState}");
+        if ((newState == GameState.Matchmaking || newState == GameState.WaitingForOpponent || newState == GameState.InGame)
+            && ratingAtMatchStart == int.MinValue)
+            ratingAtMatchStart = lobbyRating;
+        if (newState == GameState.Lobby)
+        {
+            ratingAtMatchStart = int.MinValue;
+            lastMatchReward = null;
+            surrenderInFlight = false;
+        }
         if (newState != GameState.Lobby && nextHeartCountdownCoroutine != null)
         {
             StopCoroutine(nextHeartCountdownCoroutine);
@@ -1050,6 +1081,7 @@ public class GameManager : MonoBehaviour
                 UpdateLobbyScoreLabel();
                 RefreshLobbyRating();
                 RefreshWallet();
+                lobbyPanel?.GetComponent<LobbyChrome>()?.RefreshAvatar(player.avatarId);
             }
             else
             {
@@ -1074,6 +1106,13 @@ public class GameManager : MonoBehaviour
         if (matchmakingStatusLabel != null && currentState == GameState.Matchmaking)
         {
             PersianUi.SetText(matchmakingStatusLabel, GameStrings.SearchingForOpponent);
+        }
+
+        if (currentState == GameState.Matchmaking)
+        {
+            matchmakingPanel?.GetComponent<MatchmakingChrome>()?.ShowSearching(
+                apiClient?.CurrentPlayer?.nickname, lobbyRating,
+                apiClient?.CurrentPlayer != null ? apiClient.CurrentPlayer.avatarId : AvatarCatalog.DefaultId);
         }
     }
 
@@ -1148,6 +1187,7 @@ public class GameManager : MonoBehaviour
             : GameStrings.UnknownPlayer;
 
         PersianUi.SetText(playersLabel, string.Format(GameStrings.PlayerNamesFormat, player1Name, player2Name));
+        inGamePanel?.GetComponent<GameHudChrome>()?.Refresh(state, apiClient?.CurrentPlayerId ?? 0, lobbyRating);
     }
 
     private void UpdateTurnLabel(int? currentTurnPlayer)
@@ -1210,41 +1250,56 @@ public class GameManager : MonoBehaviour
 
     private void ShowGameResult(string result)
     {
-        if (resultLabel == null) return;
-        
         Debug.Log($"[GameManager] ShowGameResult: result='{result}', localPlayerSymbol='{localPlayerSymbol}'");
-        
+
         if (string.IsNullOrEmpty(result))
-        {
             PersianUi.SetText(resultLabel, GameStrings.ResultUnknown);
-            return;
-        }
-
-        if (string.Equals(result, GameStrings.ResultDraw, StringComparison.OrdinalIgnoreCase))
-        {
+        else if (string.Equals(result, GameStrings.ResultDraw, StringComparison.OrdinalIgnoreCase))
             PersianUi.SetText(resultLabel, GameStrings.Draw);
-            return;
-        }
-
-        // Ensure localPlayerSymbol is set
-        if (string.IsNullOrEmpty(localPlayerSymbol))
-        {
-            Debug.LogWarning("[GameManager] localPlayerSymbol is not set!");
+        else if (string.IsNullOrEmpty(localPlayerSymbol))
             PersianUi.SetText(resultLabel, GameStrings.ResultUnknown);
+        else if (string.Equals(result, localPlayerSymbol, StringComparison.OrdinalIgnoreCase))
+            PersianUi.SetText(resultLabel, GameStrings.YouWin);
+        else
+            PersianUi.SetText(resultLabel, GameStrings.YouLose);
+
+        var oldRating = lastMatchReward != null ? lastMatchReward.ratingBefore : ratingAtMatchStart;
+        var newRating = lastMatchReward != null ? lastMatchReward.ratingAfter : lobbyRating;
+        var coinsWon = lastMatchReward != null ? lastMatchReward.coinsWon : 0;
+        finishedPanel?.GetComponent<FinishedChrome>()?.Show(result, localPlayerSymbol, oldRating, newRating, coinsWon);
+    }
+
+    public void OnChatComingSoon()
+    {
+        ShowError(GameStrings.ComingSoon);
+    }
+
+    public void OnSurrenderClicked()
+    {
+        if (surrenderInFlight || currentRoomId <= 0)
+            return;
+        if (webSocketManager == null || !webSocketManager.IsConnected)
+        {
+            ShowError(GameStrings.WsNotReady);
             return;
         }
+        surrenderInFlight = true;
+        webSocketManager.Surrender(currentRoomId);
+    }
 
-        bool isWinner = string.Equals(result, localPlayerSymbol, StringComparison.OrdinalIgnoreCase);
-        Debug.Log($"[GameManager] isWinner={isWinner}");
-        
-        if (isWinner)
+    private MatchReward FindLocalReward(RoomFinishedData data)
+    {
+        if (data?.rewards == null || data.rewards.Length == 0)
+            return null;
+        var playerId = apiClient?.CurrentPlayerId ?? 0;
+        if (playerId <= 0)
+            return null;
+        for (var i = 0; i < data.rewards.Length; i++)
         {
-            PersianUi.SetText(resultLabel, GameStrings.YouWin);
+            if (data.rewards[i] != null && data.rewards[i].playerId == playerId)
+                return data.rewards[i];
         }
-        else
-        {
-            PersianUi.SetText(resultLabel, GameStrings.YouLose);
-        }
+        return null;
     }
 
     // ============ Turn Helpers ============
@@ -1433,12 +1488,25 @@ public class GameManager : MonoBehaviour
         yield break;
     }
 
-    private void OnWebSocketMatchmakingQueued()
+    private void OnWebSocketMatchmakingQueued(MatchmakingQueueSuccessData data)
     {
         requestInFlight = false;
         ShowLoading(false);
+        if (data?.you != null && data.you.id > 0)
+            lobbyRating = data.you.rating;
         if (matchmakingStatusLabel != null && currentState == GameState.Matchmaking)
             PersianUi.SetText(matchmakingStatusLabel, GameStrings.SearchingForOpponent);
+        if (currentState == GameState.Matchmaking)
+        {
+            matchmakingPanel?.GetComponent<MatchmakingChrome>()?.ShowSearching(
+                data?.you != null && !string.IsNullOrEmpty(data.you.nickname)
+                    ? data.you.nickname
+                    : apiClient?.CurrentPlayer?.nickname,
+                lobbyRating,
+                data?.you != null && data.you.avatarId > 0
+                    ? data.you.avatarId
+                    : apiClient?.CurrentPlayer != null ? apiClient.CurrentPlayer.avatarId : AvatarCatalog.DefaultId);
+        }
     }
     
     private void OnWebSocketMatchmakingMatched(MatchmakingMatchedData data)
@@ -1641,6 +1709,7 @@ public class GameManager : MonoBehaviour
             ShowError(error);
         }
         requestInFlight = false;
+        surrenderInFlight = false;
         ShowLoading(false);
         if (currentState == GameState.Matchmaking)
             SetState(GameState.Lobby);
@@ -2267,8 +2336,8 @@ public class GameManager : MonoBehaviour
                 if (response?.wallet != null)
                     UpdateWalletDisplay(response.wallet);
                 else if (response != null && response.coins >= 0 && coinsLabel != null)
-                    PersianUi.SetText(coinsLabel, GameStrings.FormatLobbyCoins(response.coins));
-                string name = response?.booster?.displayName ?? response?.booster?.code ?? response?.boosterCode ?? "Booster";
+                    PersianUi.SetNumber(coinsLabel, GameStrings.FormatLobbyCoins(response.coins));
+                string name = response?.booster?.displayName ?? response?.booster?.code ?? response?.boosterCode ?? GameStrings.BoostersTitle;
                 Debug.Log($"[GameManager] Booster purchased! Code: {response?.booster?.code ?? response?.boosterCode}");
                 ShowMessage(response != null ? $"{GameStrings.BuySuccess} {name}" : GameStrings.BuySuccess);
             },
@@ -2285,9 +2354,9 @@ public class GameManager : MonoBehaviour
     {
         if (wallet == null) return;
         if (coinsLabel != null)
-            PersianUi.SetText(coinsLabel, GameStrings.FormatLobbyCoins(wallet.coins));
+            PersianUi.SetNumber(coinsLabel, GameStrings.FormatLobbyCoins(wallet.coins));
         if (heartsLabel != null)
-            PersianUi.SetText(heartsLabel, GameStrings.FormatLobbyHearts(wallet.hearts, wallet.maxHearts));
+            PersianUi.SetNumber(heartsLabel, GameStrings.FormatLobbyHearts(wallet.hearts, wallet.maxHearts));
     }
 
     // متد برای به‌روزرسانی wallet بعد از هر عملیات

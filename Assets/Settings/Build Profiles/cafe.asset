@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 15003, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: apk
+  m_Name: cafe
   m_EditorClassIdentifier: 
   m_AssetVersion: 1
   m_BuildTarget: 13
@@ -25,8 +25,9 @@ MonoBehaviour:
   - m_enabled: 1
     m_path: Assets/Scenes/main_dooooz.unity
     m_guid: 6fd10cda9192df1478ab32ee475cc04e
-  m_HasScriptingDefines: 0
-  m_ScriptingDefines: []
+  m_HasScriptingDefines: 1
+  m_ScriptingDefines:
+  - BAZAAR_IAP
   m_PlayerSettingsYaml:
     m_Settings: []
   requiredComponents: []

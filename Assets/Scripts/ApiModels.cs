@@ -16,6 +16,7 @@ public class RegisterResponse
     public int playerId;
     public string username;
     public string nickname;
+    public int avatarId;
 }
 
 [Serializable]
@@ -38,6 +39,7 @@ public class Player
     public int id;
     public string username;
     public string nickname;
+    public int avatarId;
 }
 
 [Serializable]
@@ -46,6 +48,19 @@ public class PlayerMeResponse
     public int playerId;
     public string username;
     public string nickname;
+    public int avatarId;
+}
+
+[Serializable]
+public class UpdateNicknameRequest
+{
+    public string nickname;
+}
+
+[Serializable]
+public class UpdateAvatarRequest
+{
+    public int avatarId;
 }
 
 // ============ Wallet Models ============
@@ -94,6 +109,8 @@ public class PlayerInRoom
     public int id;
     public string symbol;
     public string nickname;
+    public int rating;
+    public int avatarId;
 }
 
 [Serializable]
@@ -344,7 +361,9 @@ public class PlayerData
 {
     public int id;
     public string symbol;
-    public string nickname; // Present in matchmaking:matched and room:joined for both players
+    public string nickname;
+    public int rating;
+    public int avatarId;
 }
 
 [Serializable]
@@ -356,11 +375,26 @@ public class RoomMoveData
 }
 
 [Serializable]
+public class MatchReward
+{
+    public int playerId;
+    public string outcome;
+    public int ratingBefore;
+    public int ratingAfter;
+    public int ratingDelta;
+    public int coinsWon;
+}
+
+[Serializable]
 public class RoomFinishedData
 {
     public int roomId;
     public string[] board;
     public string result; // "X", "O", or "draw"
+    public string reason;
+    public PlayerData player1;
+    public PlayerData player2;
+    public MatchReward[] rewards;
 }
 
 [Serializable]
@@ -378,6 +412,7 @@ public class MatchmakingQueueSuccessData
     public string status;
     public PlayerData player1;
     public PlayerData player2;
+    public PlayerData you;
     public int currentTurnPlayerId;
 }
 

@@ -21,6 +21,7 @@ public class ApiClient : MonoBehaviour
     private const string PLAYER_ID_KEY = "TicTacThrow_PlayerId";
     private const string PLAYER_USERNAME_KEY = "TicTacThrow_PlayerUsername";
     private const string PLAYER_NICKNAME_KEY = "TicTacThrow_PlayerNickname";
+    private const string PLAYER_AVATAR_KEY = "TicTacThrow_PlayerAvatar";
 
     [SerializeField] private ApiConfig apiConfig;
     [SerializeField] private string baseUrlOverride;
@@ -91,13 +92,33 @@ public class ApiClient : MonoBehaviour
             PlayerPrefs.SetInt(PLAYER_ID_KEY, player.id);
             PlayerPrefs.SetString(PLAYER_USERNAME_KEY, player.username ?? string.Empty);
             PlayerPrefs.SetString(PLAYER_NICKNAME_KEY, player.nickname ?? string.Empty);
+            PlayerPrefs.SetInt(PLAYER_AVATAR_KEY, AvatarCatalog.Clamp(player.avatarId));
         }
         else
         {
             PlayerPrefs.DeleteKey(PLAYER_ID_KEY);
             PlayerPrefs.DeleteKey(PLAYER_USERNAME_KEY);
             PlayerPrefs.DeleteKey(PLAYER_NICKNAME_KEY);
+            PlayerPrefs.DeleteKey(PLAYER_AVATAR_KEY);
         }
+        PlayerPrefs.Save();
+    }
+
+    public void UpdateCachedNickname(string nickname)
+    {
+        if (cachedPlayer == null)
+            return;
+        cachedPlayer.nickname = nickname ?? string.Empty;
+        PlayerPrefs.SetString(PLAYER_NICKNAME_KEY, cachedPlayer.nickname);
+        PlayerPrefs.Save();
+    }
+
+    public void UpdateCachedAvatar(int avatarId)
+    {
+        if (cachedPlayer == null)
+            return;
+        cachedPlayer.avatarId = AvatarCatalog.Clamp(avatarId);
+        PlayerPrefs.SetInt(PLAYER_AVATAR_KEY, cachedPlayer.avatarId);
         PlayerPrefs.Save();
     }
 
@@ -113,7 +134,8 @@ public class ApiClient : MonoBehaviour
                 {
                     id = playerId,
                     username = PlayerPrefs.GetString(PLAYER_USERNAME_KEY, string.Empty),
-                    nickname = PlayerPrefs.GetString(PLAYER_NICKNAME_KEY, string.Empty)
+                    nickname = PlayerPrefs.GetString(PLAYER_NICKNAME_KEY, string.Empty),
+                    avatarId = AvatarCatalog.Clamp(PlayerPrefs.GetInt(PLAYER_AVATAR_KEY, AvatarCatalog.DefaultId))
                 };
                 Log($"[ApiClient] Loaded persisted session for player {playerId}");
             }
@@ -128,6 +150,7 @@ public class ApiClient : MonoBehaviour
         PlayerPrefs.DeleteKey(PLAYER_ID_KEY);
         PlayerPrefs.DeleteKey(PLAYER_USERNAME_KEY);
         PlayerPrefs.DeleteKey(PLAYER_NICKNAME_KEY);
+        PlayerPrefs.DeleteKey(PLAYER_AVATAR_KEY);
         PlayerPrefs.Save();
         Log("[ApiClient] Session cleared");
     }
@@ -366,6 +389,36 @@ public class ApiClient : MonoBehaviour
     public IEnumerator GetCurrentPlayer(Action<PlayerMeResponse> onSuccess, Action<string> onError)
     {
         yield return SendRequest("/api/players/me", UnityWebRequest.kHttpVerbGET, null, true,
+            response =>
+            {
+                var data = ApiResponseParser.ParsePlayerMeResponse(response);
+                if (data != null)
+                {
+                    if (!string.IsNullOrEmpty(data.nickname))
+                        UpdateCachedNickname(data.nickname);
+                    UpdateCachedAvatar(data.avatarId);
+                }
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
+    public IEnumerator UpdateNickname(string nickname, Action<PlayerMeResponse> onSuccess, Action<string> onError)
+    {
+        var body = JsonUtility.ToJson(new UpdateNicknameRequest { nickname = nickname });
+        yield return SendRequest("/api/players/me", "PATCH", body, true,
+            response =>
+            {
+                var data = ApiResponseParser.ParsePlayerMeResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
+    public IEnumerator UpdateAvatar(int avatarId, Action<PlayerMeResponse> onSuccess, Action<string> onError)
+    {
+        var body = JsonUtility.ToJson(new UpdateAvatarRequest { avatarId = AvatarCatalog.Clamp(avatarId) });
+        yield return SendRequest("/api/players/me", "PATCH", body, true,
             response =>
             {
                 var data = ApiResponseParser.ParsePlayerMeResponse(response);
