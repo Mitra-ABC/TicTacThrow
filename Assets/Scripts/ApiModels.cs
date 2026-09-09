@@ -434,6 +434,7 @@ public class MatchmakingMatchedData
     public PlayerData player2; // In real online match always sent with id, symbol, nickname
     public RoomData room;
     public bool isBot;
+    public int currentTurnPlayerId;
 }
 
 [Serializable]

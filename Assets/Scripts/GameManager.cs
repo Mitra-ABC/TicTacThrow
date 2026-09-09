@@ -544,6 +544,8 @@ public class GameManager : MonoBehaviour
 
     public void OnBackToLobby()
     {
+        if (currentRoomId > 0 && webSocketManager != null)
+            webSocketManager.UnsubscribeFromRoom(currentRoomId);
         currentRoomId = 0;
         currentJoinCode = null;
         localPlayerSymbol = null;
@@ -854,14 +856,7 @@ public class GameManager : MonoBehaviour
 
         requestInFlight = true;
         ClearError();
-
-        // Use WebSocket instead of REST API
         webSocketManager.MakeMove(currentRoomId, cellIndex);
-        
-        // Wait a bit for WebSocket response
-        yield return new WaitForSeconds(0.3f);
-        
-        requestInFlight = false;
     }
     
     private void OnWebSocketRoomMove(RoomMoveData data)
@@ -871,6 +866,8 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning($"[GameManager] Ignoring room:move for room {data.roomId} (current room: {currentRoomId})");
             return;
         }
+
+        requestInFlight = false;
         
         Debug.Log($"[GameManager] Received room:move for room {data.roomId}. Current turn: {data.currentTurnPlayerId}, Board length: {data.board?.Length ?? 0}");
         
@@ -941,6 +938,7 @@ public class GameManager : MonoBehaviour
         }
         
         Debug.Log($"[GameManager] Received room:finished for room {data.roomId}. Result: {data.result}");
+        requestInFlight = false;
         surrenderInFlight = false;
         lastMatchReward = FindLocalReward(data);
         if (lastMatchReward != null)
@@ -1240,10 +1238,10 @@ public class GameManager : MonoBehaviour
         if (weWon) yield break;
         var done = false;
         var hearts = -1;
-        apiClient.GetWallet(
+        yield return apiClient.GetWallet(
             r => { hearts = r.hearts; done = true; },
             _ => { done = true; });
-        while (!done) yield return null;
+        if (!done) yield break;
         if (hearts <= 0)
             ShowNoHeartsPopup();
     }
@@ -1329,6 +1327,11 @@ public class GameManager : MonoBehaviour
         if (currentState != GameState.InGame)
         {
             return "game_not_ready";
+        }
+
+        if (requestInFlight)
+        {
+            return "move_in_flight";
         }
 
         if (currentRoomState?.board == null)
@@ -1563,71 +1566,8 @@ public class GameManager : MonoBehaviour
             // Game is already in progress, go directly to InGame
             Debug.Log("[GameManager] Matchmaking matched with in_progress status. Transitioning to InGame.");
             SetState(GameState.InGame);
-            
-            // Initialize room state from matchmaking data (don't use REST API)
-            // Create a basic room state - board will be updated by room:move event
-            if (currentRoomState == null && data.room != null)
-            {
-                // Server sends full player1/player2 (id, symbol, nickname) in matchmaking:matched; use them, fallback to room for legacy
-                PlayerInRoom p1 = null;
-                PlayerInRoom p2 = null;
-                
-                if (data.player1 != null)
-                {
-                    p1 = ConvertPlayerDataToPlayerInRoom(data.player1);
-                }
-                else if (data.room != null && data.room.player1_id > 0)
-                {
-                    p1 = CreatePlayerInRoomFromRoomData(data.room.player1_id, data.room.player1_symbol);
-                }
-                
-                if (data.player2 != null)
-                {
-                    p2 = ConvertPlayerDataToPlayerInRoom(data.player2);
-                }
-                else if (data.room != null && data.room.player2_id > 0)
-                {
-                    p2 = CreatePlayerInRoomFromRoomData(data.room.player2_id, data.room.player2_symbol);
-                }
-                
-                currentRoomState = new RoomStateResponse
-                {
-                    roomId = data.roomId,
-                    status = GameStrings.StatusInProgress,
-                    currentTurnPlayerId = data.room.current_turn_player_id,
-                    board = new string[9], // Initialize empty board - will be updated by room:move
-                    players = new RoomPlayers
-                    {
-                        player1 = p1,
-                        player2 = p2
-                    }
-                };
-                
-                // Initialize board with empty cells
-                for (int i = 0; i < 9; i++)
-                {
-                    currentRoomState.board[i] = null;
-                }
-                
-                Debug.Log($"[GameManager] Initialized room state from matchmaking data. Current turn: {data.room.current_turn_player_id}, MyPlayerId: {apiClient?.CurrentPlayerId ?? 0}");
-                
-                // Render empty board - it will be updated when room:move arrives
-                bool isLocalTurn = IsLocalTurn(data.room.current_turn_player_id);
-                Debug.Log($"[GameManager] Rendering initial board. IsLocalTurn: {isLocalTurn}");
-                
-                if (boardView != null)
-                {
-                    boardView.RenderBoard(currentRoomState.board, isLocalTurn);
-                }
-                else
-                {
-                    Debug.LogError("[GameManager] boardView is null! Cannot render initial board.");
-                }
-                
-                UpdateTurnLabel(data.room.current_turn_player_id);
-                UpdateStatus(GameStrings.StatusInProgress);
-                UpdatePlayerInfo(currentRoomState);
-            }
+            if (currentRoomState == null)
+                ApplyMatchedRoomState(data);
             
             // Don't fetch from REST API - wait for WebSocket events (room:move, room:joined)
             Debug.Log("[GameManager] Matchmaking matched with in_progress status. Waiting for WebSocket events (room:move) to update board.");
@@ -1713,6 +1653,36 @@ public class GameManager : MonoBehaviour
         ShowLoading(false);
         if (currentState == GameState.Matchmaking)
             SetState(GameState.Lobby);
+        else if (currentState == GameState.WaitingForOpponent || currentState == GameState.JoinRoom)
+            SetState(GameState.FriendlyGame);
+    }
+
+    private void ApplyMatchedRoomState(MatchmakingMatchedData data)
+    {
+        PlayerInRoom p1 = data.player1 != null
+            ? ConvertPlayerDataToPlayerInRoom(data.player1)
+            : CreatePlayerInRoomFromRoomData(data.room != null ? data.room.player1_id : 0, data.room != null ? data.room.player1_symbol : null);
+        PlayerInRoom p2 = data.player2 != null
+            ? ConvertPlayerDataToPlayerInRoom(data.player2)
+            : CreatePlayerInRoomFromRoomData(data.room != null ? data.room.player2_id : 0, data.room != null ? data.room.player2_symbol : null);
+        var turnId = data.currentTurnPlayerId > 0
+            ? data.currentTurnPlayerId
+            : data.room != null ? data.room.current_turn_player_id : 0;
+
+        currentRoomState = new RoomStateResponse
+        {
+            roomId = data.roomId,
+            status = GameStrings.StatusInProgress,
+            currentTurnPlayerId = turnId,
+            board = new string[9],
+            players = new RoomPlayers { player1 = p1, player2 = p2 }
+        };
+
+        if (boardView != null)
+            boardView.RenderBoard(currentRoomState.board, IsLocalTurn(turnId));
+        UpdateTurnLabel(turnId);
+        UpdateStatus(GameStrings.StatusInProgress);
+        UpdatePlayerInfo(currentRoomState);
     }
 
     private void DetermineLocalSymbolFromMatchmaking(MatchmakingResponse response)
@@ -1849,14 +1819,14 @@ public class GameManager : MonoBehaviour
 
         if (myStatsRankLabel != null)
         {
-            PersianUi.SetText(myStatsRankLabel, response.rank >= 0
+            PersianUi.SetText(myStatsRankLabel, response.gamesPlayed > 0
                 ? string.Format(GameStrings.RankFormat, response.rank)
                 : GameStrings.NoRank);
         }
 
         if (myStatsRatingLabel != null)
         {
-            PersianUi.SetText(myStatsRatingLabel, response.rating >= 0
+            PersianUi.SetText(myStatsRatingLabel, response.gamesPlayed > 0
                 ? string.Format(GameStrings.RatingFormat, response.rating)
                 : GameStrings.NoRating);
         }

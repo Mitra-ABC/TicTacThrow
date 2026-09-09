@@ -173,7 +173,7 @@ public static class GameFlowScreensBuilder
         bg.raycastTarget = false;
 
         var frame = EnsureImage(root, "GameBoardFrame", SpriteAt("Assets/UI/Game/GameBoard.png"), 1);
-        Place(frame.rectTransform, new Vector2(0f, -18f), new Vector2(400f, 400f));
+        Place(frame.rectTransform, new Vector2(0f, -16f), new Vector2(560f, 560f));
         frame.preserveAspect = true;
         frame.raycastTarget = false;
 
@@ -182,14 +182,14 @@ public static class GameFlowScreensBuilder
         {
             board.gameObject.SetActive(true);
             board.SetParent(root, false);
-            Place(board, new Vector2(0f, -18f), new Vector2(400f, 400f));
+            Place(board, new Vector2(0f, -16f), new Vector2(560f, 560f));
             board.SetSiblingIndex(2);
             var grid = board.GetComponent<GridLayoutGroup>();
             if (grid != null)
             {
-                grid.padding = new RectOffset(28, 28, 28, 28);
-                grid.cellSize = new Vector2(108f, 108f);
-                grid.spacing = new Vector2(10f, 10f);
+                grid.padding = new RectOffset(42, 42, 42, 42);
+                grid.cellSize = new Vector2(146f, 146f);
+                grid.spacing = new Vector2(16f, 16f);
                 grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
                 grid.constraintCount = 3;
                 grid.childAlignment = TextAnchor.MiddleCenter;
@@ -235,35 +235,39 @@ public static class GameFlowScreensBuilder
         Hide(root, "StatusLabel");
 
         var hudL = EnsureImage(root, "GameHudLeft", SpriteAt("Assets/UI/Game/GameHudLeft.png"), 3);
-        PlaceTop(hudL.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(14f, -10f), new Vector2(430f, 108f), new Vector2(0f, 1f));
+        PlaceTop(hudL.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -8f), new Vector2(243f, 82f), new Vector2(0f, 1f));
+        hudL.type = Image.Type.Simple;
         hudL.preserveAspect = true;
+        hudL.useSpriteMesh = false;
         hudL.raycastTarget = false;
-        var leftName = EnsureLabel(hudL.rectTransform, "GameHudLeftName", GameStrings.UnknownNickname, 22f, 0, font);
-        PlaceLocal(leftName.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(8f, 10f), new Vector2(170f, 30f));
-        var leftScore = EnsureLabel(hudL.rectTransform, "GameHudLeftScore", string.Empty, 18f, 1, font);
-        PlaceLocal(leftScore.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(8f, -16f), new Vector2(170f, 24f));
+        var leftName = EnsureLabel(hudL.rectTransform, "GameHudLeftName", GameStrings.UnknownNickname, 16f, 0, font);
+        PlaceLocal(leftName.rectTransform, new Vector2(0f, 0.5f), new Vector2(128f, 13f), new Vector2(88f, 22f));
+        var leftScore = EnsureLabel(hudL.rectTransform, "GameHudLeftScore", string.Empty, 15f, 1, font);
+        PlaceLocal(leftScore.rectTransform, new Vector2(0f, 0.5f), new Vector2(138f, -15f), new Vector2(48f, 16f));
         leftScore.color = new Color(1f, 0.84f, 0.28f, 1f);
         var leftPortrait = EnsureImage(hudL.rectTransform, "GameHudLeftAvatar", SpriteAt("Assets/Resources/Avatars/1.png"), 2);
-        PlaceLocal(leftPortrait.rectTransform, new Vector2(0f, 0.5f), new Vector2(54f, 0f), new Vector2(80f, 80f));
+        PlaceLocal(leftPortrait.rectTransform, new Vector2(0f, 0.5f), new Vector2(41f, 0f), new Vector2(59f, 59f));
         leftPortrait.preserveAspect = true;
         leftPortrait.raycastTarget = false;
 
         var hudR = EnsureImage(root, "GameHudRight", SpriteAt("Assets/UI/Game/GameHudRight.png"), 4);
-        PlaceTop(hudR.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-14f, -10f), new Vector2(430f, 108f), new Vector2(1f, 1f));
+        PlaceTop(hudR.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-8f, -8f), new Vector2(255f, 82f), new Vector2(1f, 1f));
+        hudR.type = Image.Type.Simple;
         hudR.preserveAspect = true;
+        hudR.useSpriteMesh = false;
         hudR.raycastTarget = false;
-        var rightName = EnsureLabel(hudR.rectTransform, "GameHudRightName", GameStrings.UnknownNickname, 22f, 0, font);
-        PlaceLocal(rightName.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-8f, 10f), new Vector2(170f, 30f));
-        var rightScore = EnsureLabel(hudR.rectTransform, "GameHudRightScore", string.Empty, 18f, 1, font);
-        PlaceLocal(rightScore.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-8f, -16f), new Vector2(170f, 24f));
+        var rightName = EnsureLabel(hudR.rectTransform, "GameHudRightName", GameStrings.UnknownNickname, 16f, 0, font);
+        PlaceLocal(rightName.rectTransform, new Vector2(1f, 0.5f), new Vector2(-132f, 13f), new Vector2(88f, 22f));
+        var rightScore = EnsureLabel(hudR.rectTransform, "GameHudRightScore", string.Empty, 15f, 1, font);
+        PlaceLocal(rightScore.rectTransform, new Vector2(1f, 0.5f), new Vector2(-125f, -15f), new Vector2(52f, 16f));
         rightScore.color = new Color(1f, 0.84f, 0.28f, 1f);
         var rightPortrait = EnsureImage(hudR.rectTransform, "GameHudRightAvatar", SpriteAt("Assets/Resources/Avatars/1.png"), 2);
-        PlaceLocal(rightPortrait.rectTransform, new Vector2(1f, 0.5f), new Vector2(-54f, 0f), new Vector2(80f, 80f), new Vector2(0.5f, 0.5f));
+        PlaceLocal(rightPortrait.rectTransform, new Vector2(1f, 0.5f), new Vector2(-41f, 0f), new Vector2(59f, 59f), new Vector2(0.5f, 0.5f));
         rightPortrait.preserveAspect = true;
         rightPortrait.raycastTarget = false;
 
         var turn = EnsureImage(root, "GameTurn", SpriteAt("Assets/UI/Game/GameTurn.png"), 5);
-        PlaceTop(turn.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(200f, 72f), new Vector2(0.5f, 1f));
+        PlaceTop(turn.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(148f, 64f), new Vector2(0.5f, 1f));
         turn.preserveAspect = true;
         turn.raycastTarget = false;
         var turnLabel = FindDeep(root, "TurnLabel") as RectTransform;
@@ -271,29 +275,29 @@ public static class GameFlowScreensBuilder
         {
             turnLabel.SetParent(turn.rectTransform, false);
             turnLabel.gameObject.SetActive(true);
-            StretchInsets(turnLabel, new Vector2(18f, 14f), new Vector2(-18f, -18f));
-            StyleLabel(turnLabel.GetComponent<TMP_Text>(), font, 22f, new Color(1f, 0.9f, 0.45f, 1f), TextAlignmentOptions.Center);
+            StretchInsets(turnLabel, new Vector2(16f, 18f), new Vector2(-16f, -20f));
+            StyleLabel(turnLabel.GetComponent<TMP_Text>(), font, 20f, new Color(1f, 0.9f, 0.45f, 1f), TextAlignmentOptions.Center);
             PersianUi.SetText(turnLabel.GetComponent<TMP_Text>(), GameStrings.YourTurn);
         }
 
         var back = EnsureImage(root, "GameBack", SpriteAt("Assets/UI/Game/GameBack.png"), 6);
-        PlaceTop(back.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(10f, -118f), new Vector2(64f, 64f), new Vector2(0f, 1f));
+        PlaceTop(back.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -86f), new Vector2(46f, 46f), new Vector2(0f, 1f));
         back.preserveAspect = true;
         var backBtn = EnsureButton(back);
 
         var chat = EnsureImage(root, "GameChat", SpriteAt("Assets/UI/Game/GameChat.png"), 7);
-        PlaceTop(chat.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 92f), new Vector2(210f, 64f), new Vector2(0f, 0f));
+        PlaceTop(chat.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(12f, 78f), new Vector2(152f, 58f), new Vector2(0f, 0f));
         chat.preserveAspect = true;
         var chatBtn = EnsureButton(chat);
-        var chatLabel = EnsureLabel(chat.rectTransform, "GameChatLabel", GameStrings.ChatButton, 24f, 0, font);
-        StretchInsets(chatLabel.rectTransform, new Vector2(70f, 8f), new Vector2(-16f, -8f));
+        var chatLabel = EnsureLabel(chat.rectTransform, "GameChatLabel", GameStrings.ChatButton, 22f, 0, font);
+        StretchInsets(chatLabel.rectTransform, new Vector2(58f, 8f), new Vector2(-12f, -8f));
 
         var surrender = EnsureImage(root, "GameSurrender", SpriteAt("Assets/UI/Game/GameSurrender.png"), 8);
-        PlaceTop(surrender.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 20f), new Vector2(210f, 64f), new Vector2(0f, 0f));
+        PlaceTop(surrender.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(12f, 14f), new Vector2(152f, 58f), new Vector2(0f, 0f));
         surrender.preserveAspect = true;
         var surrenderBtn = EnsureButton(surrender);
-        var surrenderLabel = EnsureLabel(surrender.rectTransform, "GameSurrenderLabel", GameStrings.SurrenderButton, 24f, 0, font);
-        StretchInsets(surrenderLabel.rectTransform, new Vector2(70f, 8f), new Vector2(-16f, -8f));
+        var surrenderLabel = EnsureLabel(surrender.rectTransform, "GameSurrenderLabel", GameStrings.SurrenderButton, 22f, 0, font);
+        StretchInsets(surrenderLabel.rectTransform, new Vector2(58f, 8f), new Vector2(-12f, -8f));
 
         var chrome = panel.GetComponent<GameHudChrome>();
         if (chrome == null)

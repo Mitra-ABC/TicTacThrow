@@ -50,6 +50,7 @@ public static class GameStrings
     public const string WsNotReady = "در حال اتصال... کمی صبر کنید.";
     public const string WsDisconnected = "اتصال بازی قطع است. کمی صبر کنید.";
     public const string InvalidMatchRoom = "اتاق مسابقه ساخته نشد. دوباره تلاش کنید.";
+    public const string RoomExpired = "اتاق منقضی شد. دوباره تلاش کنید.";
     public const string MatchFoundWaiting = "حریف پیدا شد. در حال شروع بازی...";
 
     public const string StatusWaiting = "waiting";

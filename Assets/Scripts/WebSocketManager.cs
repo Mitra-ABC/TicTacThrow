@@ -679,6 +679,27 @@ public class WebSocketManager : MonoBehaviour
                 QueueOnMainThread(() => LogError($"Error handling room:finished: {e.Message}"));
             }
         });
+
+        socket.On("room:expired", (response) =>
+        {
+            try
+            {
+                var data = response.GetValue<ErrorData>();
+                QueueOnMainThread(() =>
+                {
+                    Log($"Room expired: {PickError(data)}");
+                    OnError?.Invoke(string.IsNullOrEmpty(data?.error) ? GameStrings.RoomExpired : data.error);
+                });
+            }
+            catch (Exception e)
+            {
+                QueueOnMainThread(() =>
+                {
+                    LogError($"Error handling room:expired: {e.Message}");
+                    OnError?.Invoke(GameStrings.RoomExpired);
+                });
+            }
+        });
         
         // Game move success
         socket.On("game:move:success", (response) =>
@@ -1080,12 +1101,19 @@ public class WebSocketManager : MonoBehaviour
         }
     }
     
+    private bool EnsureConnected()
+    {
+        if (socket != null && socket.Connected) return true;
+        LogError("WebSocket not connected!");
+        QueueOnMainThread(() => OnError?.Invoke(GameStrings.WsDisconnected));
+        return false;
+    }
+
     // Room Operations
     public void CreateRoom()
     {
-        if (socket == null || !socket.Connected)
+        if (!EnsureConnected())
         {
-            LogError("WebSocket not connected!");
             return;
         }
         
@@ -1100,9 +1128,8 @@ public class WebSocketManager : MonoBehaviour
 
     public void JoinRoomByCode(string joinCode)
     {
-        if (socket == null || !socket.Connected)
+        if (!EnsureConnected())
         {
-            LogError("WebSocket not connected!");
             return;
         }
 
@@ -1142,9 +1169,8 @@ public class WebSocketManager : MonoBehaviour
     // Game Operations
     public void MakeMove(int roomId, int cellIndex)
     {
-        if (socket == null || !socket.Connected)
+        if (!EnsureConnected())
         {
-            LogError("WebSocket not connected!");
             return;
         }
         
@@ -1153,9 +1179,8 @@ public class WebSocketManager : MonoBehaviour
 
     public void Surrender(int roomId)
     {
-        if (socket == null || !socket.Connected)
+        if (!EnsureConnected())
         {
-            LogError("WebSocket not connected!");
             return;
         }
 
@@ -1165,9 +1190,8 @@ public class WebSocketManager : MonoBehaviour
     // Matchmaking Operations
     public void QueueMatchmaking()
     {
-        if (socket == null || !socket.Connected)
+        if (!EnsureConnected())
         {
-            LogError("WebSocket not connected!");
             return;
         }
         
@@ -1176,9 +1200,8 @@ public class WebSocketManager : MonoBehaviour
     
     public void CancelMatchmaking()
     {
-        if (socket == null || !socket.Connected)
+        if (!EnsureConnected())
         {
-            LogError("WebSocket not connected!");
             return;
         }
         
