@@ -322,6 +322,7 @@ public class GameManager : MonoBehaviour
 
         // Leaderboard buttons
         closeLeaderboardButton?.onClick.AddListener(OnCloseLeaderboard);
+        LeaderboardUi()?.Refresh();
 
         // My Stats buttons
         closeMyStatsButton?.onClick.AddListener(OnCloseMyStats);
@@ -1704,6 +1705,7 @@ public class GameManager : MonoBehaviour
     {
         if (!EnsureLoggedIn()) return;
         SetState(GameState.Leaderboard);
+        LeaderboardUi()?.Refresh();
         LoadLeaderboard();
     }
 
@@ -1754,37 +1756,35 @@ public class GameManager : MonoBehaviour
 
     private void DisplayLeaderboard(LeaderboardResponse response)
     {
-        if (seasonLabel != null)
-        {
-            PersianUi.SetText(seasonLabel, string.Format(GameStrings.SeasonFormat, SeasonDisplay(response.seasonLabel, response.season)));
-        }
+        var chrome = LeaderboardUi();
+        chrome?.Refresh();
+        chrome?.ShowSeason(string.Format(GameStrings.SeasonFormat, SeasonDisplay(response.seasonLabel, response.season)));
 
-        // پاک کردن لیست قبلی
         if (leaderboardContent != null)
         {
             foreach (Transform child in leaderboardContent)
-            {
                 Destroy(child.gameObject);
-            }
         }
 
-        // اضافه کردن بازیکنان
-        if (response.players != null && leaderboardContent != null)
+        if (response.players == null || leaderboardContent == null || leaderboardItemPrefab == null)
+            return;
+
+        var me = apiClient != null ? apiClient.CurrentPlayerId : 0;
+        foreach (var player in response.players)
         {
-            foreach (var player in response.players)
-            {
-                if (leaderboardItemPrefab != null)
-                {
-                    var item = Instantiate(leaderboardItemPrefab, leaderboardContent);
-                    // تنظیم اطلاعات بازیکن در item
-                    var itemScript = item.GetComponent<LeaderboardItem>();
-                    if (itemScript != null)
-                    {
-                        itemScript.SetPlayer(player);
-                    }
-                }
-            }
+            var item = Instantiate(leaderboardItemPrefab, leaderboardContent);
+            var itemScript = item.GetComponent<LeaderboardItem>();
+            if (itemScript != null)
+                itemScript.SetPlayer(player, me != 0 && player.playerId == me);
         }
+    }
+
+    private LeaderboardChrome LeaderboardUi()
+    {
+        if (leaderboardPanel == null)
+            return null;
+        var chrome = leaderboardPanel.GetComponent<LeaderboardChrome>();
+        return chrome != null ? chrome : leaderboardPanel.AddComponent<LeaderboardChrome>();
     }
 
     private void LoadMyStats()
@@ -1999,21 +1999,21 @@ public class GameManager : MonoBehaviour
         if (response == null) return;
         UpdateWalletDisplay(new WalletInfo { coins = response.coins, hearts = response.hearts, maxHearts = response.maxHearts });
         if (lobbyNextHeartLabel == null) return;
+        lobbyPanel?.GetComponent<LobbyChrome>()?.ShowHeartTimer();
         if (!string.IsNullOrEmpty(response.nextHeartAt) && response.hearts < response.maxHearts)
         {
             if (TryParseNextHeartAt(response.nextHeartAt, out DateTime targetUtc))
             {
-                string timeStr = FormatTimeRemaining(targetUtc);
-                PersianUi.SetText(lobbyNextHeartLabel, string.Format(GameStrings.NextHeartFormat, timeStr));
+                SetNextHeartLabel(FormatTimeRemaining(targetUtc), true);
                 if (nextHeartCountdownCoroutine != null) StopCoroutine(nextHeartCountdownCoroutine);
                 nextHeartCountdownCoroutine = StartCoroutine(NextHeartCountdownCoroutineLobby(targetUtc));
             }
             else
-                PersianUi.SetText(lobbyNextHeartLabel, string.Format(GameStrings.NextHeartFormat, "..."));
+                SetNextHeartLabel("...", true);
         }
         else
         {
-            PersianUi.SetText(lobbyNextHeartLabel, GameStrings.HeartsFull);
+            SetNextHeartLabel(string.Empty, false);
             if (nextHeartCountdownCoroutine != null) { StopCoroutine(nextHeartCountdownCoroutine); nextHeartCountdownCoroutine = null; }
         }
     }
@@ -2025,16 +2025,28 @@ public class GameManager : MonoBehaviour
         return DateTime.TryParse(nextHeartAtIso, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out targetUtc);
     }
 
+    private void SetNextHeartLabel(string time, bool visible)
+    {
+        if (lobbyNextHeartLabel == null)
+            return;
+        lobbyNextHeartLabel.gameObject.SetActive(visible);
+        if (!visible)
+            return;
+        lobbyPanel?.GetComponent<LobbyChrome>()?.ShowHeartTimer();
+        PersianUi.SetText(lobbyNextHeartLabel, GameStrings.NextHeartTitle);
+        var timeLabel = lobbyNextHeartLabel.transform.Find("LobbyNextHeartTime");
+        if (timeLabel != null)
+            PersianUi.SetNumber(timeLabel.GetComponent<TMP_Text>(), time ?? string.Empty);
+    }
+
     private string FormatTimeRemaining(DateTime targetUtc)
     {
         var remaining = targetUtc - DateTime.UtcNow;
         if (remaining <= TimeSpan.Zero)
-            return "0:00";
+            return GameStrings.ToPersianDigits("0:00");
         if (remaining.TotalHours >= 1)
-            return $"{(int)remaining.TotalHours}h {remaining.Minutes}m";
-        if (remaining.TotalMinutes >= 1)
-            return $"{remaining.Minutes}m {remaining.Seconds}s";
-        return $"{remaining.Seconds}s";
+            return GameStrings.ToPersianDigits($"{(int)remaining.TotalHours}:{(int)remaining.Minutes:00}:{(int)remaining.Seconds:00}");
+        return GameStrings.ToPersianDigits($"{(int)remaining.Minutes}:{(int)remaining.Seconds:00}");
     }
 
     private IEnumerator NextHeartCountdownCoroutineLobby(DateTime targetUtc)
@@ -2046,17 +2058,12 @@ public class GameManager : MonoBehaviour
             var remaining = targetUtc - DateTime.UtcNow;
             if (remaining <= TimeSpan.Zero)
             {
-                if (lobbyNextHeartLabel != null)
-                    PersianUi.SetText(lobbyNextHeartLabel, GameStrings.HeartsFull);
+                SetNextHeartLabel(string.Empty, false);
                 LoadWalletForLobby();
                 nextHeartCountdownCoroutine = null;
                 yield break;
             }
-            if (lobbyNextHeartLabel != null)
-            {
-                string timeStr = FormatTimeRemaining(targetUtc);
-                PersianUi.SetText(lobbyNextHeartLabel, string.Format(GameStrings.NextHeartFormat, timeStr));
-            }
+            SetNextHeartLabel(FormatTimeRemaining(targetUtc), true);
         }
         nextHeartCountdownCoroutine = null;
     }

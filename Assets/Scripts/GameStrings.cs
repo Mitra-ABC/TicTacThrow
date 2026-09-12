@@ -81,7 +81,7 @@ public static class GameStrings
 
     public const string LeaderboardTitle = "جدول امتیازات";
     public const string MyStatsTitle = "آمار من";
-    public const string SeasonFormat = "فصل: {0}";
+    public const string SeasonFormat = "فصل {0}";
     public const string RankFormat = "رتبه: {0}";
     public const string RatingFormat = "امتیاز: {0}";
     public const string WinsFormat = "برد: {0}";
@@ -101,6 +101,7 @@ public static class GameStrings
     public const string LobbyRankButton = "رتبه‌بندی";
     public const string LobbyBoostersButton = "تقویت‌کننده‌ها";
     public const string NextHeartFormat = "قلب بعدی: {0}";
+    public const string NextHeartTitle = "قلب بعدی";
     public const string HeartsFull = "قلب‌ها پر است";
     public const string NotEnoughCoins = "سکه کافی ندارید";
     public const string NotEnoughHearts = "قلب کافی ندارید";
@@ -184,10 +185,16 @@ public static class GameStrings
     public const string NicknamePlaceholder = "نام نمایشی";
     public const string NicknameTooLong = "نام نمایشی خیلی طولانی است.";
     public const string SettingsTitle = "تنظیمات";
+    public const string ProfileTitle = "پروفایل";
     public const string SaveNicknameButton = "ذخیره نام";
+    public const string SaveProfileButton = "ذخیره پروفایل";
     public const string NicknameSaved = "نام نمایشی ذخیره شد.";
     public const string SavingNickname = "در حال ذخیره...";
-    public const string UsernameReadonlyFormat = "نام کاربری: {0}";
+    public const string SavingProfile = "در حال ذخیره پروفایل...";
+    public const string ProfileSaved = "پروفایل ذخیره شد.";
+    public const string ProfileUnchanged = "تغییری برای ذخیره نیست.";
+    public const string AccountReadonlyFormat = "حساب: {0}";
+    public const string NicknameFieldLabel = "نام نمایشی";
     public const string AvatarPickerTitle = "عکس پروفایل";
     public const string AvatarSaved = "عکس پروفایل ذخیره شد.";
     public const string SavingAvatar = "در حال ذخیره...";

@@ -427,6 +427,23 @@ public class ApiClient : MonoBehaviour
             onError);
     }
 
+    public IEnumerator UpdateProfile(string nickname, int avatarId, bool sendName, bool sendAvatar, Action<PlayerMeResponse> onSuccess, Action<string> onError)
+    {
+        var parts = new System.Collections.Generic.List<string>(2);
+        if (sendName)
+            parts.Add("\"nickname\":\"" + EscapeJson(nickname) + "\"");
+        if (sendAvatar)
+            parts.Add("\"avatarId\":" + AvatarCatalog.Clamp(avatarId));
+        var body = "{" + string.Join(",", parts) + "}";
+        yield return SendRequest("/api/players/me", "PATCH", body, true,
+            response =>
+            {
+                var data = ApiResponseParser.ParsePlayerMeResponse(response);
+                onSuccess?.Invoke(data);
+            },
+            onError);
+    }
+
     public IEnumerator GetWallet(Action<WalletResponse> onSuccess, Action<string> onError)
     {
         yield return SendRequest("/api/players/me/wallet", UnityWebRequest.kHttpVerbGET, null, true,

@@ -130,10 +130,15 @@ public static class PersianUi
         {
             rtl.Farsi = true;
             rtl.FixTags = true;
-            rtl.text = logical;
+            rtl.ForceFix = true;
+            if (string.Equals(rtl.OriginalText, logical, System.StringComparison.Ordinal))
+                rtl.UpdateText();
+            else
+                rtl.text = logical;
         }
         else
         {
+            tmp.isRightToLeftText = false;
             tmp.text = string.IsNullOrEmpty(logical) ? string.Empty : Shape(logical);
         }
     }

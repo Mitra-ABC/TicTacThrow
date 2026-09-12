@@ -57,7 +57,7 @@ public static class SettingsOverlayBuilder
         overlay.gameObject.SetActive(false);
 
         var card = EnsureImage(overlay.rectTransform, "SettingsCard", ImportSprite("Assets/UI/Waiting/WaitCodeCard.png"), 0);
-        Place(card.rectTransform, new Vector2(0f, 16f), new Vector2(640f, 500f));
+        Place(card.rectTransform, new Vector2(0f, 8f), new Vector2(700f, 640f));
         card.preserveAspect = false;
         card.raycastTarget = false;
 
@@ -66,34 +66,44 @@ public static class SettingsOverlayBuilder
         back.preserveAspect = true;
         var closeBtn = EnsureButton(back);
 
-        var title = EnsureLabel(card.rectTransform, "SettingsTitle", GameStrings.SettingsTitle, 42f, 0, font);
-        Place(title.rectTransform, new Vector2(0f, 196f), new Vector2(420f, 52f));
+        var title = EnsureLabel(card.rectTransform, "SettingsTitle", GameStrings.ProfileTitle, 36f, 0, font);
+        Place(title.rectTransform, new Vector2(0f, 278f), new Vector2(420f, 44f));
 
-        var username = EnsureLabel(card.rectTransform, "SettingsUsername", string.Empty, 22f, 1, font);
-        Place(username.rectTransform, new Vector2(0f, 142f), new Vector2(480f, 32f));
-        username.color = new Color(1f, 0.82f, 0.29f, 1f);
+        var username = EnsureLabel(card.rectTransform, "SettingsUsername", string.Empty, 18f, 1, font);
+        Place(username.rectTransform, new Vector2(0f, 200f), new Vector2(500f, 24f));
+        username.color = new Color(0.86f, 0.78f, 0.96f, 0.92f);
+
+        var nickLabel = EnsureLabel(card.rectTransform, "SettingsNicknameLabel", GameStrings.NicknameFieldLabel, 24f, 2, font);
+        Place(nickLabel.rectTransform, new Vector2(0f, 168f), new Vector2(400f, 26f));
 
         var fieldSprite = ImportSprite("Assets/UI/Auth/FormField.png", 180, 50, 180, 50);
         var nickInput = CreateNicknameField(card.rectTransform, fieldSprite, font);
-        Place(nickInput.GetComponent<RectTransform>(), new Vector2(0f, 62f), new Vector2(520f, 90f));
+        Place(nickInput.GetComponent<RectTransform>(), new Vector2(0f, 118f), new Vector2(520f, 78f));
 
         var save = EnsureImage(card.rectTransform, "SettingsSave", ImportSprite("Assets/UI/Join/JoinSubmit.png"), 4);
-        Place(save.rectTransform, new Vector2(0f, -28f), new Vector2(420f, 92f));
+        Place(save.rectTransform, new Vector2(0f, -132f), new Vector2(360f, 62f));
         save.preserveAspect = true;
         var saveBtn = EnsureButton(save);
-        var saveLabel = EnsureLabel(save.rectTransform, "SettingsSaveLabel", GameStrings.SaveNicknameButton, 32f, 0, font);
-        StretchInsets(saveLabel.rectTransform, new Vector2(36f, 10f), new Vector2(-36f, -10f));
+        var saveLabel = EnsureLabel(save.rectTransform, "SettingsSaveLabel", GameStrings.SaveProfileButton, 26f, 0, font);
+        StretchInsets(saveLabel.rectTransform, new Vector2(28f, 8f), new Vector2(-28f, -8f));
+
+        var grid = EnsureAvatarGrid(card.rectTransform);
+        Place(grid, new Vector2(0f, -8f), new Vector2(560f, 196f));
 
         var logoutImg = EnsureImage(card.rectTransform, "SettingsLogout", ImportSprite("Assets/UI/Waiting/WaitCancelBtn.png"), 5);
-        Place(logoutImg.rectTransform, new Vector2(0f, -128f), new Vector2(400f, 72f));
+        Place(logoutImg.rectTransform, new Vector2(0f, -190f), new Vector2(340f, 56f));
         logoutImg.preserveAspect = true;
         var logoutBtn = EnsureButton(logoutImg);
         var logoutLabel = EnsureLabel(logoutImg.rectTransform, "SettingsLogoutLabel", GameStrings.LogoutButton, 24f, 0, font);
         StretchInsets(logoutLabel.rectTransform, new Vector2(28f, 8f), new Vector2(-28f, -8f));
 
         var status = EnsureLabel(card.rectTransform, "SettingsStatus", string.Empty, 20f, 6, font);
-        Place(status.rectTransform, new Vector2(0f, -196f), new Vector2(500f, 32f));
+        Place(status.rectTransform, new Vector2(0f, -248f), new Vector2(520f, 28f));
         status.color = new Color(1f, 0.85f, 0.55f, 1f);
+
+        var picker = FindDeep(root, "AvatarPickerPanel");
+        if (picker != null)
+            picker.gameObject.SetActive(false);
 
         var chrome = overlay.GetComponent<SettingsChrome>();
         if (chrome == null)
@@ -106,9 +116,45 @@ public static class SettingsOverlayBuilder
         so.FindProperty("saveButton").objectReferenceValue = saveBtn;
         so.FindProperty("logoutButton").objectReferenceValue = logoutBtn;
         so.FindProperty("closeButton").objectReferenceValue = closeBtn;
+        so.FindProperty("grid").objectReferenceValue = grid;
         so.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(overlay.gameObject);
         return chrome;
+    }
+
+    private static RectTransform EnsureAvatarGrid(RectTransform card)
+    {
+        var existing = card.Find("AvatarGrid");
+        GameObject go;
+        if (existing == null)
+        {
+            go = new GameObject("AvatarGrid", typeof(RectTransform), typeof(GridLayoutGroup));
+            go.layer = card.gameObject.layer;
+            go.transform.SetParent(card, false);
+        }
+        else
+        {
+            go = existing.gameObject;
+            if (go.GetComponent<GridLayoutGroup>() == null)
+                go.AddComponent<GridLayoutGroup>();
+        }
+
+        var gridRt = go.GetComponent<RectTransform>();
+        var grid = go.GetComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(96f, 96f);
+        grid.spacing = new Vector2(16f, 16f);
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = 5;
+        grid.childAlignment = TextAnchor.MiddleCenter;
+        for (var i = 1; i <= AvatarCatalog.MaxId; i++)
+        {
+            var slot = EnsureImage(gridRt, $"AvatarSlot{i}", AvatarCatalog.Get(i), i - 1);
+            slot.preserveAspect = true;
+            slot.raycastTarget = true;
+            EnsureButton(slot);
+        }
+
+        return gridRt;
     }
 
     private static TMP_InputField CreateNicknameField(Transform parent, Sprite fieldSprite, TMP_FontAsset font)
@@ -148,12 +194,14 @@ public static class SettingsOverlayBuilder
 
         var text = EnsureLabel(area, "Text", string.Empty, 28f, 0, font);
         Stretch(text.rectTransform);
-        text.alignment = TextAlignmentOptions.MidlineRight;
+        text.alignment = TextAlignmentOptions.Center;
+        text.isRightToLeftText = false;
         text.raycastTarget = false;
 
         var placeholder = EnsureLabel(area, "Placeholder", GameStrings.NicknamePlaceholder, 28f, 1, font);
         Stretch(placeholder.rectTransform);
-        placeholder.alignment = TextAlignmentOptions.MidlineRight;
+        placeholder.alignment = TextAlignmentOptions.Center;
+        placeholder.isRightToLeftText = false;
         placeholder.color = new Color(0.78f, 0.72f, 0.92f, 1f);
         placeholder.raycastTarget = false;
 

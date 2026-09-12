@@ -76,13 +76,15 @@ public static class AvatarScreensBuilder
             button.transition = Selectable.Transition.ColorTint;
         }
 
-        var picker = BuildPicker(root, font);
+        var picker = FindDeep(root, "AvatarPickerPanel");
+        if (picker != null)
+            picker.gameObject.SetActive(false);
+
         var chrome = panel.GetComponent<LobbyChrome>();
         if (chrome == null)
             chrome = panel.AddComponent<LobbyChrome>();
         var so = new SerializedObject(chrome);
         so.FindProperty("avatarButton").objectReferenceValue = avatar != null ? avatar.GetComponent<Button>() : null;
-        so.FindProperty("avatarPicker").objectReferenceValue = picker;
         so.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(panel);
     }

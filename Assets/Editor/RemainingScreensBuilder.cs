@@ -221,17 +221,20 @@ public static class RemainingScreensBuilder
         StyleIconButton(FindDeep(root, "CloseLeaderboardButton"), ImportSprite("Assets/UI/Friends/FriendsBack.png"),
             new Vector2(0f, 1f), new Vector2(18f, -14f), new Vector2(72f, 72f), new Vector2(0f, 1f));
 
+        if (panel.GetComponent<LeaderboardChrome>() == null)
+            panel.AddComponent<LeaderboardChrome>();
+
         var title = FindDeep(root, "LeaderboardTitle") as RectTransform;
         if (title != null)
         {
             title.gameObject.SetActive(true);
-            PlaceTop(title, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(520f, 56f), new Vector2(0.5f, 1f));
-            StyleLabel(title.GetComponent<TMP_Text>(), font, 42f, Color.white, TextAlignmentOptions.Center);
+            PlaceTop(title, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -28f), new Vector2(420f, 48f), new Vector2(0.5f, 1f));
+            StyleLabel(title.GetComponent<TMP_Text>(), font, 36f, Color.white, TextAlignmentOptions.Center);
             PersianUi.SetText(title.GetComponent<TMP_Text>(), GameStrings.LeaderboardTitle);
         }
 
         var trophy = EnsureImage(root, "LeaderboardTrophy", ImportSprite("Assets/UI/Lobby/LobbyTrophy.png"), 3);
-        PlaceTop(trophy.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-28f, -18f), new Vector2(64f, 64f), new Vector2(1f, 1f));
+        PlaceTop(trophy.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(268f, -22f), new Vector2(52f, 52f), new Vector2(0.5f, 1f));
         trophy.preserveAspect = true;
         trophy.raycastTarget = false;
 
@@ -239,15 +242,15 @@ public static class RemainingScreensBuilder
         if (season != null)
         {
             season.gameObject.SetActive(true);
-            PlaceTop(season, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(520f, 32f), new Vector2(0.5f, 1f));
-            StyleLabel(season.GetComponent<TMP_Text>(), font, 22f, new Color(1f, 1f, 1f, 0.9f), TextAlignmentOptions.Center);
+            PlaceTop(season, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -96f), new Vector2(520f, 30f), new Vector2(0.5f, 1f));
+            StyleLabel(season.GetComponent<TMP_Text>(), font, 22f, new Color(1f, 0.86f, 0.45f, 0.95f), TextAlignmentOptions.Center);
         }
 
         var scroll = FindDeep(root, "LeaderboardScrollView") as RectTransform;
         if (scroll != null)
         {
             scroll.gameObject.SetActive(true);
-            Place(scroll, new Vector2(0f, -28f), new Vector2(1040f, 500f));
+            Place(scroll, new Vector2(0f, -36f), new Vector2(980f, 500f));
         }
 
         EditorUtility.SetDirty(panel);

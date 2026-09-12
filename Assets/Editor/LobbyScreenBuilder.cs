@@ -68,7 +68,7 @@ public static class LobbyScreenBuilder
         Hide(root, "WalletButtonImage");
         Hide(root, "LogoutButtonImage");
         Hide(root, "LogoutButtonLabel");
-        Hide(root, "LobbyNextHeartLabel");
+        Hide(root, "LobbyNextHeartLabelImage");
 
         var bg = EnsureImage(root, "LobbyBg", bgSprite, 0);
         Stretch(bg.rectTransform);
@@ -146,9 +146,9 @@ public static class LobbyScreenBuilder
         if (nextHeart != null)
         {
             nextHeart.SetParent(heartsBar.rectTransform, false);
-            PlaceLocal(nextHeart, new Vector2(0.5f, 0f), new Vector2(0f, -18f), new Vector2(220f, 18f));
-            StyleLabel(nextHeart.GetComponent<TMP_Text>(), font, 14f, new Color(1f, 1f, 1f, 0.78f), TextAlignmentOptions.Center);
-            nextHeart.gameObject.SetActive(false);
+            PlaceLocal(nextHeart, new Vector2(0.5f, 0f), new Vector2(0f, -4f), new Vector2(240f, 24f));
+            StyleLabel(nextHeart.GetComponent<TMP_Text>(), font, 16f, new Color(1f, 0.86f, 0.45f, 0.95f), TextAlignmentOptions.Center);
+            nextHeart.gameObject.SetActive(true);
         }
 
         var coinsBar = EnsureImage(root, "LobbyCoinsBar", barSprite, 3);

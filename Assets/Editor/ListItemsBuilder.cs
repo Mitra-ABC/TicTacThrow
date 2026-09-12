@@ -25,6 +25,7 @@ public static class ListItemsBuilder
         var shopCard = ImportSprite(ShopCardPath);
         var boosterCard = ImportSprite(BoosterCardPath);
         var bar = ImportSprite(BarPath, 32, 16, 32, 16);
+        var field = ImportSprite("Assets/UI/Auth/FormField.png", 180, 50, 180, 50);
         var buy = ImportSprite(BuyPath);
         var coin = ImportSprite(CoinPath);
         var trophy = ImportSprite(TrophyPath);
@@ -32,10 +33,10 @@ public static class ListItemsBuilder
 
         StyleBooster(font, boosterCard, buy, coin, star);
         StyleCoinPack(font, shopCard, buy, coin);
-        StyleLeaderboard(font, bar, trophy);
+        StyleLeaderboard(font, field != null ? field : bar, trophy);
         StyleHorizontalScroll("BoostersScrollView", new Vector2(0f, -16f), new Vector2(1180f, 540f));
         StyleHorizontalScroll("CoinPacksScrollView", new Vector2(0f, -16f), new Vector2(1180f, 540f));
-        StyleVerticalScroll("LeaderboardScrollView", new Vector2(0f, -28f), new Vector2(1040f, 500f));
+        StyleVerticalScroll("LeaderboardScrollView", new Vector2(0f, -36f), new Vector2(980f, 500f));
 
         var scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
         if (scene.IsValid())
@@ -114,17 +115,17 @@ public static class ListItemsBuilder
         var root = PrefabUtility.LoadPrefabContents(path);
         try
         {
-            StyleRowRoot(root, bar, 120f);
+            StyleRowRoot(root, bar, 92f);
             var leftover = Find(root, "Image");
             if (leftover != null)
                 leftover.gameObject.SetActive(false);
 
-            PlaceAnchored(Find(root, "RankText") as RectTransform, new Vector2(1f, 0.5f), new Vector2(-48f, 0f), new Vector2(110f, 80f), new Vector2(1f, 0.5f));
-            StyleExistingLabel(Find(root, "RankText"), font, 48f, new Color(1f, 0.85f, 0.35f, 1f), TextAlignmentOptions.Center);
-            PlaceAnchored(Find(root, "NicknameText") as RectTransform, new Vector2(1f, 0.5f), new Vector2(-320f, 0f), new Vector2(460f, 72f), new Vector2(1f, 0.5f));
-            StyleExistingLabel(Find(root, "NicknameText"), font, 38f, Color.white, TextAlignmentOptions.MidlineRight);
-            PlaceAnchored(Find(root, "RatingText") as RectTransform, new Vector2(0f, 0.5f), new Vector2(156f, 0f), new Vector2(220f, 72f), new Vector2(0f, 0.5f));
-            StyleExistingLabel(Find(root, "RatingText"), font, 38f, Color.white, TextAlignmentOptions.MidlineLeft);
+            PlaceAnchored(Find(root, "RankText") as RectTransform, new Vector2(1f, 0.5f), new Vector2(-28f, 0f), new Vector2(78f, 64f), new Vector2(1f, 0.5f));
+            StyleExistingLabel(Find(root, "RankText"), font, 36f, new Color(1f, 0.85f, 0.28f, 1f), TextAlignmentOptions.Center);
+            PlaceAnchored(Find(root, "NicknameText") as RectTransform, new Vector2(0.5f, 0.5f), new Vector2(16f, 0f), new Vector2(460f, 60f), new Vector2(0.5f, 0.5f));
+            StyleExistingLabel(Find(root, "NicknameText"), font, 32f, Color.white, TextAlignmentOptions.Center);
+            PlaceAnchored(Find(root, "RatingText") as RectTransform, new Vector2(0f, 0.5f), new Vector2(92f, 0f), new Vector2(180f, 60f), new Vector2(0f, 0.5f));
+            StyleExistingLabel(Find(root, "RatingText"), font, 32f, new Color(1f, 0.9f, 0.55f, 1f), TextAlignmentOptions.MidlineLeft);
 
             var cup = EnsureImage(root.transform, "RowTrophy", trophy, 0);
             PlaceAnchored(cup.rectTransform, new Vector2(0f, 0.5f), new Vector2(40f, 0f), new Vector2(56f, 56f), new Vector2(0f, 0.5f));
