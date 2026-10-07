@@ -31,7 +31,6 @@ public class GameHudChrome : MonoBehaviour
     public void Bind(UnityAction back, UnityAction surrender, UnityAction chat)
     {
         ApplyLayout();
-        Wire(backButton, back);
         Wire(surrenderButton, surrender);
         Wire(chatButton, chat);
     }
@@ -52,7 +51,9 @@ public class GameHudChrome : MonoBehaviour
         HideRt("GameHudRightMark");
 
         PlaceTop(FindRt("GameTurn"), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(148f, 64f), new Vector2(0.5f, 1f));
-        PlaceTop(FindRt("GameBack"), new Vector2(0f, 1f), new Vector2(8f, -96f), new Vector2(46f, 46f), new Vector2(0f, 1f));
+        HideRt("GameBack");
+        if (backButton != null)
+            backButton.gameObject.SetActive(false);
         PlaceTop(FindRt("GameChat"), new Vector2(0f, 0f), new Vector2(12f, 78f), new Vector2(152f, 58f), new Vector2(0f, 0f));
         PlaceTop(FindRt("GameSurrender"), new Vector2(0f, 0f), new Vector2(12f, 14f), new Vector2(152f, 58f), new Vector2(0f, 0f));
 

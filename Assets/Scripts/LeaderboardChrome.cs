@@ -40,39 +40,13 @@ public class LeaderboardChrome : MonoBehaviour
             dim.transform.SetSiblingIndex(1);
         }
 
-        var titleSprite = FindSprite("MMTitle");
-        if (titleSprite != null)
-        {
-            var banner = EnsureImage("LeaderboardTitleBanner", titleSprite);
-            PlaceTop(banner.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(560f, 88f), new Vector2(0.5f, 1f));
-            banner.preserveAspect = true;
-            banner.raycastTarget = false;
-            banner.color = Color.white;
-            banner.transform.SetSiblingIndex(2);
-        }
-
-        PlaceTop(FindRt("LeaderboardTitle"), new Vector2(0.5f, 1f), new Vector2(0f, -28f), new Vector2(420f, 48f), new Vector2(0.5f, 1f));
-        PlaceTop(FindRt("SeasonLabel"), new Vector2(0.5f, 1f), new Vector2(0f, -96f), new Vector2(520f, 30f), new Vector2(0.5f, 1f));
-        PlaceTop(FindRt("CloseLeaderboardButton"), new Vector2(0f, 1f), new Vector2(18f, -14f), new Vector2(72f, 72f), new Vector2(0f, 1f));
-
-        var trophy = FindRt("LeaderboardTrophy");
-        if (trophy != null)
-        {
-            PlaceTop(trophy, new Vector2(0.5f, 1f), new Vector2(268f, -22f), new Vector2(52f, 52f), new Vector2(0.5f, 1f));
-            var img = trophy.GetComponent<Image>();
-            if (img != null)
-            {
-                img.preserveAspect = true;
-                img.raycastTarget = false;
-                img.color = Color.white;
-            }
-        }
+        PageHeader.Apply(transform, "LeaderboardTitle", "CloseLeaderboardButton", GameStrings.LeaderboardTitle, "LeaderboardTrophy");
+        PlaceTop(FindRt("SeasonLabel"), new Vector2(0.5f, 1f), new Vector2(0f, -108f), new Vector2(520f, 30f), new Vector2(0.5f, 1f));
 
         var scroll = FindRt("LeaderboardScrollView");
         Place(scroll, new Vector2(0f, -36f), new Vector2(980f, 500f));
         StyleScroll(scroll);
 
-        FindRt("LeaderboardTitle")?.SetAsLastSibling();
         FindRt("SeasonLabel")?.SetAsLastSibling();
         FindRt("CloseLeaderboardButton")?.SetAsLastSibling();
     }
@@ -235,29 +209,9 @@ public class LeaderboardChrome : MonoBehaviour
         return null;
     }
 
-    private static readonly System.Collections.Generic.Dictionary<string, Sprite> SpriteCache =
-        new System.Collections.Generic.Dictionary<string, Sprite>();
-
     public static Sprite FindSprite(string name)
     {
-        if (string.IsNullOrEmpty(name))
-            return null;
-        if (SpriteCache.TryGetValue(name, out var cached) && cached != null)
-            return cached;
-
-        foreach (var img in Object.FindObjectsByType<Image>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-        {
-            if (img == null || img.sprite == null)
-                continue;
-            var spriteName = img.sprite.name;
-            if (spriteName == name || spriteName.StartsWith(name + "_"))
-            {
-                SpriteCache[name] = img.sprite;
-                return img.sprite;
-            }
-        }
-
-        return null;
+        return PageHeader.FindSprite(name);
     }
 
     private static void Stretch(RectTransform rt)

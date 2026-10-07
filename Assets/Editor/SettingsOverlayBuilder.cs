@@ -66,8 +66,8 @@ public static class SettingsOverlayBuilder
         back.preserveAspect = true;
         var closeBtn = EnsureButton(back);
 
-        var title = EnsureLabel(card.rectTransform, "SettingsTitle", GameStrings.ProfileTitle, 36f, 0, font);
-        Place(title.rectTransform, new Vector2(0f, 278f), new Vector2(420f, 44f));
+        var title = EnsureLabel(overlay.rectTransform, "SettingsTitle", GameStrings.ProfileTitle, 36f, 0, font);
+        PageHeader.Apply(overlay.rectTransform, "SettingsTitle", "SettingsBack", GameStrings.ProfileTitle);
 
         var username = EnsureLabel(card.rectTransform, "SettingsUsername", string.Empty, 18f, 1, font);
         Place(username.rectTransform, new Vector2(0f, 200f), new Vector2(500f, 24f));

@@ -45,6 +45,7 @@ public class WaitingChrome : MonoBehaviour
         SetLabel("WaitCopyLabel", GameStrings.CopyButton);
         SetLabel("WaitShareLabel", GameStrings.ShareButton);
         SetLabel("CancelWaitingButtonLabel", GameStrings.CancelRoomButton);
+        PageHeader.Apply(transform, "WaitCreatedTitle", "WaitBackButton", GameStrings.RoomCreatedTitle);
 
         var cancel = FindTmpOn("CancelWaitingButton");
         if (cancel != null)

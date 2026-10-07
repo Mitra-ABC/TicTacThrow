@@ -44,6 +44,7 @@ public class JoinRoomChrome : MonoBehaviour
     {
         if (input != null)
             input.ActivateInputField();
+        PageHeader.Apply(transform, "JoinPageTitle", "BackFromJoinButton", GameStrings.JoinRoomButton, "JoinTitle");
         Refresh();
     }
 

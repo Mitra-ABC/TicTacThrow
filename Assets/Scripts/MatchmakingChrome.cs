@@ -19,6 +19,7 @@ public class MatchmakingChrome : MonoBehaviour
     private void OnEnable()
     {
         elapsed = 0f;
+        PageHeader.Apply(transform, "MatchmakingBannerLabel", "MatchmakingBack", GameStrings.MatchmakingTitle);
         RefreshTimer();
     }
 

@@ -74,12 +74,11 @@ public static class GameFlowScreensBuilder
         Wire(EnsureButton(back), "OnCancelMatchmakingClicked");
 
         var banner = EnsureImage(root, "MatchmakingBanner", SpriteAt("Assets/UI/Matchmaking/MMTitle.png"), 2);
-        PlaceTop(banner.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(560f, 96f), new Vector2(0.5f, 1f));
         banner.preserveAspect = true;
         banner.raycastTarget = false;
         var title = EnsureLabel(banner.rectTransform, "MatchmakingBannerLabel", GameStrings.MatchmakingTitle, 36f, 0, font);
-        StretchInsets(title.rectTransform, new Vector2(48f, 18f), new Vector2(-48f, -18f));
         title.color = new Color(1f, 0.86f, 0.22f, 1f);
+        PageHeader.Apply(root, "MatchmakingBannerLabel", "MatchmakingBack", GameStrings.MatchmakingTitle);
 
         var leftAv = EnsureImage(root, "MatchmakingAvatar", SpriteAt("Assets/UI/Matchmaking/MMAvatar.png"), 3);
         Place(leftAv.rectTransform, new Vector2(-300f, 28f), new Vector2(168f, 168f));
@@ -280,10 +279,7 @@ public static class GameFlowScreensBuilder
             PersianUi.SetText(turnLabel.GetComponent<TMP_Text>(), GameStrings.YourTurn);
         }
 
-        var back = EnsureImage(root, "GameBack", SpriteAt("Assets/UI/Game/GameBack.png"), 6);
-        PlaceTop(back.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -86f), new Vector2(46f, 46f), new Vector2(0f, 1f));
-        back.preserveAspect = true;
-        var backBtn = EnsureButton(back);
+        HierarchyLeftovers.DestroyAll();
 
         var chat = EnsureImage(root, "GameChat", SpriteAt("Assets/UI/Game/GameChat.png"), 7);
         PlaceTop(chat.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(12f, 78f), new Vector2(152f, 58f), new Vector2(0f, 0f));
@@ -307,7 +303,7 @@ public static class GameFlowScreensBuilder
         so.FindProperty("leftScore").objectReferenceValue = leftScore;
         so.FindProperty("rightName").objectReferenceValue = rightName;
         so.FindProperty("rightScore").objectReferenceValue = rightScore;
-        so.FindProperty("backButton").objectReferenceValue = backBtn;
+        so.FindProperty("backButton").objectReferenceValue = null;
         so.FindProperty("surrenderButton").objectReferenceValue = surrenderBtn;
         so.FindProperty("chatButton").objectReferenceValue = chatBtn;
         so.FindProperty("leftAvatar").objectReferenceValue = leftPortrait;

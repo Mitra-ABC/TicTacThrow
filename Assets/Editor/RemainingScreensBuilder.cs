@@ -28,7 +28,8 @@ public static class RemainingScreensBuilder
             "CloseLeaderboardButton",
             "CloseMyStatsButton",
             "CloseStoreButton",
-            "CloseBoostersButton"
+            "CloseBoostersButton",
+            "SettingsBack"
         };
 
         foreach (var name in names)
@@ -69,6 +70,38 @@ public static class RemainingScreensBuilder
         }
 
         Debug.Log("DuoDooz: Back buttons unified to FriendsBack.");
+    }
+
+    [MenuItem("Tools/DuoDooz/Unify Page Headers")]
+    public static void UnifyPageHeaders()
+    {
+        ApplyHeader("FriendlyGamePanel", "FriendlyPanelTitle", "BackFromFriendlyGameButton", GameStrings.WithFriends);
+        ApplyHeader("JoinRoomPanel", "JoinPageTitle", "BackFromJoinButton", GameStrings.JoinRoomButton, "JoinTitle");
+        ApplyHeader("WaitingPanel", "WaitCreatedTitle", "WaitBackButton", GameStrings.RoomCreatedTitle);
+        ApplyHeader("MatchmakingPanel", "MatchmakingBannerLabel", "MatchmakingBack", GameStrings.MatchmakingTitle);
+        ApplyHeader("LeaderboardPanel", "LeaderboardTitle", "CloseLeaderboardButton", GameStrings.LeaderboardTitle, "LeaderboardTrophy");
+        ApplyHeader("MyStatsPanel", "MyStatsTitle", "CloseMyStatsButton", GameStrings.MyStatsTitle, "MyStatsTile");
+        ApplyHeader("StorePanel", "StoreTitle", "CloseStoreButton", GameStrings.StoreTitle, "StoreTile");
+        ApplyHeader("BoostersPanel", "BoostersTitle", "CloseBoostersButton", GameStrings.BoostersTitle, "BoostersTile");
+        ApplyHeader("SettingsPanel", "SettingsTitle", "SettingsBack", GameStrings.ProfileTitle);
+
+        var scene = EditorSceneManager.GetActiveScene();
+        if (scene.IsValid())
+        {
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        Debug.Log("DuoDooz: Page headers unified to MMTitle banner.");
+    }
+
+    private static void ApplyHeader(string panelName, string titleName, string backName, string titleText, params string[] hideNames)
+    {
+        var panel = FindNamed(panelName);
+        if (panel == null)
+            return;
+        PageHeader.Apply(panel.transform, titleName, backName, titleText, hideNames);
+        EditorUtility.SetDirty(panel);
     }
 
     [MenuItem("Tools/DuoDooz/Build Remaining Screens")]
@@ -224,19 +257,8 @@ public static class RemainingScreensBuilder
         if (panel.GetComponent<LeaderboardChrome>() == null)
             panel.AddComponent<LeaderboardChrome>();
 
-        var title = FindDeep(root, "LeaderboardTitle") as RectTransform;
-        if (title != null)
-        {
-            title.gameObject.SetActive(true);
-            PlaceTop(title, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -28f), new Vector2(420f, 48f), new Vector2(0.5f, 1f));
-            StyleLabel(title.GetComponent<TMP_Text>(), font, 36f, Color.white, TextAlignmentOptions.Center);
-            PersianUi.SetText(title.GetComponent<TMP_Text>(), GameStrings.LeaderboardTitle);
-        }
-
-        var trophy = EnsureImage(root, "LeaderboardTrophy", ImportSprite("Assets/UI/Lobby/LobbyTrophy.png"), 3);
-        PlaceTop(trophy.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(268f, -22f), new Vector2(52f, 52f), new Vector2(0.5f, 1f));
-        trophy.preserveAspect = true;
-        trophy.raycastTarget = false;
+        HierarchyLeftovers.DestroyAll();
+        PageHeader.Apply(root, "LeaderboardTitle", "CloseLeaderboardButton", GameStrings.LeaderboardTitle, "LeaderboardTrophy");
 
         var season = FindDeep(root, "SeasonLabel") as RectTransform;
         if (season != null)
@@ -285,19 +307,10 @@ public static class RemainingScreensBuilder
         StyleIconButton(FindDeep(root, "CloseMyStatsButton"), ImportSprite("Assets/UI/Friends/FriendsBack.png"),
             new Vector2(0f, 1f), new Vector2(18f, -14f), new Vector2(72f, 72f), new Vector2(0f, 1f));
 
-        var title = FindDeep(root, "MyStatsTitle") as RectTransform;
-        if (title != null)
-        {
-            title.gameObject.SetActive(true);
-            PlaceTop(title, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(420f, 56f), new Vector2(0.5f, 1f));
-            StyleLabel(title.GetComponent<TMP_Text>(), font, 42f, Color.white, TextAlignmentOptions.Center);
-            PersianUi.SetText(title.GetComponent<TMP_Text>(), GameStrings.MyStatsTitle);
-        }
-
-        var tile = EnsureImage(root, "MyStatsTile", ImportSprite("Assets/UI/Lobby/LobbyTileStats.png"), 3);
-        PlaceTop(tile.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -16f), new Vector2(72f, 72f), new Vector2(1f, 1f));
-        tile.preserveAspect = true;
-        tile.raycastTarget = false;
+        if (panel.GetComponent<SubpageChrome>() == null)
+            panel.AddComponent<SubpageChrome>();
+        HierarchyLeftovers.DestroyAll();
+        PageHeader.Apply(root, "MyStatsTitle", "CloseMyStatsButton", GameStrings.MyStatsTitle, "MyStatsTile");
 
         var card = EnsureImage(root, "MyStatsCard", ImportSprite("Assets/UI/Waiting/WaitCodeCard.png"), 4);
         Place(card.rectTransform, new Vector2(0f, -16f), new Vector2(700f, 460f));
@@ -347,19 +360,10 @@ public static class RemainingScreensBuilder
         StyleIconButton(FindDeep(root, "CloseStoreButton"), ImportSprite("Assets/UI/Friends/FriendsBack.png"),
             new Vector2(0f, 1f), new Vector2(18f, -14f), new Vector2(72f, 72f), new Vector2(0f, 1f));
 
-        var title = FindDeep(root, "StoreTitle") as RectTransform;
-        if (title != null)
-        {
-            title.gameObject.SetActive(true);
-            PlaceTop(title, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(420f, 56f), new Vector2(0.5f, 1f));
-            StyleLabel(title.GetComponent<TMP_Text>(), font, 42f, Color.white, TextAlignmentOptions.Center);
-            PersianUi.SetText(title.GetComponent<TMP_Text>(), GameStrings.StoreTitle);
-        }
-
-        var tile = EnsureImage(root, "StoreTile", ImportSprite("Assets/UI/Lobby/LobbyTileShop.png"), 3);
-        PlaceTop(tile.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -16f), new Vector2(72f, 72f), new Vector2(1f, 1f));
-        tile.preserveAspect = true;
-        tile.raycastTarget = false;
+        if (panel.GetComponent<SubpageChrome>() == null)
+            panel.AddComponent<SubpageChrome>();
+        HierarchyLeftovers.DestroyAll();
+        PageHeader.Apply(root, "StoreTitle", "CloseStoreButton", GameStrings.StoreTitle, "StoreTile");
 
         var scroll = FindDeep(root, "CoinPacksScrollView") as RectTransform;
         if (scroll != null)
@@ -392,19 +396,10 @@ public static class RemainingScreensBuilder
         StyleIconButton(FindDeep(root, "CloseBoostersButton"), ImportSprite("Assets/UI/Friends/FriendsBack.png"),
             new Vector2(0f, 1f), new Vector2(18f, -14f), new Vector2(72f, 72f), new Vector2(0f, 1f));
 
-        var title = FindDeep(root, "BoostersTitle") as RectTransform;
-        if (title != null)
-        {
-            title.gameObject.SetActive(true);
-            PlaceTop(title, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(420f, 56f), new Vector2(0.5f, 1f));
-            StyleLabel(title.GetComponent<TMP_Text>(), font, 42f, Color.white, TextAlignmentOptions.Center);
-            PersianUi.SetText(title.GetComponent<TMP_Text>(), GameStrings.BoostersTitle);
-        }
-
-        var tile = EnsureImage(root, "BoostersTile", ImportSprite("Assets/UI/Lobby/LobbyTileBoosters.png"), 3);
-        PlaceTop(tile.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -16f), new Vector2(72f, 72f), new Vector2(1f, 1f));
-        tile.preserveAspect = true;
-        tile.raycastTarget = false;
+        if (panel.GetComponent<SubpageChrome>() == null)
+            panel.AddComponent<SubpageChrome>();
+        HierarchyLeftovers.DestroyAll();
+        PageHeader.Apply(root, "BoostersTitle", "CloseBoostersButton", GameStrings.BoostersTitle, "BoostersTile");
 
         var scroll = FindDeep(root, "BoostersScrollView") as RectTransform;
         if (scroll != null)

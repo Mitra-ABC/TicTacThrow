@@ -56,14 +56,9 @@ public static class FriendsFlowBuilder
         StyleIconButton(FindDeep(root, "BackFromFriendlyGameButton"), ImportSprite("Assets/UI/Friends/FriendsBack.png"),
             new Vector2(0f, 1f), new Vector2(18f, -14f), new Vector2(72f, 72f), new Vector2(0f, 1f));
 
-        var title = FindDeep(root, "FriendlyPanelTitle") as RectTransform;
-        if (title != null)
-        {
-            title.gameObject.SetActive(true);
-            PlaceTop(title, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(100f, -22f), new Vector2(360f, 56f), new Vector2(0f, 1f));
-            StyleLabel(title.GetComponent<TMP_Text>(), font, 40f, Color.white, TextAlignmentOptions.MidlineRight);
-            PersianUi.SetText(title.GetComponent<TMP_Text>(), GameStrings.PlayWithFriendsButton);
-        }
+        if (panel.GetComponent<SubpageChrome>() == null)
+            panel.AddComponent<SubpageChrome>();
+        PageHeader.Apply(root, "FriendlyPanelTitle", "BackFromFriendlyGameButton", GameStrings.WithFriends);
 
         StyleCard(FindDeep(root, "CreateRoomButton"), ImportSprite("Assets/UI/Friends/FriendsCreateCard.png"),
             new Vector2(-230f, -24f), new Vector2(360f, 440f), GameStrings.CreateRoomButton, GameStrings.CreateRoomHint, font);
@@ -95,7 +90,6 @@ public static class FriendsFlowBuilder
         Stretch(bg.rectTransform);
         bg.raycastTarget = false;
 
-        var titleSprite = ImportSprite("Assets/UI/Join/JoinTitle.png");
         var digitSprite = ImportSprite("Assets/UI/Join/JoinDigit.png");
         var submitSprite = ImportSprite("Assets/UI/Join/JoinSubmit.png");
         var dividerSprite = ImportSprite("Assets/UI/Join/JoinDivider.png");
@@ -104,13 +98,11 @@ public static class FriendsFlowBuilder
         StyleIconButton(FindDeep(root, "BackFromJoinButton"), ImportSprite("Assets/UI/Friends/FriendsBack.png"),
             new Vector2(0f, 1f), new Vector2(18f, -14f), new Vector2(72f, 72f), new Vector2(0f, 1f));
 
-        var title = EnsureImage(root, "JoinTitle", titleSprite, 2);
-        Place(title.rectTransform, new Vector2(0f, 210f), new Vector2(520f, 120f));
-        title.preserveAspect = true;
-        title.raycastTarget = false;
+        HierarchyLeftovers.DestroyAll();
+        PageHeader.Apply(root, "JoinPageTitle", "BackFromJoinButton", GameStrings.JoinRoomButton, "JoinTitle");
 
         var hint = EnsureLabel(root, "JoinInstruction", GameStrings.JoinRoomInstruction, 26f, 3, font);
-        Place(hint.rectTransform, new Vector2(0f, 118f), new Vector2(480f, 36f));
+        Place(hint.rectTransform, new Vector2(0f, 168f), new Vector2(520f, 36f));
 
         var divL = EnsureImage(root, "JoinDividerLeft", dividerSprite, 4);
         Place(divL.rectTransform, new Vector2(-280f, 118f), new Vector2(160f, 18f));
@@ -222,7 +214,7 @@ public static class FriendsFlowBuilder
         }
 
         var created = EnsureLabel(root, "WaitCreatedTitle", GameStrings.RoomCreatedTitle, 44f, 2, font);
-        Place(created.rectTransform, new Vector2(0f, 200f), new Vector2(640f, 56f));
+        PageHeader.Apply(root, "WaitCreatedTitle", "WaitBackButton", GameStrings.RoomCreatedTitle);
 
         var status = FindDeep(root, "WaitingStatusLabel") as RectTransform;
         if (status != null)

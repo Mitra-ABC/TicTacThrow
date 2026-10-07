@@ -90,10 +90,10 @@ public class SettingsChrome : MonoBehaviour
             overlay.raycastTarget = true;
         }
 
-        Place(FindRt("SettingsCard"), new Vector2(0f, -18f), new Vector2(640f, 560f));
-        Place(FindRt("SettingsTitle"), new Vector2(0f, 232f), new Vector2(400f, 40f));
+        PageHeader.Apply(transform, "SettingsTitle", "SettingsBack", GameStrings.ProfileTitle);
+        Place(FindRt("SettingsCard"), new Vector2(0f, -36f), new Vector2(640f, 520f));
         var account = FindRt("SettingsUsername");
-        Place(account, new Vector2(0f, 200f), new Vector2(480f, 24f));
+        Place(account, new Vector2(0f, 220f), new Vector2(480f, 24f));
         StyleMutedLabel(account != null ? account.GetComponent<TMP_Text>() : null);
         var fieldLabel = EnsureNicknameFieldLabel();
         Place(fieldLabel, new Vector2(0f, 168f), new Vector2(400f, 26f));

@@ -234,6 +234,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        PageHeader.EnsureSubpages();
         // Check if already logged in (persisted session)
         if (apiClient != null && apiClient.IsLoggedIn)
         {
@@ -1048,6 +1049,7 @@ public class GameManager : MonoBehaviour
         myStatsPanel?.SetActive(currentState == GameState.MyStats);
         storePanel?.SetActive(currentState == GameState.Store);
         boostersPanel?.SetActive(currentState == GameState.Boosters);
+        PageHeader.ApplyAll();
 
         // Auth form state - show/hide nickname field based on mode
         if (currentState == GameState.AuthForm)
